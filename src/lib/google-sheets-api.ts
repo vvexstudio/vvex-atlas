@@ -1,0 +1,374 @@
+import { unstable_noStore as noStore } from "next/cache";
+import * as XLSX from "xlsx";
+
+interface TokenResponse {
+  access_token: string;
+  expires_in: number;
+  scope: string;
+  token_type: string;
+}
+
+interface SheetResponse {
+  range: string;
+  majorDimension: string;
+  values?: any[][];
+}
+
+let cachedAccessToken: string | null = null;
+let tokenExpiryTime: number = 0;
+
+/**
+ * Gets a valid OAuth access token by refreshing the refresh token
+ */
+async function getAccessToken(): Promise<string> {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
+
+  if (!clientId || !clientSecret || !refreshToken) {
+    throw new Error(
+      "Missing Google OAuth environment variables (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN)."
+    );
+  }
+
+  const now = Date.now();
+  // Return cached token if it has more than 5 minutes of life left
+  if (cachedAccessToken && tokenExpiryTime > now + 300 * 1000) {
+    return cachedAccessToken;
+  }
+
+  console.log("Refreshing Google OAuth access token...");
+  try {
+    const res = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+        grant_type: "refresh_token",
+      }),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Token refresh failed with status ${res.status}: ${errorText}`);
+    }
+
+    const data = (await res.json()) as TokenResponse;
+    cachedAccessToken = data.access_token;
+    tokenExpiryTime = Date.now() + data.expires_in * 1000;
+    return cachedAccessToken;
+  } catch (err) {
+    console.error("Error refreshing access token:", err);
+    throw err;
+  }
+}
+
+/**
+ * Fetches raw values from a Google Sheet range using Workspace API (OAuth)
+ */
+export async function getSpreadsheetValues(spreadsheetId: string, range: string): Promise<any[][]> {
+  noStore(); // Disable server-side caching
+
+  const accessToken = await getAccessToken();
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueRenderOption=UNFORMATTED_VALUE`;
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Sheets API request failed with status ${res.status}: ${errorText}`);
+    }
+
+    const data = (await res.json()) as SheetResponse;
+    return data.values || [];
+  } catch (err) {
+    console.error(`Error fetching spreadsheet values for range '${range}':`, err);
+    throw err;
+  }
+}
+
+/**
+ * Fetches and parses Google Sheet tab data into objects using Workspace API (OAuth)
+ */
+export async function getParsedSheetData<T extends Record<string, any>>(
+  spreadsheetId: string,
+  tabName: string
+): Promise<T[]> {
+  const range = tabName === "ROS by TIME" ? `${tabName}!A2:Z500` : `${tabName}!A1:Z500`;
+  const rows = await getSpreadsheetValues(spreadsheetId, range);
+  if (rows.length === 0) return [];
+
+  const headers = rows[0].map(h => String(h).trim());
+  const dataRows = rows.slice(1);
+
+  return dataRows.map((row) => {
+    const item: Record<string, any> = {};
+    headers.forEach((header, index) => {
+      if (header) {
+        item[header] = row[index] !== undefined ? row[index] : "";
+      }
+    });
+    return item as T;
+  });
+}
+
+/**
+ * Fallback: Fetches and parses Google Sheet tab data using public CSV export URL
+ */
+export async function getParsedSheetDataFromPublicCsv<T extends Record<string, any>>(
+  spreadsheetId: string,
+  tabName: string
+): Promise<T[]> {
+  noStore();
+  const url = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`HTTP status ${res.status}: ${res.statusText}`);
+    }
+    const csvText = await res.text();
+    const workbook = XLSX.read(csvText, { type: "string" });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    return XLSX.utils.sheet_to_json<T>(worksheet, { defval: "" });
+  } catch (err) {
+    console.error(`Error fetching/parsing public CSV sheet for tab '${tabName}':`, err);
+    throw err;
+  }
+}
+
+function rgbToHex(rgb: any): string | undefined {
+  if (!rgb) return undefined;
+  // Google Sheets API returns colors as floats between 0 and 1
+  const r = rgb.red !== undefined ? Math.round(rgb.red * 255) : 0;
+  const g = rgb.green !== undefined ? Math.round(rgb.green * 255) : 0;
+  const b = rgb.blue !== undefined ? Math.round(rgb.blue * 255) : 0;
+  
+  // Format to standard 6-digit hex string
+  return "#" + [r, g, b].map(x => x.toString(16).padStart(2, "0")).join("");
+}
+
+function getContrastColor(hexBg: string): string {
+  const hex = hexBg.replace("#", "");
+  if (hex.length !== 6) return "#000000";
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 128 ? "#000000" : "#ffffff";
+}
+
+/**
+ * Fetches the titles of all sheets in a spreadsheet using Workspace API (OAuth)
+ */
+export async function getSpreadsheetSheets(spreadsheetId: string): Promise<string[]> {
+  noStore();
+
+  const accessToken = await getAccessToken();
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties.title`;
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Sheets API request failed with status ${res.status}: ${errorText}`);
+    }
+
+    const data = await res.json();
+    return (data.sheets || []).map((sheet: any) => sheet.properties?.title).filter(Boolean);
+  } catch (err) {
+    console.error(`Error fetching spreadsheet sheets list:`, err);
+    throw err;
+  }
+}
+
+/**
+ * Fetches spreadsheet data including grid formatting data for the given ranges using Workspace API (OAuth)
+ */
+export async function getSpreadsheetWithFormatting(
+  spreadsheetId: string,
+  ranges: string[]
+): Promise<any> {
+  noStore();
+
+  const accessToken = await getAccessToken();
+  const rangeParams = ranges.map(r => `ranges=${encodeURIComponent(r)}`).join("&");
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?includeGridData=true&${rangeParams}`;
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Sheets API request failed with status ${res.status}: ${errorText}`);
+    }
+
+    return await res.json();
+  } catch (err) {
+    console.error(`Error fetching spreadsheet with formatting for ranges ${ranges.join(", ")}:`, err);
+    throw err;
+  }
+}
+
+export interface ParsedSheetDataWithColors<T> {
+  data: T[];
+  colors: Record<string, { bg: string; fg: string }>;
+}
+
+/**
+ * Parses sheet from the formatting-aware API response and extracts values & color styles from a 'Color' column.
+ */
+export function parseSheetDataWithColors<T extends Record<string, any>>(
+  spreadsheetObj: any,
+  tabName: string
+): ParsedSheetDataWithColors<T> {
+  const sheet = spreadsheetObj.sheets?.find((s: any) => s.properties?.title === tabName);
+  if (!sheet) {
+    throw new Error(`Sheet tab "${tabName}" not found in response`);
+  }
+
+  const rows = sheet.data?.[0]?.rowData || [];
+  if (rows.length === 0) {
+    return { data: [], colors: {} };
+  }
+
+  // Parse headers from the first row
+  const firstRowValues = rows[0].values || [];
+  const headers = firstRowValues.map((cell: any) =>
+    String(cell.userEnteredValue?.stringValue || cell.formattedValue || "").trim()
+  );
+
+  const colorColIndex = headers.indexOf("Color");
+  const dataRows = rows.slice(1);
+  const data: T[] = [];
+  const colors: Record<string, { bg: string; fg: string }> = {};
+
+  dataRows.forEach((row: any) => {
+    const rowValues = row.values || [];
+    // Skip empty rows
+    const hasValues = rowValues.some((cell: any) => cell.userEnteredValue !== undefined || cell.formattedValue);
+    if (!hasValues) return;
+
+    const item: Record<string, any> = {};
+    headers.forEach((header: string, index: number) => {
+      if (header) {
+        const cell = rowValues[index];
+        let val: any = "";
+        if (cell) {
+          if (cell.userEnteredValue?.stringValue !== undefined) {
+            val = cell.userEnteredValue.stringValue;
+          } else if (cell.userEnteredValue?.numberValue !== undefined) {
+            val = cell.userEnteredValue.numberValue;
+          } else if (cell.userEnteredValue?.boolValue !== undefined) {
+            val = cell.userEnteredValue.boolValue;
+          } else {
+            val = cell.formattedValue || "";
+          }
+        }
+        item[header] = val;
+      }
+    });
+    data.push(item as T);
+
+    // Extract colors if Color column exists
+    const primaryKey = String(rowValues[0]?.userEnteredValue?.stringValue || rowValues[0]?.formattedValue || "").trim();
+    if (primaryKey && colorColIndex !== -1 && colorColIndex < rowValues.length) {
+      const colorCell = rowValues[colorColIndex];
+      const effectiveFormat = colorCell?.effectiveFormat;
+      const bg = rgbToHex(effectiveFormat?.backgroundColor);
+      // We only store the color style if there is a background color set that is not pure white or missing
+      if (bg && bg !== "#ffffff") {
+        let fg = rgbToHex(effectiveFormat?.textFormat?.foregroundColor);
+        // Default to high-contrast color if foreground matches background or is invalid
+        if (!fg || fg === bg) {
+          fg = getContrastColor(bg);
+        }
+        colors[primaryKey] = { bg, fg };
+      }
+    }
+  });
+
+  return { data, colors };
+}
+
+/**
+ * Updates values in a Google Sheet range
+ */
+export async function updateSpreadsheetValues(
+  spreadsheetId: string,
+  range: string,
+  values: any[][]
+): Promise<any> {
+  const accessToken = await getAccessToken();
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
+
+  try {
+    const res = await fetch(url, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ values }),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Sheets API update failed with status ${res.status}: ${errorText}`);
+    }
+
+    return await res.json();
+  } catch (err) {
+    console.error(`Error updating spreadsheet values for range '${range}':`, err);
+    throw err;
+  }
+}
+
+/**
+ * Clears values in a Google Sheet range
+ */
+export async function clearSpreadsheetValues(
+  spreadsheetId: string,
+  range: string
+): Promise<any> {
+  const accessToken = await getAccessToken();
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}:clear`;
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Sheets API clear failed with status ${res.status}: ${errorText}`);
+    }
+
+    return await res.json();
+  } catch (err) {
+    console.error(`Error clearing spreadsheet values for range '${range}':`, err);
+    throw err;
+  }
+}
+
+

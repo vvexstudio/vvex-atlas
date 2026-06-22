@@ -1,0 +1,170 @@
+{
+  "Location": {
+    "Solaris": {
+      "bg": "#ffc8aa",
+      "fg": "#753800"
+    },
+    "LLL": {
+      "bg": "#d4edbc",
+      "fg": "#11734b"
+    },
+    "Reno": {
+      "bg": "#bfe1f6",
+      "fg": "#0a53a8"
+    },
+    "Storage": {
+      "bg": "#ffe5a0",
+      "fg": "#473821"
+    },
+    "Playa": {
+      "bg": "#ffcfc9",
+      "fg": "#b10202"
+    },
+    "All Locations": {
+      "bg": "#c6dbe1",
+      "fg": "#215a6c"
+    },
+    "Le Salon": {
+      "bg": "#b10202",
+      "fg": "#ffcfc9"
+    }
+  },
+  "Department": {
+    "Structural": {
+      "bg": "#b6f0b8",
+      "fg": "#1c5027"
+    },
+    "SolarPunks": {
+      "bg": "#a2aabf",
+      "fg": "#282f40"
+    },
+    "Set Design": {
+      "bg": "#ffeafb",
+      "fg": "#28122c"
+    },
+    "Rigging": {
+      "bg": "#ecefff",
+      "fg": "#001940"
+    },
+    "Med / Sec": {
+      "bg": "#c1a0c2",
+      "fg": "#3f2742"
+    },
+    "Hospitality": {
+      "bg": "#90aae2",
+      "fg": "#0f2e5f"
+    },
+    "Heavy Equipment (WonderBros)": {
+      "bg": "#573d5a",
+      "fg": "#fffaff"
+    },
+    "Fly Fleet": {
+      "bg": "#2a4577",
+      "fg": "#fdfaff"
+    },
+    "F&B": {
+      "bg": "#dae1f8",
+      "fg": "#3e4658"
+    },
+    "Electricity": {
+      "bg": "#fad6fb",
+      "fg": "#573d5a"
+    },
+    "ATPF": {
+      "bg": "#d7e1ff",
+      "fg": "#2a4577"
+    }
+  },
+  "Personnel": {
+    "Will": {
+      "bg": "#d0f7ff",
+      "fg": "#001e23"
+    },
+    "Vale": {
+      "bg": "#c5ffc6",
+      "fg": "#002007"
+    },
+    "Sarah": {
+      "bg": "#85b2ba",
+      "fg": "#00353c"
+    },
+    "Paris": {
+      "bg": "#80b784",
+      "fg": "#003813"
+    },
+    "Lauren": {
+      "bg": "#1e4c53",
+      "fg": "#f5fdff"
+    },
+    "Lara": {
+      "bg": "#1c5027",
+      "fg": "#f5fff0"
+    },
+    "Gregg": {
+      "bg": "#d3e7d0",
+      "fg": "#394a39"
+    },
+    "Ben": {
+      "bg": "#bce9f2",
+      "fg": "#1e4c53"
+    }
+  },
+  "Action": {
+    "Set up": {
+      "bg": "#edd4f5",
+      "fg": "#6b21a8"
+    },
+    "Transportation": {
+      "bg": "#dbeafe",
+      "fg": "#1e40af"
+    },
+    "Strike": {
+      "bg": "#fee2e2",
+      "fg": "#991b1b"
+    },
+    "F&B": {
+      "bg": "#dae1f8",
+      "fg": "#3e4658"
+    },
+    "Guest Experience": {
+      "bg": "#d1fae5",
+      "fg": "#065f46"
+    },
+    "Sound & Light Check": {
+      "bg": "#fef3c7",
+      "fg": "#92400e"
+    },
+    "Prep work": {
+      "bg": "#f3f4f6",
+      "fg": "#374151"
+    },
+    "Vendor Delivery": {
+      "bg": "#ffedd5",
+      "fg": "#9a3412"
+    },
+    "Sunrise / Sunset": {
+      "bg": "#ffe4e6",
+      "fg": "#9f1239"
+    },
+    "Water Pump / Fill": {
+      "bg": "#ccfbf1",
+      "fg": "#115e59"
+    },
+    "Clean & Moop": {
+      "bg": "#f0fdf4",
+      "fg": "#166534"
+    },
+    "Special Event": {
+      "bg": "#ede9fe",
+      "fg": "#5b21b6"
+    },
+    "Incident / Medical Response": {
+      "bg": "#fee2e2",
+      "fg": "#b91c1c"
+    },
+    "Playa Operations": {
+      "bg": "#e2e8f0",
+      "fg": "#334155"
+    }
+  }
+}
