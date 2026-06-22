@@ -47,7 +47,7 @@ A private, reusable **interactive map + run-of-show (ROS) schedule** app for **T
 **What exists and works:**
 - `src/components/festival-map-app.tsx` (~2,880 lines) — mature single shared view: Google map, geofenced markers, category/project-type filters, fuzzy search, day tabs, timeline view, service icons, event modals.
 - `src/lib/festival-data.ts` — server loader: parses KMZ placemarks → venues, `ROS by TIME` sheet → events, infers event types from text, name-matches schedule locations to placemarks, keeps unmatched rows as "unmapped."
-- `/admin` — single shared-cookie gate (`admin_access=true`) + password server action (`src/app/admin/actions.ts`, `src/middleware.ts`). CRUD pin editor (`src/components/admin/pin-editor.tsx`); entries persist to local `portal-admin-entries.json`.
+- `/admin` — single shared-cookie gate (`admin_access=true`) + password server action (`src/app/admin/actions.ts`, `src/proxy.ts`). CRUD pin editor (`src/components/admin/pin-editor.tsx`); entries persist to local `portal-admin-entries.json`.
 
 **Data work completed this session (remote sheet `1rpmzT4…`):**
 - ✅ Added **`Locations`** tab (24 rows): id, name, aliases, category, foh_boh_default, lat/lng (synthetic), capacity, notes.

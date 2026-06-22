@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifySessionCookie, isAdminEmail } from "@/lib/auth";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 1. Exclude public paths
@@ -61,4 +61,3 @@ export const config = {
     "/((?!api/auth|_next/static|_next/image|favicon.ico|icon.png).*)",
   ],
 };
-

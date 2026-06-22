@@ -11,7 +11,7 @@ A private, reusable interactive **map + run-of-show schedule** app for The Porta
 - `src/app/page.tsx` — server entry; calls `getFestivalData()`.
 - `src/lib/festival-data.ts` — **data layer**: parses KMZ placemarks + `ROS by TIME` xlsx → venues + events.
 - `src/components/festival-map-app.tsx` — the main client view (~2,880 lines; map, filters, search, timeline). **Change surgically.**
-- `src/app/admin/*`, `src/middleware.ts` — admin gate (currently a single shared cookie/password). `src/components/admin/pin-editor.tsx` — pin CRUD.
+- `src/app/admin/*`, `src/proxy.ts` — admin gate (currently a single shared cookie/password). `src/components/admin/pin-editor.tsx` — pin CRUD.
 - `src/types/festival.ts`, `src/types/admin-entry.ts`, `src/data/festival.ts` — types + label maps.
 
 ## 3. Locked decisions (do not re-litigate without the client)
