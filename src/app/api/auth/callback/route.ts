@@ -7,9 +7,15 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const state = searchParams.get("state") || "/"; // callbackUrl
 
+  // Detect origin dynamically from request headers (support x-forwarded-host for proxies)
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
+  const proto = request.headers.get("x-forwarded-proto") || "http";
+  const origin = `${proto}://${host}`;
+  const redirectUri = `${origin}/api/auth/callback`;
+
   if (!code) {
     console.error("OAuth callback: Missing authorization code");
-    return NextResponse.redirect(new URL("/login?error=no-code", request.url));
+    return NextResponse.redirect(new URL("/login?error=no-code", origin));
   }
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -17,14 +23,8 @@ export async function GET(request: Request) {
 
   if (!clientId || !clientSecret) {
     console.error("OAuth callback: Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET");
-    return NextResponse.redirect(new URL("/login?error=config-missing", request.url));
+    return NextResponse.redirect(new URL("/login?error=config-missing", origin));
   }
-
-  // Detect origin dynamically from request headers (support x-forwarded-host for proxies)
-  const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
-  const proto = request.headers.get("x-forwarded-proto") || "http";
-  const origin = `${proto}://${host}`;
-  const redirectUri = `${origin}/api/auth/callback`;
 
   try {
     // 1. Exchange code for access_token
@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     if (!tokenRes.ok) {
       const errorText = await tokenRes.text();
       console.error(`OAuth token exchange failed (status ${tokenRes.status}):`, errorText);
-      return NextResponse.redirect(new URL("/login?error=token-exchange-failed", request.url));
+      return NextResponse.redirect(new URL("/login?error=token-exchange-failed", origin));
     }
 
     const tokenData = await tokenRes.json();
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
 
     if (!accessToken) {
       console.error("OAuth token exchange did not return an access token");
-      return NextResponse.redirect(new URL("/login?error=no-access-token", request.url));
+      return NextResponse.redirect(new URL("/login?error=no-access-token", origin));
     }
 
     // 2. Fetch user information
@@ -62,7 +62,7 @@ export async function GET(request: Request) {
     if (!userRes.ok) {
       const errorText = await userRes.text();
       console.error(`OAuth fetch userinfo failed (status ${userRes.status}):`, errorText);
-      return NextResponse.redirect(new URL("/login?error=userinfo-failed", request.url));
+      return NextResponse.redirect(new URL("/login?error=userinfo-failed", origin));
     }
 
     const userData = await userRes.json();
@@ -72,7 +72,7 @@ export async function GET(request: Request) {
 
     if (!email) {
       console.error("Google user profile did not contain an email address");
-      return NextResponse.redirect(new URL("/login?error=no-email", request.url));
+      return NextResponse.redirect(new URL("/login?error=no-email", origin));
     }
 
     // 3. Verify user email against Approved Emails tab
@@ -81,7 +81,7 @@ export async function GET(request: Request) {
     if (!approved) {
       console.warn(`Access denied: ${email} is not in the approved list`);
       return NextResponse.redirect(
-        new URL(`/login?error=unauthorized&email=${encodeURIComponent(email)}`, request.url)
+        new URL(`/login?error=unauthorized&email=${encodeURIComponent(email)}`, origin)
       );
     }
 
@@ -103,9 +103,9 @@ export async function GET(request: Request) {
     });
 
     console.log(`Access granted: ${email} successfully logged in`);
-    return NextResponse.redirect(new URL(state, request.url));
+    return NextResponse.redirect(new URL(state, origin));
   } catch (err) {
     console.error("OAuth callback exception:", err);
-    return NextResponse.redirect(new URL("/login?error=callback-exception", request.url));
+    return NextResponse.redirect(new URL("/login?error=callback-exception", origin));
   }
 }
