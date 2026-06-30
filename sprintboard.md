@@ -125,7 +125,7 @@ Goal: keep the way the client already works (the `ROS by TIME` columns are the b
 - [x] Document the schema + "how to give us production data" guide.
 
 ### M3 — Option B operational (PLUS features, pitched + staged)
-- [ ] Role-based auth (admin / lead / vendor / guest) replacing the single shared cookie.
+- [/] Role-based auth (admin / lead / vendor / guest) replacing the single shared cookie (OAuth credentials configured, fixing redirect logic for reverse proxy / dev envs).
 - [ ] Admin dashboard to scope what each role sees (`Roles` tab → runtime filter).
 - [ ] Row-level `visibility` + FOH/BOH gating in the map/schedule.
 - [ ] Contacts Directory + personal view.
