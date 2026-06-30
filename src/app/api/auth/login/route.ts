@@ -10,8 +10,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "OAuth Client ID not configured" }, { status: 500 });
   }
 
-  // Detect origin dynamically from request headers
-  const host = request.headers.get("host");
+  // Detect origin dynamically from request headers (support x-forwarded-host for proxies)
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
   const proto = request.headers.get("x-forwarded-proto") || "http";
   const origin = `${proto}://${host}`;
   const redirectUri = `${origin}/api/auth/callback`;

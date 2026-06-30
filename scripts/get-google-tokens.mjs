@@ -6,9 +6,9 @@ import { fileURLToPath } from "node:url";
 // Get client secret file
 async function getClientSecrets() {
   const files = await fs.readdir(process.cwd());
-  const secretFile = files.find(f => f.startsWith("client_secret_") && f.endsWith(".json"));
+  const secretFile = files.find(f => (f.startsWith("client_secret_") || f === "client_secret.json") && f.endsWith(".json"));
   if (!secretFile) {
-    throw new Error("No client_secret_*.json file found in the workspace root directory.");
+    throw new Error("No client_secret.json or client_secret_*.json file found in the workspace root directory.");
   }
   console.log(`Using client secrets from: ${secretFile}`);
   const content = await fs.readFile(path.join(process.cwd(), secretFile), "utf8");
