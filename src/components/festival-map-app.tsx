@@ -180,6 +180,7 @@ export function FestivalMapApp({
   const hideEmptyColumns = true;
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const [isMobileScheduleOpen, setIsMobileScheduleOpen] = useState(false);
 
   // Sync dark mode class on document body
   useEffect(() => {
@@ -590,11 +591,11 @@ export function FestivalMapApp({
           {/* Desktop-only floating sidebar toggle */}
           <button
             type="button"
-            className="legacy-sidebar-toggle-edge"
+            className={`legacy-sidebar-toggle-edge ${isSidebarOpen ? "is-open" : "is-closed"}`}
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             title={isSidebarOpen ? "Hide filters & running schedule" : "Show filters & running schedule"}
           >
-            {isSidebarOpen ? "➡️ Hide Panel" : "⬅️ Show Panel"}
+            {isSidebarOpen ? "➡️" : "⬅️"}
           </button>
           {/* Main Tab Switcher */}
           <div className="main-tabs-header">
@@ -707,7 +708,10 @@ export function FestivalMapApp({
                 <div className="calendar-controls">
                   <div className="scale-sliders-group">
                     <div className="scale-slider-item">
-                      <label htmlFor="horz-zoom-slider">↔️ Column Width: <span className="scale-value font-mono">{columnWidthScale}px</span></label>
+                      <label htmlFor="horz-zoom-slider">
+                        <span className="label-full">↔️ Column Width: <span className="scale-value font-mono">{columnWidthScale}px</span></span>
+                        <span className="label-short">↔️ W: <span className="scale-value font-mono">{columnWidthScale}px</span></span>
+                      </label>
                       <input
                         id="horz-zoom-slider"
                         type="range"
@@ -720,7 +724,10 @@ export function FestivalMapApp({
                       />
                     </div>
                     <div className="scale-slider-item">
-                      <label htmlFor="vert-zoom-slider">↕️ Hour Height: <span className="scale-value font-mono">{hourHeightScale}px</span></label>
+                      <label htmlFor="vert-zoom-slider">
+                        <span className="label-full">↕️ Hour Height: <span className="scale-value font-mono">{hourHeightScale}px</span></span>
+                        <span className="label-short">↕️ H: <span className="scale-value font-mono">{hourHeightScale}px</span></span>
+                      </label>
                       <input
                         id="vert-zoom-slider"
                         type="range"
@@ -744,7 +751,10 @@ export function FestivalMapApp({
                           />
                           <span className="switch-slider"></span>
                         </label>
-                        <span className="switch-text">🙈 Hide Empty Hours</span>
+                        <span className="switch-text">
+                          <span className="label-full">🙈 Hide Empty Hours</span>
+                          <span className="label-short">🙈 Hide Empty</span>
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1373,62 +1383,75 @@ export function FestivalMapApp({
 
           {/* Running Chronological Schedule */}
           <section className="legacy-list-block sidebar-schedule-block">
-            <div className="legacy-list-title">
-              <h2>Running Schedule</h2>
-              <span>{filteredAndSortedEvents.length} items</span>
-            </div>
-            <div className="sidebar-scroll-container">
-              {groupedEventsByDate.length === 0 ? (
-                <div className="sidebar-empty-state">No events match filters.</div>
-              ) : (
-                groupedEventsByDate.map((dateGroup) => (
-                  <div key={dateGroup.date} className="sidebar-date-group">
-                    <div className="sidebar-date-header">{dateGroup.dateLabel}</div>
-                    <div className="sidebar-event-list">
-                      {dateGroup.events.map((event) => (
-                        <div key={event.id} className="sidebar-event-card">
-                          <div className="event-time-badge font-mono">
-                            ⏰ {event.startTime} - {event.endTime}
-                          </div>
-                          <div className="event-card-title">{event.title}</div>
-                          
-                          <div className="event-card-details font-mono">
-                            {event.locationName && (
-                              <span className="card-detail-badge loc-tag-sm" style={getColorStyle("Location", event.locationName)}>
-                                📍 {event.locationName}
-                              </span>
-                            )}
-                            {event.action && (
-                              <span className="card-detail-badge action-tag-sm" style={getColorStyle("Action", event.action)}>
-                                ⚡ {event.action}
-                              </span>
-                            )}
-                          </div>
+            {/* Mobile collapsible schedule header toggle */}
+            <button
+              type="button"
+              className="legacy-mobile-schedule-toggle"
+              onClick={() => setIsMobileScheduleOpen(!isMobileScheduleOpen)}
+              title={isMobileScheduleOpen ? "Hide schedule list" : "Show schedule list"}
+            >
+              <span>📋 Running Schedule</span>
+              <span>{isMobileScheduleOpen ? "🔼 Collapse" : "🔽 Expand"}</span>
+            </button>
 
-                          {(event.leadPointPerson || event.department) && (
-                            <div className="event-card-badges">
-                              {event.leadPointPerson && (
-                                <span className="card-badge lead-badge" style={getColorStyle("Personnel", event.leadPointPerson)}>
-                                  👤 {event.leadPointPerson}
+            <div className={`legacy-mobile-schedule-body ${isMobileScheduleOpen ? "is-open" : ""}`}>
+              <div className="legacy-list-title">
+                <h2>Running Schedule</h2>
+                <span>{filteredAndSortedEvents.length} items</span>
+              </div>
+              <div className="sidebar-scroll-container">
+                {groupedEventsByDate.length === 0 ? (
+                  <div className="sidebar-empty-state">No events match filters.</div>
+                ) : (
+                  groupedEventsByDate.map((dateGroup) => (
+                    <div key={dateGroup.date} className="sidebar-date-group">
+                      <div className="sidebar-date-header">{dateGroup.dateLabel}</div>
+                      <div className="sidebar-event-list">
+                        {dateGroup.events.map((event) => (
+                          <div key={event.id} className="sidebar-event-card">
+                            <div className="event-time-badge font-mono">
+                              ⏰ {event.startTime} - {event.endTime}
+                            </div>
+                            <div className="event-card-title">{event.title}</div>
+                            
+                            <div className="event-card-details font-mono">
+                              {event.locationName && (
+                                <span className="card-detail-badge loc-tag-sm" style={getColorStyle("Location", event.locationName)}>
+                                  📍 {event.locationName}
                                 </span>
                               )}
-                              {event.department && (
-                                <span className="card-badge dept-badge" style={getColorStyle("Department", event.department)}>
-                                  🏢 {event.department}
+                              {event.action && (
+                                <span className="card-detail-badge action-tag-sm" style={getColorStyle("Action", event.action)}>
+                                  ⚡ {event.action}
                                 </span>
                               )}
                             </div>
-                          )}
 
-                          {event.description && (
-                            <div className="event-card-desc">{event.description}</div>
-                          )}
-                        </div>
-                      ))}
+                            {(event.leadPointPerson || event.department) && (
+                              <div className="event-card-badges">
+                                {event.leadPointPerson && (
+                                  <span className="card-badge lead-badge" style={getColorStyle("Personnel", event.leadPointPerson)}>
+                                    👤 {event.leadPointPerson}
+                                  </span>
+                                )}
+                                {event.department && (
+                                  <span className="card-badge dept-badge" style={getColorStyle("Department", event.department)}>
+                                    🏢 {event.department}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            {event.description && (
+                              <div className="event-card-desc">{event.description}</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))
-              )}
+                  ))
+                )}
+              </div>
             </div>
           </section>
         </aside>

@@ -182,6 +182,7 @@ Tracked here so we know what to stand up vs. what the client owns. Env var names
 ## 10. Session Log
 > Append newest at top. Format: `YYYY-MM-DD — who — what changed / decided / discovered`.
 
+- **2026-07-03 — agent** — Made the running schedule collapsible on mobile/tablet stacked viewports. Compressed calendar controls into a single row on mobile with "W", "H", and "Hide Empty" abbreviations. Positioned the desktop sidebar toggle button on the left boundary of the sidebar.
 - **2026-07-03 — agent** — Simplified the calendar layout toolbar to a single toggle ("Hide Empty Hours", enabled by default). Converted "Hide Empty Columns" to a permanent background feature.
 - **2026-07-03 — agent** — Simplified the header banner by removing the kicker, removing the secondary sub-heading ("ROS by TIME Master View"), and hiding the data source label, leaving "The Portal" as the sole primary title.
 - **2026-07-03 — agent** — Fixed mobile header layout overlapping title text, kicker, and data source label, and resolved theme switch button clipping on narrow viewports by introducing a vertical block stack layout with dynamic profile label truncation.
