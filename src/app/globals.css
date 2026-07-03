@@ -2196,6 +2196,7 @@ body.legacy-theme-dark .user-profile-section {
     justify-content: flex-start;
   }
 
+  .legacy-mobile-filters-toggle,
   .legacy-mobile-schedule-toggle {
     display: flex;
     justify-content: space-between;
@@ -2215,16 +2216,19 @@ body.legacy-theme-dark .user-profile-section {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
   }
 
+  body.legacy-theme-dark .legacy-mobile-filters-toggle,
   body.legacy-theme-dark .legacy-mobile-schedule-toggle {
     background: #12161f;
     border-color: #2d3443;
     color: #e2e8f0;
   }
 
+  .legacy-mobile-filter-body,
   .legacy-mobile-schedule-body {
     display: none;
   }
 
+  .legacy-mobile-filter-body.is-open,
   .legacy-mobile-schedule-body.is-open {
     display: flex;
     flex-direction: column;
@@ -2344,41 +2348,7 @@ body.legacy-theme-dark .user-profile-section {
     transform: none;
   }
 
-  .legacy-mobile-filters-toggle {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    font-size: 0.8rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    padding: 10px 14px;
-    background: #efe9d9;
-    border: 1px solid #d9d4c5;
-    border-radius: 8px;
-    cursor: pointer;
-    color: #4a4338;
-    margin-bottom: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-  }
 
-  body.legacy-theme-dark .legacy-mobile-filters-toggle {
-    background: #12161f;
-    border-color: #2d3443;
-    color: #e2e8f0;
-  }
-
-  .legacy-mobile-filter-body {
-    display: none;
-  }
-
-  .legacy-mobile-filter-body.is-open {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 12px;
-  }
 
   .legacy-view-switcher {
     display: none;
