@@ -151,6 +151,25 @@ a {
   text-align: center;
 }
 
+.user-profile-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-right: 0.5rem;
+  border-right: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+body.legacy-theme-dark .user-profile-section {
+  border-right-color: rgba(255, 255, 255, 0.15);
+}
+
+.user-profile-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-right: 0.25rem;
+}
+
 .legacy-control-row {
   display: flex;
   gap: 6px;
@@ -233,6 +252,8 @@ a {
   flex: 1 1 auto;
   min-width: 0;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .legacy-map-controls {
@@ -267,6 +288,12 @@ a {
   gap: 12px;
   align-content: start;
   color: #151515;
+}
+
+@media (min-width: 1081px) {
+  .legacy-list-panel.collapsed {
+    display: none !important;
+  }
 }
 
 .legacy-sidebar-resize-handle {
@@ -307,6 +334,10 @@ a {
 
 .legacy-sidebar-toggle-edge:hover {
   background: #ecdfca;
+}
+
+.legacy-mobile-filters-toggle {
+  display: none;
 }
 
 .legacy-list-block {
@@ -2060,6 +2091,10 @@ a {
 }
 
 @media (max-width: 1080px) {
+  .legacy-sidebar-toggle-edge {
+    display: none !important;
+  }
+
   .legacy-app {
     height: auto;
   }
@@ -2156,23 +2191,58 @@ a {
   }
 
   .legacy-banner {
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: flex-start;
     gap: 10px;
-    padding: 10px 12px;
+    padding: 12px 16px;
+    height: auto;
   }
 
   .legacy-banner-title {
+    width: 100%;
     justify-items: start;
+    gap: 2px;
   }
 
   .legacy-banner-heading {
     text-align: left;
-    font-size: clamp(0.98rem, 4vw, 1.2rem);
+    font-size: clamp(1rem, 5vw, 1.25rem);
+    line-height: 1.2;
   }
 
   .legacy-banner-actions {
     position: static;
     margin-left: 0;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 10px;
+    margin-top: 4px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    padding-top: 8px;
+  }
+
+  body.legacy-theme-dark .legacy-banner-actions {
+    border-top-color: rgba(255, 255, 255, 0.05);
+  }
+
+  .user-profile-section {
+    border-right: none;
+    padding-right: 0;
+  }
+
+  .user-profile-info {
+    display: none !important;
+  }
+
+  .legacy-theme-switch {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .festival-app {
@@ -2223,12 +2293,28 @@ a {
   }
 
   .legacy-mobile-filters-toggle {
-    display: inline-flex;
-    justify-content: center;
+    display: flex;
+    justify-content: space-between;
     align-items: center;
     width: 100%;
-    font-size: 0.95rem;
+    font-size: 0.8rem;
     font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 10px 14px;
+    background: #efe9d9;
+    border: 1px solid #d9d4c5;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #4a4338;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  }
+
+  body.legacy-theme-dark .legacy-mobile-filters-toggle {
+    background: #12161f;
+    border-color: #2d3443;
+    color: #e2e8f0;
   }
 
   .legacy-mobile-filter-body {
@@ -2236,7 +2322,10 @@ a {
   }
 
   .legacy-mobile-filter-body.is-open {
-    display: grid;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 12px;
   }
 
   .legacy-view-switcher {
@@ -2572,9 +2661,14 @@ body.legacy-theme-dark .main-tab-btn.active {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: #fffeef;
   position: relative;
-  height: calc(100vh - 100px); /* Adjust to viewport */
+}
+
+.main-tab-content.tab-calendar,
+.main-tab-content.tab-map {
+  overflow: hidden;
 }
 body.legacy-theme-dark .main-tab-content {
   background: #171b23;
@@ -3324,6 +3418,7 @@ body.legacy-theme-dark .zoom-slider::-webkit-slider-thumb {
   border: 1px solid #d9d4c5;
   border-radius: 12px;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
   min-height: 400px;
   position: relative;
@@ -3332,6 +3427,19 @@ body.legacy-theme-dark .zoom-slider::-webkit-slider-thumb {
 body.legacy-theme-dark .spatial-calendar-grid {
   background: #171b23;
   border-color: #2d3443;
+}
+
+@media (max-width: 1080px) {
+  .spatial-calendar-grid {
+    min-height: 250px;
+  }
+}
+
+@media (max-width: 720px) {
+  .spatial-calendar-container {
+    padding: 8px;
+    gap: 8px;
+  }
 }
 
 /* Calendar Day Sections stacked vertically */
@@ -3348,6 +3456,7 @@ body.legacy-theme-dark .calendar-day-section {
 
 /* Sticky Day/Date Header Banner */
 .calendar-day-header {
+  position: -webkit-sticky;
   position: sticky;
   top: 0;
   left: 0;
@@ -3372,6 +3481,7 @@ body.legacy-theme-dark .calendar-day-header {
 
 /* Headers wrapper to stay stuck below the day banner */
 .calendar-day-headers-wrapper {
+  position: -webkit-sticky;
   position: sticky;
   top: 34px;
   z-index: 25;
@@ -3441,6 +3551,7 @@ body.legacy-theme-dark .calendar-grid-header-row {
 }
 
 .calendar-time-axis-header {
+  position: -webkit-sticky;
   position: sticky;
   left: 0;
   z-index: 10;
@@ -3625,6 +3736,7 @@ body.legacy-theme-dark .tooltip-text {
 
 /* Left Time Axis Column */
 .calendar-time-axis {
+  position: -webkit-sticky;
   position: sticky;
   left: 0;
   z-index: 10;
@@ -3658,6 +3770,17 @@ body.legacy-theme-dark .time-label {
   color: #718096;
 }
 
+.time-label-sub {
+  font-size: 0.58rem;
+  font-weight: 500;
+  color: #8c7f6f;
+  opacity: 0.8;
+}
+
+body.legacy-theme-dark .time-label-sub {
+  color: #a0aec0;
+}
+
 /* Right Columns Container */
 .calendar-grid-lines {
   position: absolute;
@@ -3675,6 +3798,14 @@ body.legacy-theme-dark .time-label {
 
 body.legacy-theme-dark .grid-line {
   border-bottom-color: #1e2430;
+}
+
+.grid-line.sub-hour-line {
+  border-bottom: 1px dashed rgba(222, 216, 200, 0.6);
+}
+
+body.legacy-theme-dark .grid-line.sub-hour-line {
+  border-bottom-color: rgba(45, 52, 67, 0.6);
 }
 
 .calendar-columns-wrapper {

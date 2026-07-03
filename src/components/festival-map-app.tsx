@@ -176,7 +176,10 @@ export function FestivalMapApp({
   const [columnWidthScale, setColumnWidthScale] = useState<number>(180);
   const [hourHeightScale, setHourHeightScale] = useState<number>(60);
   const [modalEvent, setModalEvent] = useState<FestivalEvent | null>(null);
-  const [hideEmptyHours, setHideEmptyHours] = useState(false);
+  const [hideEmptyHours, setHideEmptyHours] = useState(true);
+  const hideEmptyColumns = true;
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
   // Sync dark mode class on document body
   useEffect(() => {
@@ -506,15 +509,11 @@ export function FestivalMapApp({
       {/* Header Banner */}
       <header className="legacy-banner">
         <div className="legacy-banner-title">
-          <span className="legacy-banner-kicker">The Portal</span>
-          <h1 className="legacy-banner-heading">ROS by TIME Master View</h1>
+          <h1 className="legacy-banner-heading">The Portal</h1>
         </div>
-        <div className="legacy-banner-actions" style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          {dataSourceLabel && (
-            <span className="legacy-banner-source">{dataSourceLabel}</span>
-          )}
+        <div className="legacy-banner-actions">
           {userSession && (
-            <div className="user-profile-section" style={{ display: "flex", alignItems: "center", gap: "0.75rem", paddingRight: "0.5rem", borderRight: "1px solid rgba(255, 255, 255, 0.15)" }}>
+            <div className="user-profile-section">
               {userSession.picture ? (
                 <img
                   src={userSession.picture}
@@ -541,7 +540,7 @@ export function FestivalMapApp({
                   {(userSession.name || userSession.email)[0].toUpperCase()}
                 </div>
               )}
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", marginRight: "0.25rem" }}>
+              <div className="user-profile-info">
                 <span style={{ fontSize: "0.8rem", fontWeight: 600, color: isDarkMode ? "#f3f4f6" : "#1f2937", lineHeight: "1.2" }}>
                   {userSession.name || userSession.email.split("@")[0]}
                 </span>
@@ -588,6 +587,15 @@ export function FestivalMapApp({
       <div className="legacy-shell">
         {/* Main Content Area: Tabbed Schedule & Map */}
         <section className="legacy-map-panel">
+          {/* Desktop-only floating sidebar toggle */}
+          <button
+            type="button"
+            className="legacy-sidebar-toggle-edge"
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            title={isSidebarOpen ? "Hide filters & running schedule" : "Show filters & running schedule"}
+          >
+            {isSidebarOpen ? "➡️ Hide Panel" : "⬅️ Show Panel"}
+          </button>
           {/* Main Tab Switcher */}
           <div className="main-tabs-header">
             <button
@@ -614,7 +622,7 @@ export function FestivalMapApp({
           </div>
 
           {/* Main Content Render */}
-          <div className="main-tab-content">
+          <div className={`main-tab-content tab-${mainTab}`}>
             {mainTab === "schedule" ? (
               /* High-fidelity Schedule Grid View */
               <div className="main-schedule-container">
@@ -717,7 +725,7 @@ export function FestivalMapApp({
                         id="vert-zoom-slider"
                         type="range"
                         min="30"
-                        max="150"
+                        max="300"
                         step="5"
                         value={hourHeightScale}
                         onChange={(e) => setHourHeightScale(Number(e.target.value))}
@@ -759,7 +767,13 @@ export function FestivalMapApp({
                       </div>
                     ) : (
                       groupedEventsByDate.map((dateGroup) => {
-                        const totalGridWidth = 70 + (activeDepartments.length + activeLocations.length) * columnWidthScale;
+                        const displayDepts = hideEmptyColumns
+                          ? activeDepartments.filter(dept => dateGroup.events.some(e => e.department === dept))
+                          : activeDepartments;
+                        const displayLocs = hideEmptyColumns
+                          ? activeLocations.filter(loc => dateGroup.events.some(e => e.locationName === loc))
+                          : activeLocations;
+                        const totalGridWidth = 70 + (displayDepts.length + displayLocs.length) * columnWidthScale;
                         const activeHours = hideEmptyHours ? getActiveHoursForDay(dateGroup.events) : hoursArray;
                         
                         return (
@@ -774,13 +788,14 @@ export function FestivalMapApp({
                               {/* Parent Row */}
                               <div className="calendar-parent-header-row">
                                 <div className="calendar-time-axis-header parent" style={{ width: "70px" }}></div>
-                                {activeDepartments.length > 0 && (
-                                  <div className="calendar-parent-header-cell departments" style={{ width: activeDepartments.length * columnWidthScale }}>
+                                {displayDepts.length > 0 && (
+                                  <div className="calendar-parent-header-cell departments" style={{ width: displayDepts.length * columnWidthScale }}>
                                     🏢 Departments
                                   </div>
                                 )}
-                                {activeLocations.length > 0 && (
-                                  <div className="calendar-parent-header-cell locations" style={{ width: activeLocations.length * columnWidthScale }}>
+                                {displayLocs.length > 0 && (
+                                  <div className="calendar-parent-header-cell locations" style={{ width: displayLocs.length * columnWidthScale }}>
+                                    📍 Locations
                                   </div>
                                 )}
                               </div>
@@ -791,7 +806,7 @@ export function FestivalMapApp({
                                   <span className="timezone-label">UTC</span>
                                 </div>
                                 
-                                {activeDepartments.map((dept) => {
+                                {displayDepts.map((dept) => {
                                   const tbdEvents = dateGroup.events.filter(
                                     (e) => e.department === dept && timeToMinutes(e.startTime) === -1
                                   );
@@ -856,7 +871,7 @@ export function FestivalMapApp({
                                   );
                                 })}
 
-                                {activeLocations.map((loc) => {
+                                {displayLocs.map((loc) => {
                                   const tbdEvents = dateGroup.events.filter(
                                     (e) => e.locationName === loc && timeToMinutes(e.startTime) === -1
                                   );
@@ -894,25 +909,82 @@ export function FestivalMapApp({
                                 {activeHours.map((hour) => {
                                   const ampm = hour >= 12 ? "PM" : "AM";
                                   const displayHour = hour % 12 === 0 ? 12 : hour % 12;
-                                  return (
-                                    <div key={hour} className="time-axis-slot" style={{ height: hourHeightScale }}>
-                                      <span className="time-label">{displayHour} {ampm}</span>
-                                    </div>
-                                  );
+                                  
+                                  if (hourHeightScale >= 110) {
+                                    // 15-minute increments
+                                    return (
+                                      <div key={hour} className="hour-group" style={{ height: hourHeightScale, display: "flex", flexDirection: "column" }}>
+                                        <div className="time-axis-slot main-hour" style={{ height: hourHeightScale / 4 }}>
+                                          <span className="time-label">{displayHour}:00 {ampm}</span>
+                                        </div>
+                                        <div className="time-axis-slot sub-hour" style={{ height: hourHeightScale / 4 }}>
+                                          <span className="time-label time-label-sub">{displayHour}:15</span>
+                                        </div>
+                                        <div className="time-axis-slot sub-hour" style={{ height: hourHeightScale / 4 }}>
+                                          <span className="time-label time-label-sub">{displayHour}:30</span>
+                                        </div>
+                                        <div className="time-axis-slot sub-hour" style={{ height: hourHeightScale / 4 }}>
+                                          <span className="time-label time-label-sub">{displayHour}:45</span>
+                                        </div>
+                                      </div>
+                                    );
+                                  } else if (hourHeightScale >= 70) {
+                                    // 30-minute increments
+                                    return (
+                                      <div key={hour} className="hour-group" style={{ height: hourHeightScale, display: "flex", flexDirection: "column" }}>
+                                        <div className="time-axis-slot main-hour" style={{ height: hourHeightScale / 2 }}>
+                                          <span className="time-label">{displayHour}:00 {ampm}</span>
+                                        </div>
+                                        <div className="time-axis-slot sub-hour" style={{ height: hourHeightScale / 2 }}>
+                                          <span className="time-label time-label-sub">{displayHour}:30</span>
+                                        </div>
+                                      </div>
+                                    );
+                                  } else {
+                                    // 60-minute increments (zoomed out)
+                                    return (
+                                      <div key={hour} className="time-axis-slot" style={{ height: hourHeightScale }}>
+                                        <span className="time-label">{displayHour} {ampm}</span>
+                                      </div>
+                                    );
+                                  }
                                 })}
                               </div>
 
                               {/* Background grid lines */}
                               <div className="calendar-grid-lines">
-                                {activeHours.map((hour) => (
-                                  <div key={`line-${hour}`} className="grid-line" style={{ height: hourHeightScale }} />
-                                ))}
+                                {activeHours.map((hour) => {
+                                  if (hourHeightScale >= 110) {
+                                    // 15-minute grid lines
+                                    return (
+                                      <div key={`line-${hour}`} style={{ height: hourHeightScale, display: "flex", flexDirection: "column" }}>
+                                        <div className="grid-line sub-hour-line" style={{ height: hourHeightScale / 4 }} />
+                                        <div className="grid-line sub-hour-line" style={{ height: hourHeightScale / 4 }} />
+                                        <div className="grid-line sub-hour-line" style={{ height: hourHeightScale / 4 }} />
+                                        <div className="grid-line hour-line" style={{ height: hourHeightScale / 4 }} />
+                                      </div>
+                                    );
+                                  } else if (hourHeightScale >= 70) {
+                                    // 30-minute grid lines
+                                    return (
+                                      <div key={`line-${hour}`} style={{ height: hourHeightScale, display: "flex", flexDirection: "column" }}>
+                                        <div className="grid-line sub-hour-line" style={{ height: hourHeightScale / 2 }} />
+                                        <div className="grid-line hour-line" style={{ height: hourHeightScale / 2 }} />
+                                      </div>
+                                    );
+                                  } else {
+                                    // Hourly grid lines
+                                    return (
+                                      <div key={`line-${hour}`} className="grid-line hour-line" style={{ height: hourHeightScale }} />
+                                    );
+                                  }
+                                })}
                               </div>
 
                               {/* Lanes Wrapper */}
                               <div className="calendar-columns-wrapper">
                                 {/* Department Lanes */}
-                                {activeDepartments.map((dept) => {
+                                {displayDepts.map((dept) => {
                                   const timedEvents = dateGroup.events.filter(
                                     (e) => e.department === dept && timeToMinutes(e.startTime) !== -1
                                   );
@@ -965,7 +1037,7 @@ export function FestivalMapApp({
                                 })}
 
                                 {/* Location Lanes */}
-                                {activeLocations.map((loc) => {
+                                {displayLocs.map((loc) => {
                                   const timedEvents = dateGroup.events.filter(
                                     (e) => e.locationName === loc && timeToMinutes(e.startTime) !== -1
                                   );
@@ -1077,141 +1149,154 @@ export function FestivalMapApp({
         </section>
 
         {/* Right Sidebar Section */}
-        <aside className="legacy-list-panel">
+        <aside className={`legacy-list-panel ${isSidebarOpen ? "" : "collapsed"}`}>
           {/* Filters Panel */}
           <section className="legacy-list-block legacy-list-controls">
-            <div className="legacy-search-row">
-              <input
-                id="portal-search-input"
-                name="search"
-                type="search"
-                placeholder="Search description, action, dept, lead..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="legacy-search"
-                aria-label="Search schedule"
-              />
-            </div>
+            {/* Mobile collapsible filters header toggle */}
+            <button
+              type="button"
+              className="legacy-mobile-filters-toggle"
+              onClick={() => setIsMobileFiltersOpen(!isMobileFiltersOpen)}
+              title={isMobileFiltersOpen ? "Hide filters" : "Show filters"}
+            >
+              <span>🔍 Filters & Search</span>
+              <span>{isMobileFiltersOpen ? "🔼 Collapse" : "🔽 Expand"}</span>
+            </button>
 
-            <div className="portal-dropdown-filters">
-              <div className="filter-dropdown-group">
-                <label htmlFor="filter-location">Location</label>
-                <select
-                  id="filter-location"
-                  name="location"
-                  value="all"
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val !== "all" && !selectedLocations.includes(val)) {
-                      setSelectedLocations([...selectedLocations, val]);
-                    }
-                  }}
-                >
-                  <option value="all">Add Location Filter...</option>
-                  {locationOptions.map((loc) => (
-                    !selectedLocations.includes(loc) && (
-                      <option key={loc} value={loc} style={getColorStyle("Location", loc)}>
-                        {loc}
-                      </option>
-                    )
-                  ))}
-                </select>
-              </div>
-
-              <div className="filter-dropdown-group">
-                <label htmlFor="filter-action">Action</label>
-                <select
-                  id="filter-action"
-                  name="action"
-                  value="all"
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val !== "all" && !selectedActions.includes(val)) {
-                      setSelectedActions([...selectedActions, val]);
-                    }
-                  }}
-                >
-                  <option value="all">Add Action Filter...</option>
-                  {actionOptions.map((act) => (
-                    !selectedActions.includes(act) && (
-                      <option key={act} value={act} style={getColorStyle("Action", act)}>
-                        {act}
-                      </option>
-                    )
-                  ))}
-                </select>
-              </div>
-
-              <div className="filter-dropdown-group">
-                <label htmlFor="filter-department">Department</label>
-                <select
-                  id="filter-department"
-                  name="department"
-                  value="all"
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val !== "all" && !selectedDepartments.includes(val)) {
-                      setSelectedDepartments([...selectedDepartments, val]);
-                    }
-                  }}
-                >
-                  <option value="all">Add Department Filter...</option>
-                  {departmentOptions.map((dept) => (
-                    !selectedDepartments.includes(dept) && (
-                      <option key={dept} value={dept} style={getColorStyle("Department", dept)}>
-                        {dept}
-                      </option>
-                    )
-                  ))}
-                </select>
-              </div>
-
-              <div className="filter-dropdown-group">
-                <label htmlFor="filter-lead">Lead Person</label>
-                <select
-                  id="filter-lead"
-                  name="lead"
-                  value="all"
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val !== "all" && !selectedLeads.includes(val)) {
-                      setSelectedLeads([...selectedLeads, val]);
-                    }
-                  }}
-                >
-                  <option value="all">Add Lead Filter...</option>
-                  {leadOptions.map((lead) => (
-                    !selectedLeads.includes(lead) && (
-                      <option key={lead} value={lead} style={getColorStyle("Personnel", lead)}>
-                        {lead}
-                      </option>
-                    )
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Time Range Filters */}
-            <div className="time-filter-row">
-              <div className="time-input-group">
-                <label htmlFor="time-start">Start Date &amp; Time</label>
+            <div className={`legacy-mobile-filter-body ${isMobileFiltersOpen ? "is-open" : ""}`}>
+              <div className="legacy-search-row">
                 <input
-                  id="time-start"
-                  type="datetime-local"
-                  value={startTimeFilter}
-                  onChange={(e) => setStartTimeFilter(e.target.value)}
-                  className="time-picker-input"
+                  id="portal-search-input"
+                  name="search"
+                  type="search"
+                  placeholder="Search description, action, dept, lead..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="legacy-search"
+                  aria-label="Search schedule"
                 />
               </div>
-              <div className="time-input-group">
-                <label htmlFor="time-end">End Date &amp; Time</label>
-                <input
-                  id="time-end"
-                  type="datetime-local"
-                  value={endTimeFilter}
-                  onChange={(e) => setEndTimeFilter(e.target.value)}
-                  className="time-picker-input"
-                />
+
+              <div className="portal-dropdown-filters">
+                <div className="filter-dropdown-group">
+                  <label htmlFor="filter-location">Location</label>
+                  <select
+                    id="filter-location"
+                    name="location"
+                    value="all"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val !== "all" && !selectedLocations.includes(val)) {
+                        setSelectedLocations([...selectedLocations, val]);
+                      }
+                    }}
+                  >
+                    <option value="all">Add Location Filter...</option>
+                    {locationOptions.map((loc) => (
+                      !selectedLocations.includes(loc) && (
+                        <option key={loc} value={loc} style={getColorStyle("Location", loc)}>
+                          {loc}
+                        </option>
+                      )
+                    ))}
+                  </select>
+                </div>
+
+                <div className="filter-dropdown-group">
+                  <label htmlFor="filter-action">Action</label>
+                  <select
+                    id="filter-action"
+                    name="action"
+                    value="all"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val !== "all" && !selectedActions.includes(val)) {
+                        setSelectedActions([...selectedActions, val]);
+                      }
+                    }}
+                  >
+                    <option value="all">Add Action Filter...</option>
+                    {actionOptions.map((act) => (
+                      !selectedActions.includes(act) && (
+                        <option key={act} value={act} style={getColorStyle("Action", act)}>
+                          {act}
+                        </option>
+                      )
+                    ))}
+                  </select>
+                </div>
+
+                <div className="filter-dropdown-group">
+                  <label htmlFor="filter-department">Department</label>
+                  <select
+                    id="filter-department"
+                    name="department"
+                    value="all"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val !== "all" && !selectedDepartments.includes(val)) {
+                        setSelectedDepartments([...selectedDepartments, val]);
+                      }
+                    }}
+                  >
+                    <option value="all">Add Department Filter...</option>
+                    {departmentOptions.map((dept) => (
+                      !selectedDepartments.includes(dept) && (
+                        <option key={dept} value={dept} style={getColorStyle("Department", dept)}>
+                          {dept}
+                        </option>
+                      )
+                    ))}
+                  </select>
+                </div>
+
+                <div className="filter-dropdown-group">
+                  <label htmlFor="filter-lead">Lead Person</label>
+                  <select
+                    id="filter-lead"
+                    name="lead"
+                    value="all"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val !== "all" && !selectedLeads.includes(val)) {
+                        setSelectedLeads([...selectedLeads, val]);
+                      }
+                    }}
+                  >
+                    <option value="all">Add Lead Filter...</option>
+                    {leadOptions.map((lead) => (
+                      !selectedLeads.includes(lead) && (
+                        <option key={lead} value={lead} style={getColorStyle("Personnel", lead)}>
+                          {lead}
+                        </option>
+                      )
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Time Range Filters */}
+              <div className="time-filter-row">
+                <div className="time-input-group">
+                  <label htmlFor="time-start">Start Date &amp; Time</label>
+                  <input
+                    id="time-start"
+                    type="datetime-local"
+                    value={startTimeFilter}
+                    onChange={(e) => setStartTimeFilter(e.target.value)}
+                    className="time-picker-input"
+                  />
+                </div>
+                <div className="time-input-group">
+                  <label htmlFor="time-end">End Date &amp; Time</label>
+                  <input
+                    id="time-end"
+                    type="datetime-local"
+                    value={endTimeFilter}
+                    onChange={(e) => setEndTimeFilter(e.target.value)}
+                    className="time-picker-input"
+                  />
+                </div>
               </div>
             </div>
 
