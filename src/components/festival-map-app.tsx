@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { APIProvider, Map, AdvancedMarker, AdvancedMarkerAnchorPoint } from "@vis.gl/react-google-maps";
 import { Venue, FestivalEvent, FestivalDay, Department } from "@/types/festival";
 import sheetColors from "@/data/sheet-colors.json";
@@ -137,6 +137,62 @@ type FestivalMapAppProps = {
     picture?: string;
   };
 };
+
+interface CalendarChipProps {
+  variant: "header" | "status-tag";
+  style?: React.CSSProperties;
+  label?: string;
+  icon?: string;
+  status?: string;
+  onClick?: () => void;
+  title?: string;
+  tooltipContent?: React.ReactNode;
+}
+
+export function CalendarChip({
+  variant,
+  style,
+  label,
+  icon,
+  status = "TBD",
+  onClick,
+  title,
+  tooltipContent
+}: CalendarChipProps) {
+  if (variant === "header") {
+    return (
+      <div 
+        className="calendar-chip variant-header" 
+        style={style}
+        title={title}
+      >
+        {icon && <span className="calendar-chip-icon">{icon}</span>}
+        <span className="calendar-chip-label">{label}</span>
+        {tooltipContent && (
+          <div className="dept-contact-tooltip">
+            <div className="tooltip-header" style={style}>
+              <span>{icon} {label}</span>
+            </div>
+            {tooltipContent}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Variant 2: status-tag
+  return (
+    <div 
+      className="calendar-chip variant-tag" 
+      style={style}
+      onClick={onClick}
+      title={title}
+    >
+      <span className="calendar-chip-badge">{status}</span>
+      <span className="calendar-chip-label">{label}</span>
+    </div>
+  );
+}
 
 export function FestivalMapApp({
   venues,
@@ -1083,7 +1139,7 @@ export function FestivalMapApp({
                         const activeHours = hideEmptyHours ? getActiveHoursForDay(dateGroup.events) : hoursArray;
                         
                         return (
-                          <div key={dateGroup.date} className="calendar-day-section" style={{ width: totalGridWidth, minWidth: totalGridWidth }}>
+                          <div key={dateGroup.date} className="calendar-day-section" style={{ width: "100%", minWidth: `${totalGridWidth}px` }}>
                             {/* Sticky Date/Day Banner */}
                             <div className="calendar-day-header font-bold">
                               {dateGroup.dateLabel}
@@ -1095,12 +1151,24 @@ export function FestivalMapApp({
                               <div className="calendar-parent-header-row">
                                 <div className="calendar-time-axis-header parent" style={{ width: "70px" }}></div>
                                 {displayDepts.length > 0 && (
-                                  <div className="calendar-parent-header-cell departments" style={{ width: displayDepts.length * columnWidthScale }}>
+                                  <div 
+                                    className="calendar-parent-header-cell departments" 
+                                    style={{ 
+                                      flex: `${displayDepts.length} ${displayDepts.length} 0%`, 
+                                      minWidth: `${displayDepts.length * columnWidthScale}px` 
+                                    }}
+                                  >
                                     🏢 Departments
                                   </div>
                                 )}
                                 {displayLocs.length > 0 && (
-                                  <div className="calendar-parent-header-cell locations" style={{ width: displayLocs.length * columnWidthScale }}>
+                                  <div 
+                                    className="calendar-parent-header-cell locations" 
+                                    style={{ 
+                                      flex: `${displayLocs.length} ${displayLocs.length} 0%`, 
+                                      minWidth: `${displayLocs.length * columnWidthScale}px` 
+                                    }}
+                                  >
                                     📍 Locations
                                   </div>
                                 )}
@@ -1120,56 +1188,54 @@ export function FestivalMapApp({
                                   const icon = getDepartmentIcon(dept);
 
                                   return (
-                                    <div key={`hdr-dept-${dept}`} className="calendar-column-header-cell department" style={{ width: columnWidthScale }}>
-                                      <div className="column-title-badge department-tab" style={getColorStyle("Department", dept)}>
-                                        <span className="dept-tab-icon">{icon}</span>
-                                        <span className="dept-tab-name">{dept}</span>
-
-                                        {/* Hover tooltip for contact details */}
-                                        {deptInfo && (
-                                          <div className="dept-contact-tooltip">
-                                            <div className="tooltip-header" style={getColorStyle("Department", dept)}>
-                                              <span>{icon} {dept}</span>
-                                            </div>
-                                            <div className="tooltip-body">
-                                              {deptInfo["Lead Point Person"] && (
-                                                <div className="tooltip-item">
-                                                  <span className="tooltip-icon">👤</span>
-                                                  <span className="tooltip-text">{deptInfo["Lead Point Person"]}</span>
-                                                </div>
-                                              )}
-                                              {deptInfo["Lead Phone"] && (
-                                                <div className="tooltip-item">
-                                                  <span className="tooltip-icon">📞</span>
-                                                  <span className="tooltip-text">{deptInfo["Lead Phone"]}</span>
-                                                </div>
-                                              )}
-                                              {deptInfo["Lead Email"] && (
-                                                <div className="tooltip-item">
-                                                  <span className="tooltip-icon">✉️</span>
-                                                  <span className="tooltip-text">{deptInfo["Lead Email"]}</span>
-                                                </div>
-                                              )}
-                                              {!deptInfo["Lead Point Person"] && !deptInfo["Lead Phone"] && !deptInfo["Lead Email"] && (
-                                                <div className="tooltip-empty">No contact details</div>
-                                              )}
-                                            </div>
+                                    <div 
+                                      key={`hdr-dept-${dept}`} 
+                                      className="calendar-column-header-cell department" 
+                                      style={{ flex: "1 1 0%", minWidth: `${columnWidthScale}px` }}
+                                    >
+                                      <CalendarChip
+                                        variant="header"
+                                        style={getColorStyle("Department", dept)}
+                                        label={dept}
+                                        icon={icon}
+                                        tooltipContent={deptInfo ? (
+                                          <div className="tooltip-body">
+                                            {deptInfo["Lead Point Person"] && (
+                                              <div className="tooltip-item">
+                                                <span className="tooltip-icon">👤</span>
+                                                <span className="tooltip-text">{deptInfo["Lead Point Person"]}</span>
+                                              </div>
+                                            )}
+                                            {deptInfo["Lead Phone"] && (
+                                              <div className="tooltip-item">
+                                                <span className="tooltip-icon">📞</span>
+                                                <span className="tooltip-text">{deptInfo["Lead Phone"]}</span>
+                                              </div>
+                                            )}
+                                            {deptInfo["Lead Email"] && (
+                                              <div className="tooltip-item">
+                                                <span className="tooltip-icon">✉️</span>
+                                                <span className="tooltip-text">{deptInfo["Lead Email"]}</span>
+                                              </div>
+                                            )}
+                                            {!deptInfo["Lead Point Person"] && !deptInfo["Lead Phone"] && !deptInfo["Lead Email"] && (
+                                              <div className="tooltip-empty">No contact details</div>
+                                            )}
                                           </div>
-                                        )}
-                                      </div>
+                                        ) : null}
+                                      />
                                       {tbdEvents.length > 0 && (
                                         <div className="column-tbd-container">
                                           {tbdEvents.map((event) => (
-                                            <div
+                                            <CalendarChip
                                               key={event.id}
-                                              className="calendar-tbd-card"
+                                              variant="status-tag"
                                               style={getColorStyle("Department", dept)}
+                                              label={event.title}
+                                              status="TBD"
                                               onClick={() => setModalEvent(event)}
                                               title={event.description}
-                                            >
-                                              <span className="tbd-badge">TBD</span>
-                                              <span className="tbd-title">{event.title}</span>
-                                            </div>
+                                            />
                                           ))}
                                         </div>
                                       )}
@@ -1182,23 +1248,28 @@ export function FestivalMapApp({
                                     (e) => e.locationName === loc && timeToMinutes(e.startTime) === -1
                                   );
                                   return (
-                                    <div key={`hdr-loc-${loc}`} className="calendar-column-header-cell location" style={{ width: columnWidthScale }}>
-                                      <div className="column-title-badge" style={getColorStyle("Location", loc)}>
-                                        {loc}
-                                      </div>
+                                    <div 
+                                      key={`hdr-loc-${loc}`} 
+                                      className="calendar-column-header-cell location" 
+                                      style={{ flex: "1 1 0%", minWidth: `${columnWidthScale}px` }}
+                                    >
+                                      <CalendarChip
+                                        variant="header"
+                                        style={getColorStyle("Location", loc)}
+                                        label={loc}
+                                      />
                                       {tbdEvents.length > 0 && (
                                         <div className="column-tbd-container">
                                           {tbdEvents.map((event) => (
-                                            <div
+                                            <CalendarChip
                                               key={event.id}
-                                              className="calendar-tbd-card"
+                                              variant="status-tag"
                                               style={getColorStyle("Location", loc)}
+                                              label={event.title}
+                                              status="TBD"
                                               onClick={() => setModalEvent(event)}
                                               title={event.description}
-                                            >
-                                              <span className="tbd-badge">TBD</span>
-                                              <span className="tbd-title">{event.title}</span>
-                                            </div>
+                                            />
                                           ))}
                                         </div>
                                       )}
@@ -1209,7 +1280,7 @@ export function FestivalMapApp({
                             </div>
 
                             {/* Timeline + Grid Columns Body */}
-                            <div className="calendar-day-grid-body" style={{ height: activeHours.length * hourHeightScale }}>
+                            <div className="calendar-day-grid-body" style={{ height: activeHours.length * hourHeightScale, width: "100%" }}>
                               {/* Left Time Axis */}
                               <div className="calendar-time-axis" style={{ width: "70px" }}>
                                 {activeHours.map((hour) => {
@@ -1295,7 +1366,11 @@ export function FestivalMapApp({
                                     (e) => e.department === dept && timeToMinutes(e.startTime) !== -1
                                   );
                                   return (
-                                    <div key={`lane-dept-${dept}`} className="calendar-grid-column department-lane" style={{ width: columnWidthScale }}>
+                                    <div 
+                                      key={`lane-dept-${dept}`} 
+                                      className="calendar-grid-column department-lane" 
+                                      style={{ flex: "1 1 0%", minWidth: `${columnWidthScale}px` }}
+                                    >
                                       {timedEvents.map((event) => {
                                         const placement = calendarEventPlacements.get(`${event.id}::department::${dept}`);
                                         if (!placement) return null;
@@ -1348,7 +1423,11 @@ export function FestivalMapApp({
                                     (e) => e.locationName === loc && timeToMinutes(e.startTime) !== -1
                                   );
                                   return (
-                                    <div key={`lane-loc-${loc}`} className="calendar-grid-column location-lane" style={{ width: columnWidthScale }}>
+                                    <div 
+                                      key={`lane-loc-${loc}`} 
+                                      className="calendar-grid-column location-lane" 
+                                      style={{ flex: "1 1 0%", minWidth: `${columnWidthScale}px` }}
+                                    >
                                       {timedEvents.map((event) => {
                                         const placement = calendarEventPlacements.get(`${event.id}::location::${loc}`);
                                         if (!placement) return null;

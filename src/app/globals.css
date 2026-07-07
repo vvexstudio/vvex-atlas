@@ -3447,7 +3447,7 @@ body.legacy-theme-dark .spatial-calendar-grid {
 
 @media (max-width: 720px) {
   .spatial-calendar-container {
-    padding: 8px;
+    padding: 8px 4px;
     gap: 8px;
   }
 
@@ -3635,7 +3635,7 @@ body.legacy-theme-dark .calendar-time-axis-header {
   display: flex;
   flex-direction: column;
   padding: 6px;
-  align-items: center;
+  align-items: stretch;
   justify-content: flex-start;
   gap: 6px;
   border-right: 1px solid #ded8c8;
@@ -3646,21 +3646,82 @@ body.legacy-theme-dark .calendar-column-header-cell {
   border-right-color: #2d3443;
 }
 
-.column-title-badge {
+/* Unified Calendar Chip Styles */
+.calendar-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 6px;
   padding: 4px 8px;
   font-size: 0.72rem;
-  font-weight: 800;
-  border-radius: 5px;
-  text-align: center;
-  width: 100%;
+  font-weight: 700;
   border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  line-height: 1.2;
+  transition: all 0.2s ease;
   position: relative;
-  overflow: visible;
+}
+
+body.legacy-theme-dark .calendar-chip {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Variant 1: Department Header Chip */
+.calendar-chip.variant-header {
+  cursor: help;
+  justify-content: center;
+}
+
+/* Variant 2: Status Tag Chip */
+.calendar-chip.variant-tag {
+  cursor: pointer;
+  /* Make background slightly darker/muted */
+  background-image: linear-gradient(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.12));
+}
+
+body.legacy-theme-dark .calendar-chip.variant-tag {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35));
+}
+
+.calendar-chip.variant-tag:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* Base style for icon/badge */
+.calendar-chip-icon {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  cursor: help;
+}
+
+/* Badge for TBD tag */
+.calendar-chip-badge {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 0.58rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: inherit;
+  flex-shrink: 0;
+}
+
+body.legacy-theme-dark .calendar-chip-badge {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Label text styles */
+.calendar-chip-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
 }
 
 .dept-tab-icon {
@@ -3697,7 +3758,7 @@ body.legacy-theme-dark .dept-contact-tooltip {
   border-color: #ffffff;
 }
 
-.column-title-badge:hover .dept-contact-tooltip {
+.calendar-chip.variant-header:hover .dept-contact-tooltip {
   display: block;
 }
 
@@ -3754,46 +3815,12 @@ body.legacy-theme-dark .tooltip-text {
   width: 100%;
 }
 
-.calendar-tbd-card {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 6px;
-  border-radius: 4px;
-  font-size: 0.65rem;
-  font-weight: 700;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  cursor: pointer;
-  width: 100%;
-  transition: transform 0.1s ease;
-}
-
-.calendar-tbd-card:hover {
-  transform: translateY(-1px);
-}
-
-.calendar-tbd-card .tbd-badge {
-  background: rgba(0, 0, 0, 0.12);
-  padding: 1px 3px;
-  border-radius: 2px;
-  font-size: 0.58rem;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.calendar-tbd-card .tbd-title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 /* Calendar Grid Body */
 .calendar-day-grid-body {
   display: flex;
   flex-direction: row;
   position: relative;
-  min-width: max-content;
+  width: 100%;
 }
 
 /* Left Time Axis Column */
