@@ -3507,6 +3507,20 @@ body.legacy-theme-dark .spatial-calendar-grid {
     width: 100% !important;
     margin: 0;
   }
+
+  /* Prevent filters/date pickers from overflowing viewports */
+  .portal-dropdown-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .time-filter-row {
+    grid-template-columns: 1fr;
+  }
+
+  /* Prevent main schedule table columns from squishing on mobile/tablet viewports */
+  .main-schedule-table {
+    min-width: 750px;
+  }
 }
 
 /* Calendar Day Sections stacked vertically */
@@ -3515,6 +3529,7 @@ body.legacy-theme-dark .spatial-calendar-grid {
   flex-direction: column;
   position: relative;
   border-bottom: 8px solid #efe9d9;
+  flex-shrink: 0;
 }
 
 body.legacy-theme-dark .calendar-day-section {

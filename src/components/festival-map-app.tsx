@@ -787,7 +787,7 @@ export function FestivalMapApp({
                         const activeHours = hideEmptyHours ? getActiveHoursForDay(dateGroup.events) : hoursArray;
                         
                         return (
-                          <div key={dateGroup.date} className="calendar-day-section" style={{ width: totalGridWidth }}>
+                          <div key={dateGroup.date} className="calendar-day-section" style={{ width: totalGridWidth, minWidth: totalGridWidth }}>
                             {/* Sticky Date/Day Banner */}
                             <div className="calendar-day-header font-bold">
                               {dateGroup.dateLabel}
