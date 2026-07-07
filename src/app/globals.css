@@ -73,22 +73,19 @@ a {
 
 .legacy-banner {
   flex: 0 0 auto;
-  min-height: 42px;
-  padding: 10px 16px 8px;
+  min-height: 48px;
+  padding: 8px 16px;
   border-bottom: 1px solid #ded8c8;
   display: flex;
   align-items: center;
-  justify-content: center;
-  position: relative;
+  justify-content: space-between;
   background: #fffdf3;
 }
 
 .legacy-banner-title {
-  display: grid;
-  gap: 4px;
-  width: 100%;
+  display: flex;
+  align-items: center;
   min-width: 0;
-  justify-items: center;
 }
 
 .legacy-banner-kicker {
@@ -101,20 +98,16 @@ a {
 
 .legacy-banner-heading {
   color: #17120c;
-  font-size: clamp(1.05rem, 2vw, 1.55rem);
+  font-size: clamp(1.05rem, 2vw, 1.4rem);
   font-weight: 700;
   letter-spacing: 0.02em;
-  line-height: 1.15;
-  text-align: center;
+  line-height: 1.2;
 }
 
 .legacy-banner-actions {
-  position: absolute;
-  top: 10px;
-  right: 14px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .legacy-theme-switch {
@@ -2113,16 +2106,14 @@ body.legacy-theme-dark .user-profile-section {
   }
 
   .legacy-banner {
-    padding: 8px 0 6px;
+    padding: 8px 16px;
   }
 
   .legacy-banner-actions {
-    position: static;
     margin-left: auto;
   }
 
   .legacy-banner-title {
-    width: 100%;
     min-width: 0;
   }
 
@@ -2247,17 +2238,15 @@ body.legacy-theme-dark .user-profile-section {
   }
 
   .legacy-banner {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 12px 16px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
     height: auto;
   }
 
   .legacy-banner-title {
-    width: 100%;
-    justify-items: start;
-    gap: 2px;
+    width: auto;
   }
 
   .legacy-banner-heading {
@@ -2267,22 +2256,13 @@ body.legacy-theme-dark .user-profile-section {
   }
 
   .legacy-banner-actions {
-    position: static;
-    margin-left: 0;
+    margin-left: auto;
     display: flex;
     flex-direction: row;
-    flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    gap: 10px;
-    margin-top: 4px;
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
-    padding-top: 8px;
-  }
-
-  body.legacy-theme-dark .legacy-banner-actions {
-    border-top-color: rgba(255, 255, 255, 0.05);
+    justify-content: flex-end;
+    width: auto;
+    gap: 8px;
   }
 
   .user-profile-section {
@@ -4252,4 +4232,181 @@ body.legacy-theme-dark .switch-checkbox:checked + .switch-slider {
 
 body.legacy-theme-dark .switch-text {
   color: #e2e8f0;
+}
+
+/* Mobile Sticky Bottom Bar */
+.mobile-sticky-bottom-bar {
+  display: none;
+}
+
+@media (max-width: 1080px) {
+  .mobile-sticky-bottom-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 900;
+    background: #fffdf3;
+    border-top: 1px solid #ded8c8;
+    padding: 10px 16px;
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  body.legacy-theme-dark .mobile-sticky-bottom-bar {
+    background: #12161f;
+    border-top-color: #2d3443;
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.3);
+  }
+
+  .mobile-bar-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid #d4c9b6;
+    background: #f8f1e1;
+    color: #372f25;
+    transition: all 0.2s;
+  }
+
+  body.legacy-theme-dark .mobile-bar-btn {
+    border-color: #2d3443;
+    background: #1a202c;
+    color: #e2e8f0;
+  }
+
+  .mobile-bar-btn:active {
+    opacity: 0.8;
+  }
+
+  .mobile-bar-btn.active {
+    background: #e9dec9;
+    border-color: #c0b49e;
+  }
+
+  body.legacy-theme-dark .mobile-bar-btn.active {
+    background: #2d3748;
+    border-color: #4a5568;
+  }
+
+  .mobile-badge {
+    background: #a855f7;
+    color: white;
+    border-radius: 99px;
+    padding: 1px 6px;
+    font-size: 0.7rem;
+    font-weight: bold;
+  }
+
+  /* Hide static sidebar panel on mobile/tablet */
+  .legacy-list-panel {
+    display: none !important;
+  }
+}
+
+/* Mobile Bottom Sheet Drawer */
+.mobile-drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 950;
+  display: flex;
+  align-items: flex-end;
+  animation: fade-in 0.2s ease-out;
+}
+
+.mobile-drawer-content {
+  width: 100%;
+  max-height: 80vh;
+  background: #fffdf3;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  animation: slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 16px;
+}
+
+body.legacy-theme-dark .mobile-drawer-content {
+  background: #12161f;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.mobile-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #ded8c8;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+}
+
+body.legacy-theme-dark .mobile-drawer-header {
+  border-bottom-color: #2d3443;
+}
+
+.mobile-drawer-header h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+  color: #17120c;
+}
+
+body.legacy-theme-dark .mobile-drawer-header h3 {
+  color: #e2e8f0;
+}
+
+.mobile-drawer-close {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: #6b5f4f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+body.legacy-theme-dark .mobile-drawer-close {
+  color: #a0aec0;
+}
+
+.mobile-drawer-close:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+body.legacy-theme-dark .mobile-drawer-close:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.mobile-drawer-body {
+  overflow-y: auto;
+  flex: 1;
+  padding-bottom: 24px;
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }

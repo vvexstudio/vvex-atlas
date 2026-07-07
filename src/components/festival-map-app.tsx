@@ -144,7 +144,7 @@ export function FestivalMapApp({
   personnel = [],
   departments = [],
   colors,
-  dataSourceLabel,
+  dataSourceLabel: _dataSourceLabel,
   debug,
   userSession,
 }: FestivalMapAppProps) {
@@ -503,6 +503,301 @@ export function FestivalMapApp({
     }
   }, [mainTab, availableDates, filteredEvents, hourHeightScale, hideEmptyHours]);
 
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (searchQuery) count += 1;
+    count += selectedLocations.length;
+    count += selectedActions.length;
+    count += selectedDepartments.length;
+    count += selectedLeads.length;
+    if (startTimeFilter) count += 1;
+    if (endTimeFilter) count += 1;
+    return count;
+  }, [searchQuery, selectedLocations, selectedActions, selectedDepartments, selectedLeads, startTimeFilter, endTimeFilter]);
+
+  // Prevent body scroll when mobile drawers are open
+  useEffect(() => {
+    if (isMobileFiltersOpen || isMobileScheduleOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMobileFiltersOpen, isMobileScheduleOpen]);
+
+  // Helper to render the body of filters & search
+  const renderFiltersBody = () => {
+    return (
+      <>
+        <div className="legacy-search-row">
+          <input
+            id="portal-search-input"
+            name="search"
+            type="search"
+            placeholder="Search description, action, dept, lead..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="legacy-search"
+            aria-label="Search schedule"
+          />
+        </div>
+
+        <div className="portal-dropdown-filters">
+          <div className="filter-dropdown-group">
+            <label htmlFor="filter-location">Location</label>
+            <select
+              id="filter-location"
+              name="location"
+              value="all"
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val !== "all" && !selectedLocations.includes(val)) {
+                  setSelectedLocations([...selectedLocations, val]);
+                }
+              }}
+            >
+              <option value="all">Add Location Filter...</option>
+              {locationOptions.map((loc) => (
+                !selectedLocations.includes(loc) && (
+                  <option key={loc} value={loc} style={getColorStyle("Location", loc)}>
+                    {loc}
+                  </option>
+                )
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-dropdown-group">
+            <label htmlFor="filter-action">Action</label>
+            <select
+              id="filter-action"
+              name="action"
+              value="all"
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val !== "all" && !selectedActions.includes(val)) {
+                  setSelectedActions([...selectedActions, val]);
+                }
+              }}
+            >
+              <option value="all">Add Action Filter...</option>
+              {actionOptions.map((act) => (
+                !selectedActions.includes(act) && (
+                  <option key={act} value={act} style={getColorStyle("Action", act)}>
+                    {act}
+                  </option>
+                )
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-dropdown-group">
+            <label htmlFor="filter-department">Department</label>
+            <select
+              id="filter-department"
+              name="department"
+              value="all"
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val !== "all" && !selectedDepartments.includes(val)) {
+                  setSelectedDepartments([...selectedDepartments, val]);
+                }
+              }}
+            >
+              <option value="all">Add Department Filter...</option>
+              {departmentOptions.map((dept) => (
+                !selectedDepartments.includes(dept) && (
+                  <option key={dept} value={dept} style={getColorStyle("Department", dept)}>
+                    {dept}
+                  </option>
+                )
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-dropdown-group">
+            <label htmlFor="filter-lead">Lead Person</label>
+            <select
+              id="filter-lead"
+              name="lead"
+              value="all"
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val !== "all" && !selectedLeads.includes(val)) {
+                  setSelectedLeads([...selectedLeads, val]);
+                }
+              }}
+            >
+              <option value="all">Add Lead Filter...</option>
+              {leadOptions.map((lead) => (
+                !selectedLeads.includes(lead) && (
+                  <option key={lead} value={lead} style={getColorStyle("Personnel", lead)}>
+                    {lead}
+                  </option>
+                )
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Time Range Filters */}
+        <div className="time-filter-row">
+          <div className="time-input-group">
+            <label htmlFor="time-start">Start Date &amp; Time</label>
+            <input
+              id="time-start"
+              type="datetime-local"
+              value={startTimeFilter}
+              onChange={(e) => setStartTimeFilter(e.target.value)}
+              className="time-picker-input"
+            />
+          </div>
+          <div className="time-input-group">
+            <label htmlFor="time-end">End Date &amp; Time</label>
+            <input
+              id="time-end"
+              type="datetime-local"
+              value={endTimeFilter}
+              onChange={(e) => setEndTimeFilter(e.target.value)}
+              className="time-picker-input"
+            />
+          </div>
+        </div>
+
+        {/* Active Filter Chips */}
+        {(selectedLocations.length > 0 ||
+          selectedActions.length > 0 ||
+          selectedDepartments.length > 0 ||
+          selectedLeads.length > 0 ||
+          startTimeFilter ||
+          endTimeFilter ||
+          searchQuery) && (
+          <div className="active-filters-row">
+            {searchQuery && (
+              <span className="filter-chip search-chip">
+                🔍 &quot;{searchQuery}&quot;
+                <button type="button" className="clear-chip-btn" onClick={() => setSearchQuery("")} aria-label="Clear search">×</button>
+              </span>
+            )}
+            {selectedLocations.map((loc) => (
+              <span key={`loc-${loc}`} className="filter-chip" style={getColorStyle("Location", loc)}>
+                📍 {loc}
+                <button type="button" className="clear-chip-btn" onClick={() => setSelectedLocations(selectedLocations.filter((l) => l !== loc))} aria-label="Clear location filter">×</button>
+              </span>
+            ))}
+            {selectedActions.map((act) => (
+              <span key={`act-${act}`} className="filter-chip" style={getColorStyle("Action", act)}>
+                ⚡ {act}
+                <button type="button" className="clear-chip-btn" onClick={() => setSelectedActions(selectedActions.filter((a) => a !== act))} aria-label="Clear action filter">×</button>
+              </span>
+            ))}
+            {selectedDepartments.map((dept) => (
+              <span key={`dept-${dept}`} className="filter-chip" style={getColorStyle("Department", dept)}>
+                🏢 {dept}
+                <button type="button" className="clear-chip-btn" onClick={() => setSelectedDepartments(selectedDepartments.filter((d) => d !== dept))} aria-label="Clear department filter">×</button>
+              </span>
+            ))}
+            {selectedLeads.map((lead) => (
+              <span key={`lead-${lead}`} className="filter-chip" style={getColorStyle("Personnel", lead)}>
+                👤 {lead}
+                <button type="button" className="clear-chip-btn" onClick={() => setSelectedLeads(selectedLeads.filter((l) => l !== lead))} aria-label="Clear lead filter">×</button>
+              </span>
+            ))}
+            {startTimeFilter && (
+              <span className="filter-chip time-chip">
+                ⏰ Start &ge; {formatFilterDateTime(startTimeFilter)}
+                <button type="button" className="clear-chip-btn" onClick={() => setStartTimeFilter("")} aria-label="Clear start time filter">×</button>
+              </span>
+            )}
+            {endTimeFilter && (
+              <span className="filter-chip time-chip">
+                ⏰ End &le; {formatFilterDateTime(endTimeFilter)}
+                <button type="button" className="clear-chip-btn" onClick={() => setEndTimeFilter("")} aria-label="Clear end time filter">×</button>
+              </span>
+            )}
+
+            <button
+              type="button"
+              className="clear-filters-btn"
+              onClick={() => {
+                setSelectedLocations([]);
+                setSelectedActions([]);
+                setSelectedDepartments([]);
+                setSelectedLeads([]);
+                setStartTimeFilter("");
+                setEndTimeFilter("");
+                setSearchQuery("");
+              }}
+            >
+              Clear All Filters
+            </button>
+          </div>
+        )}
+      </>
+    );
+  };
+
+  // Helper to render the body of the running schedule
+  const renderScheduleBody = () => {
+    return (
+      <div className="sidebar-scroll-container">
+        {groupedEventsByDate.length === 0 ? (
+          <div className="sidebar-empty-state">No events match filters.</div>
+        ) : (
+          groupedEventsByDate.map((dateGroup) => (
+            <div key={dateGroup.date} className="sidebar-date-group">
+              <div className="sidebar-date-header">{dateGroup.dateLabel}</div>
+              <div className="sidebar-event-list">
+                {dateGroup.events.map((event) => (
+                  <div key={event.id} className="sidebar-event-card" onClick={() => setModalEvent(event)} style={{ cursor: "pointer" }}>
+                    <div className="event-time-badge font-mono">
+                      ⏰ {event.startTime} - {event.endTime}
+                    </div>
+                    <div className="event-card-title">{event.title}</div>
+                    
+                    <div className="event-card-details font-mono">
+                      {event.locationName && (
+                        <span className="card-detail-badge loc-tag-sm" style={getColorStyle("Location", event.locationName)}>
+                          📍 {event.locationName}
+                        </span>
+                      )}
+                      {event.action && (
+                        <span className="card-detail-badge action-tag-sm" style={getColorStyle("Action", event.action)}>
+                          ⚡ {event.action}
+                        </span>
+                      )}
+                    </div>
+
+                    {(event.leadPointPerson || event.department) && (
+                      <div className="event-card-badges">
+                        {event.leadPointPerson && (
+                          <span className="card-badge lead-badge" style={getColorStyle("Personnel", event.leadPointPerson)}>
+                            👤 {event.leadPointPerson}
+                          </span>
+                        )}
+                        {event.department && (
+                          <span className="card-badge dept-badge" style={getColorStyle("Department", event.department)}>
+                            🏢 {event.department}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {event.description && (
+                      <div className="event-card-desc">{event.description}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    );
+  };
+
   const hoursArray = Array.from({ length: 24 }, (_, i) => i);
 
   return (
@@ -578,8 +873,9 @@ export function FestivalMapApp({
             className="legacy-theme-switch"
             onClick={() => setIsDarkMode(!isDarkMode)}
             aria-label="Toggle dark theme"
+            style={{ width: "32px", height: "32px", padding: "0", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", fontSize: "1rem" }}
           >
-            {isDarkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}
+            {isDarkMode ? "☀️" : "🌙"}
           </button>
         </div>
       </header>
@@ -1115,7 +1411,7 @@ export function FestivalMapApp({
                     <Map
                       center={mapCenterCoords}
                       zoom={MAP_DEFAULT_ZOOM}
-                      mapId="2f9f04bb8e9c458045b99a65"
+                      mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || "2f9f04bb8e9c458045b99a65"}
                       disableDefaultUI={false}
                       style={{ width: "100%", height: "100%" }}
                     >
@@ -1174,211 +1470,8 @@ export function FestivalMapApp({
             </button>
 
             <div className={`legacy-mobile-filter-body ${isMobileFiltersOpen ? "is-open" : ""}`}>
-              <div className="legacy-search-row">
-                <input
-                  id="portal-search-input"
-                  name="search"
-                  type="search"
-                  placeholder="Search description, action, dept, lead..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="legacy-search"
-                  aria-label="Search schedule"
-                />
-              </div>
-
-              <div className="portal-dropdown-filters">
-                <div className="filter-dropdown-group">
-                  <label htmlFor="filter-location">Location</label>
-                  <select
-                    id="filter-location"
-                    name="location"
-                    value="all"
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val !== "all" && !selectedLocations.includes(val)) {
-                        setSelectedLocations([...selectedLocations, val]);
-                      }
-                    }}
-                  >
-                    <option value="all">Add Location Filter...</option>
-                    {locationOptions.map((loc) => (
-                      !selectedLocations.includes(loc) && (
-                        <option key={loc} value={loc} style={getColorStyle("Location", loc)}>
-                          {loc}
-                        </option>
-                      )
-                    ))}
-                  </select>
-                </div>
-
-                <div className="filter-dropdown-group">
-                  <label htmlFor="filter-action">Action</label>
-                  <select
-                    id="filter-action"
-                    name="action"
-                    value="all"
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val !== "all" && !selectedActions.includes(val)) {
-                        setSelectedActions([...selectedActions, val]);
-                      }
-                    }}
-                  >
-                    <option value="all">Add Action Filter...</option>
-                    {actionOptions.map((act) => (
-                      !selectedActions.includes(act) && (
-                        <option key={act} value={act} style={getColorStyle("Action", act)}>
-                          {act}
-                        </option>
-                      )
-                    ))}
-                  </select>
-                </div>
-
-                <div className="filter-dropdown-group">
-                  <label htmlFor="filter-department">Department</label>
-                  <select
-                    id="filter-department"
-                    name="department"
-                    value="all"
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val !== "all" && !selectedDepartments.includes(val)) {
-                        setSelectedDepartments([...selectedDepartments, val]);
-                      }
-                    }}
-                  >
-                    <option value="all">Add Department Filter...</option>
-                    {departmentOptions.map((dept) => (
-                      !selectedDepartments.includes(dept) && (
-                        <option key={dept} value={dept} style={getColorStyle("Department", dept)}>
-                          {dept}
-                        </option>
-                      )
-                    ))}
-                  </select>
-                </div>
-
-                <div className="filter-dropdown-group">
-                  <label htmlFor="filter-lead">Lead Person</label>
-                  <select
-                    id="filter-lead"
-                    name="lead"
-                    value="all"
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val !== "all" && !selectedLeads.includes(val)) {
-                        setSelectedLeads([...selectedLeads, val]);
-                      }
-                    }}
-                  >
-                    <option value="all">Add Lead Filter...</option>
-                    {leadOptions.map((lead) => (
-                      !selectedLeads.includes(lead) && (
-                        <option key={lead} value={lead} style={getColorStyle("Personnel", lead)}>
-                          {lead}
-                        </option>
-                      )
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Time Range Filters */}
-              <div className="time-filter-row">
-                <div className="time-input-group">
-                  <label htmlFor="time-start">Start Date &amp; Time</label>
-                  <input
-                    id="time-start"
-                    type="datetime-local"
-                    value={startTimeFilter}
-                    onChange={(e) => setStartTimeFilter(e.target.value)}
-                    className="time-picker-input"
-                  />
-                </div>
-                <div className="time-input-group">
-                  <label htmlFor="time-end">End Date &amp; Time</label>
-                  <input
-                    id="time-end"
-                    type="datetime-local"
-                    value={endTimeFilter}
-                    onChange={(e) => setEndTimeFilter(e.target.value)}
-                    className="time-picker-input"
-                  />
-                </div>
-              </div>
+              {renderFiltersBody()}
             </div>
-
-            {/* Active Filter Chips */}
-            {(selectedLocations.length > 0 ||
-              selectedActions.length > 0 ||
-              selectedDepartments.length > 0 ||
-              selectedLeads.length > 0 ||
-              startTimeFilter ||
-              endTimeFilter ||
-              searchQuery) && (
-              <div className="active-filters-row">
-                {searchQuery && (
-                  <span className="filter-chip search-chip">
-                    🔍 &quot;{searchQuery}&quot;
-                    <button type="button" className="clear-chip-btn" onClick={() => setSearchQuery("")} aria-label="Clear search">×</button>
-                  </span>
-                )}
-                {selectedLocations.map((loc) => (
-                  <span key={`loc-${loc}`} className="filter-chip" style={getColorStyle("Location", loc)}>
-                    📍 {loc}
-                    <button type="button" className="clear-chip-btn" onClick={() => setSelectedLocations(selectedLocations.filter((l) => l !== loc))} aria-label="Clear location filter">×</button>
-                  </span>
-                ))}
-                {selectedActions.map((act) => (
-                  <span key={`act-${act}`} className="filter-chip" style={getColorStyle("Action", act)}>
-                    ⚡ {act}
-                    <button type="button" className="clear-chip-btn" onClick={() => setSelectedActions(selectedActions.filter((a) => a !== act))} aria-label="Clear action filter">×</button>
-                  </span>
-                ))}
-                {selectedDepartments.map((dept) => (
-                  <span key={`dept-${dept}`} className="filter-chip" style={getColorStyle("Department", dept)}>
-                    🏢 {dept}
-                    <button type="button" className="clear-chip-btn" onClick={() => setSelectedDepartments(selectedDepartments.filter((d) => d !== dept))} aria-label="Clear department filter">×</button>
-                  </span>
-                ))}
-                {selectedLeads.map((lead) => (
-                  <span key={`lead-${lead}`} className="filter-chip" style={getColorStyle("Personnel", lead)}>
-                    👤 {lead}
-                    <button type="button" className="clear-chip-btn" onClick={() => setSelectedLeads(selectedLeads.filter((l) => l !== lead))} aria-label="Clear lead filter">×</button>
-                  </span>
-                ))}
-                {startTimeFilter && (
-                  <span className="filter-chip time-chip">
-                    ⏰ Start &ge; {formatFilterDateTime(startTimeFilter)}
-                    <button type="button" className="clear-chip-btn" onClick={() => setStartTimeFilter("")} aria-label="Clear start time filter">×</button>
-                  </span>
-                )}
-                {endTimeFilter && (
-                  <span className="filter-chip time-chip">
-                    ⏰ End &le; {formatFilterDateTime(endTimeFilter)}
-                    <button type="button" className="clear-chip-btn" onClick={() => setEndTimeFilter("")} aria-label="Clear end time filter">×</button>
-                  </span>
-                )}
-
-                <button
-                  type="button"
-                  className="clear-filters-btn"
-                  onClick={() => {
-                    setSelectedLocations([]);
-                    setSelectedActions([]);
-                    setSelectedDepartments([]);
-                    setSelectedLeads([]);
-                    setStartTimeFilter("");
-                    setEndTimeFilter("");
-                    setSearchQuery("");
-                  }}
-                >
-                  Clear All Filters
-                </button>
-              </div>
-            )}
           </section>
 
           {/* Running Chronological Schedule */}
@@ -1399,63 +1492,69 @@ export function FestivalMapApp({
                 <h2>Running Schedule</h2>
                 <span>{filteredAndSortedEvents.length} items</span>
               </div>
-              <div className="sidebar-scroll-container">
-                {groupedEventsByDate.length === 0 ? (
-                  <div className="sidebar-empty-state">No events match filters.</div>
-                ) : (
-                  groupedEventsByDate.map((dateGroup) => (
-                    <div key={dateGroup.date} className="sidebar-date-group">
-                      <div className="sidebar-date-header">{dateGroup.dateLabel}</div>
-                      <div className="sidebar-event-list">
-                        {dateGroup.events.map((event) => (
-                          <div key={event.id} className="sidebar-event-card">
-                            <div className="event-time-badge font-mono">
-                              ⏰ {event.startTime} - {event.endTime}
-                            </div>
-                            <div className="event-card-title">{event.title}</div>
-                            
-                            <div className="event-card-details font-mono">
-                              {event.locationName && (
-                                <span className="card-detail-badge loc-tag-sm" style={getColorStyle("Location", event.locationName)}>
-                                  📍 {event.locationName}
-                                </span>
-                              )}
-                              {event.action && (
-                                <span className="card-detail-badge action-tag-sm" style={getColorStyle("Action", event.action)}>
-                                  ⚡ {event.action}
-                                </span>
-                              )}
-                            </div>
-
-                            {(event.leadPointPerson || event.department) && (
-                              <div className="event-card-badges">
-                                {event.leadPointPerson && (
-                                  <span className="card-badge lead-badge" style={getColorStyle("Personnel", event.leadPointPerson)}>
-                                    👤 {event.leadPointPerson}
-                                  </span>
-                                )}
-                                {event.department && (
-                                  <span className="card-badge dept-badge" style={getColorStyle("Department", event.department)}>
-                                    🏢 {event.department}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-
-                            {event.description && (
-                              <div className="event-card-desc">{event.description}</div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+              {renderScheduleBody()}
             </div>
           </section>
         </aside>
       </div>
+
+      {/* Mobile Sticky Bottom Bar */}
+      <div className="mobile-sticky-bottom-bar">
+        <button
+          type="button"
+          className={`mobile-bar-btn ${isMobileFiltersOpen ? "active" : ""}`}
+          onClick={() => {
+            setIsMobileFiltersOpen(!isMobileFiltersOpen);
+            setIsMobileScheduleOpen(false);
+          }}
+        >
+          🔍 Filters &amp; Search {activeFiltersCount > 0 && <span className="mobile-badge">{activeFiltersCount}</span>}
+        </button>
+        <button
+          type="button"
+          className={`mobile-bar-btn ${isMobileScheduleOpen ? "active" : ""}`}
+          onClick={() => {
+            setIsMobileScheduleOpen(!isMobileScheduleOpen);
+            setIsMobileFiltersOpen(false);
+          }}
+        >
+          📋 Running Schedule
+        </button>
+      </div>
+
+      {/* Mobile Filters Drawer */}
+      {isMobileFiltersOpen && (
+        <div className="mobile-drawer-overlay" onClick={() => setIsMobileFiltersOpen(false)}>
+          <div className="mobile-drawer-content" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-drawer-header">
+              <h3>🔍 Filters &amp; Search</h3>
+              <button type="button" className="mobile-drawer-close" onClick={() => setIsMobileFiltersOpen(false)}>
+                ✕
+              </button>
+            </div>
+            <div className="mobile-drawer-body">
+              {renderFiltersBody()}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Running Schedule Drawer */}
+      {isMobileScheduleOpen && (
+        <div className="mobile-drawer-overlay" onClick={() => setIsMobileScheduleOpen(false)}>
+          <div className="mobile-drawer-content" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-drawer-header">
+              <h3>📋 Running Schedule ({filteredAndSortedEvents.length})</h3>
+              <button type="button" className="mobile-drawer-close" onClick={() => setIsMobileScheduleOpen(false)}>
+                ✕
+              </button>
+            </div>
+            <div className="mobile-drawer-body">
+              {renderScheduleBody()}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Debug Footer info */}
       {!!debug && (

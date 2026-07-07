@@ -182,6 +182,7 @@ Tracked here so we know what to stand up vs. what the client owns. Env var names
 ## 10. Session Log
 > Append newest at top. Format: `YYYY-MM-DD — who — what changed / decided / discovered`.
 
+- **2026-07-07 — agent** — Maximized screen real estate: Consolidated header banner to a single-row flex layout on both desktop and mobile; hid user name/email on mobile and changed light/dark mode switch to a compact icon button; replaced bottom collapsible accordions on mobile with a sticky navigation bar that opens slide-up drawer panels (bottom sheets) for Filters & Search and the Running Schedule.
 - **2026-07-07 — agent** — Fixed mobile layout bugs: stacked filter dropdowns and date-time pickers vertically on screens ≤ 720px to prevent global horizontal page overflow; added horizontal scroll to main schedule table on mobile with 750px min-width to avoid column squishing; added minWidth constraint and flex-shrink: 0 to calendar-day-sections to prevent column squeezing in calendar view.
 - **2026-07-03 — agent** — Expanded filters collapsible header support from mobile-only up to tablet stacked layouts (max-width: 1080px), styling and behaving identically to the running schedule collapse header.
 - **2026-07-03 — agent** — Made the running schedule collapsible on mobile/tablet stacked viewports. Compressed calendar controls into a single row on mobile with "W", "H", and "Hide Empty" abbreviations. Positioned the desktop sidebar toggle button on the left boundary of the sidebar.
