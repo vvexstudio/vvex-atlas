@@ -2610,10 +2610,95 @@ body.legacy-theme-dark .legacy-filter-note {
 /* Tabs in Main View */
 .main-tabs-header {
   display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
   background: #f3ebdc;
   border-bottom: 2px solid #ded8c8;
   padding: 8px 16px 0;
   gap: 8px;
+}
+
+.main-tabs-header-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.main-tabs-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+
+@media (max-width: 720px) {
+  .main-tabs-header-controls {
+    display: none !important;
+  }
+}
+
+.tab-header-scale-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #6b5f4f;
+}
+
+body.legacy-theme-dark .tab-header-scale-item {
+  color: #a0aec0;
+}
+
+.tab-header-scale-item label {
+  white-space: nowrap;
+}
+
+.tab-header-scale-item .zoom-slider {
+  width: 90px;
+  height: 4px;
+  cursor: pointer;
+}
+
+/* Floating Hide Empty toggle in sticky day headers on mobile */
+.calendar-day-header-toggle-btn {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .calendar-day-header-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    position: -webkit-sticky;
+    position: sticky;
+    right: 16px; /* Keep it pinned to the right edge of the viewport */
+    z-index: 40;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fffeef;
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-left: auto; /* Fallback alignment */
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.15s ease;
+  }
+  
+  .calendar-day-header-toggle-btn:active {
+    background: rgba(255, 255, 255, 0.25);
+  }
+  
+  .calendar-day-header-toggle-btn.active {
+    background: #bc5c2d !important;
+    border-color: #a34e23 !important;
+    color: #ffffff !important;
+  }
+  
+  body.legacy-theme-dark .calendar-day-header-toggle-btn.active {
+    background: #8b5cf6 !important;
+    border-color: #7c3aed !important;
+    color: #ffffff !important;
+  }
 }
 body.legacy-theme-dark .main-tabs-header {
   background: #12161f;
@@ -2723,6 +2808,7 @@ body.legacy-theme-dark .main-schedule-day-header {
   border-collapse: collapse;
   text-align: left;
   font-size: 0.88rem;
+  table-layout: fixed;
 }
 .main-schedule-table th {
   background: #f7f3e8;

@@ -1063,27 +1063,99 @@ export function FestivalMapApp({
           </button>
           {/* Main Tab Switcher */}
           <div className="main-tabs-header">
-            <button
-              type="button"
-              className={`main-tab-btn ${mainTab === "schedule" ? "active" : ""}`}
-              onClick={() => setMainTab("schedule")}
-            >
-              📋 Schedule List
-            </button>
-            <button
-              type="button"
-              className={`main-tab-btn ${mainTab === "calendar" ? "active" : ""}`}
-              onClick={() => setMainTab("calendar")}
-            >
-              📅 Calendar Grid
-            </button>
-            <button
-              type="button"
-              className={`main-tab-btn map-tab-btn ${mainTab === "map" ? "active" : ""}`}
-              onClick={() => setMainTab("map")}
-            >
-              🗺️ Map View {visibleMappableVenues.length === 0 ? "(Scaffolded)" : ""}
-            </button>
+            <div className="main-tabs-header-buttons">
+              <button
+                type="button"
+                className={`main-tab-btn ${mainTab === "schedule" ? "active" : ""}`}
+                onClick={() => setMainTab("schedule")}
+              >
+                📋 Schedule List
+              </button>
+              <button
+                type="button"
+                className={`main-tab-btn ${mainTab === "calendar" ? "active" : ""}`}
+                onClick={() => setMainTab("calendar")}
+              >
+                📅 Calendar Grid
+              </button>
+              <button
+                type="button"
+                className={`main-tab-btn map-tab-btn ${mainTab === "map" ? "active" : ""}`}
+                onClick={() => setMainTab("map")}
+              >
+                🗺️ Map View {visibleMappableVenues.length === 0 ? "(Scaffolded)" : ""}
+              </button>
+            </div>
+            
+            <div className="main-tabs-header-controls">
+              {mainTab === "schedule" && (
+                <div className="tab-header-scale-item">
+                  <label htmlFor="sched-zoom-slider-header">W: <span className="scale-value">{scheduleWidthScale}px</span></label>
+                  <input
+                    id="sched-zoom-slider-header"
+                    type="range"
+                    min="500"
+                    max="1500"
+                    step="50"
+                    value={scheduleWidthScale}
+                    onChange={(e) => setScheduleWidthScale(Number(e.target.value))}
+                    className="zoom-slider"
+                  />
+                </div>
+              )}
+              {mainTab === "calendar" && (
+                <>
+                  <div className="tab-header-scale-item">
+                    <label htmlFor="horz-zoom-slider-header">W: <span className="scale-value">{columnWidthScale}px</span></label>
+                    <input
+                      id="horz-zoom-slider-header"
+                      type="range"
+                      min="100"
+                      max="400"
+                      step="10"
+                      value={columnWidthScale}
+                      onChange={(e) => setColumnWidthScale(Number(e.target.value))}
+                      className="zoom-slider"
+                    />
+                  </div>
+                  <div className="tab-header-scale-item">
+                    <label htmlFor="vert-zoom-slider-header">H: <span className="scale-value">{hourHeightScale}px</span></label>
+                    <input
+                      id="vert-zoom-slider-header"
+                      type="range"
+                      min="30"
+                      max="300"
+                      step="5"
+                      value={hourHeightScale}
+                      onChange={(e) => setHourHeightScale(Number(e.target.value))}
+                      className="zoom-slider"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setHideEmptyHours(!hideEmptyHours)}
+                    className={`calendar-toggle-btn ${hideEmptyHours ? "active" : ""}`}
+                    aria-pressed={hideEmptyHours}
+                    style={{ padding: "4px 8px", fontSize: "0.75rem", borderRadius: "6px" }}
+                  >
+                    {hideEmptyHours ? (
+                      <svg className="control-icon-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }}>
+                        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                        <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                        <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                        <line x1="2" y1="2" x2="22" y2="22" />
+                      </svg>
+                    ) : (
+                      <svg className="control-icon-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }}>
+                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    )}
+                    <span>Hide Empty Hours</span>
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Main Content Render */}
@@ -1091,34 +1163,7 @@ export function FestivalMapApp({
             {mainTab === "schedule" ? (
               /* High-fidelity Schedule Grid View */
               <div className="main-schedule-container">
-                {groupedEventsByDate.length > 0 && (
-                  <div className="schedule-controls">
-                    <div className="scale-sliders-group">
-                      <div className="scale-slider-item">
-                        <label htmlFor="sched-zoom-slider">
-                          <svg className="control-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }}>
-                            <path d="m18 8 4 4-4 4" />
-                            <path d="m6 8-4 4 4 4" />
-                            <path d="M2 12h20" />
-                          </svg>
-                          <span className="label-full">Table Width:</span>
-                          <span className="label-short">W:</span>
-                          <span className="scale-value font-mono">{scheduleWidthScale}px</span>
-                        </label>
-                        <input
-                          id="sched-zoom-slider"
-                          type="range"
-                          min="500"
-                          max="1500"
-                          step="50"
-                          value={scheduleWidthScale}
-                          onChange={(e) => setScheduleWidthScale(Number(e.target.value))}
-                          className="zoom-slider"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
+
                 {groupedEventsByDate.length === 0 ? (
                   <div className="empty-schedule-state">
                     <span className="empty-icon">🔍</span>
@@ -1196,79 +1241,7 @@ export function FestivalMapApp({
             ) : mainTab === "calendar" ? (
               /* Spatial Calendar View */
               <div className="spatial-calendar-container">
-                {/* Calendar Controls (Sliders) */}
-                <div className="calendar-controls">
-                  <div className="scale-sliders-group">
-                    <div className="scale-slider-item">
-                      <label htmlFor="horz-zoom-slider">
-                        <svg className="control-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }}>
-                          <path d="m18 8 4 4-4 4" />
-                          <path d="m6 8-4 4 4 4" />
-                          <path d="M2 12h20" />
-                        </svg>
-                        <span className="label-full">Column Width:</span>
-                        <span className="label-short">W:</span>
-                        <span className="scale-value font-mono">{columnWidthScale}px</span>
-                      </label>
-                      <input
-                        id="horz-zoom-slider"
-                        type="range"
-                        min="100"
-                        max="400"
-                        step="10"
-                        value={columnWidthScale}
-                        onChange={(e) => setColumnWidthScale(Number(e.target.value))}
-                        className="zoom-slider"
-                      />
-                    </div>
-                    <div className="scale-slider-item">
-                      <label htmlFor="vert-zoom-slider">
-                        <svg className="control-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }}>
-                          <path d="m8 18 4 4 4-4" />
-                          <path d="m8 6 4-4 4 4" />
-                          <path d="M12 2v20" />
-                        </svg>
-                        <span className="label-full">Hour Height:</span>
-                        <span className="label-short">H:</span>
-                        <span className="scale-value font-mono">{hourHeightScale}px</span>
-                      </label>
-                      <input
-                        id="vert-zoom-slider"
-                        type="range"
-                        min="30"
-                        max="300"
-                        step="5"
-                        value={hourHeightScale}
-                        onChange={(e) => setHourHeightScale(Number(e.target.value))}
-                        className="zoom-slider"
-                      />
-                    </div>
-                    <div className="scale-slider-item">
-                      <button
-                        type="button"
-                        onClick={() => setHideEmptyHours(!hideEmptyHours)}
-                        className={`calendar-toggle-btn ${hideEmptyHours ? "active" : ""}`}
-                        aria-pressed={hideEmptyHours}
-                      >
-                        {hideEmptyHours ? (
-                          <svg className="control-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }}>
-                            <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-                            <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
-                            <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
-                            <line x1="2" y1="2" x2="22" y2="22" />
-                          </svg>
-                        ) : (
-                          <svg className="control-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }}>
-                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                            <circle cx="12" cy="12" r="3" />
-                          </svg>
-                        )}
-                        <span className="label-full">Hide Empty Hours</span>
-                        <span className="label-short">Hide Empty</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
+
 
                 {/* Main Calendar Area */}
                 {activeDepartments.length === 0 && activeLocations.length === 0 ? (
@@ -1305,7 +1278,15 @@ export function FestivalMapApp({
                           <div key={dateGroup.date} className="calendar-day-section" style={{ width: "100%", minWidth: `${totalGridWidth}px` }}>
                             {/* Sticky Date/Day Banner */}
                             <div className="calendar-day-header font-bold">
-                              {dateGroup.dateLabel}
+                              <span>{dateGroup.dateLabel}</span>
+                              <button
+                                type="button"
+                                onClick={() => setHideEmptyHours(!hideEmptyHours)}
+                                className={`calendar-day-header-toggle-btn ${hideEmptyHours ? "active" : ""}`}
+                                aria-label="Toggle empty hours"
+                              >
+                                {hideEmptyHours ? "👁️ Hide Empty Hours" : "👁️ Show All Hours"}
+                              </button>
                             </div>
 
                             {/* Sticky Columns Headers */}
