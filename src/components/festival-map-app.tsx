@@ -1252,7 +1252,8 @@ export function FestivalMapApp({
                   </div>
                 ) : (
                   <div ref={calendarScrollContainerRef} className="spatial-calendar-grid">
-                    {groupedEventsByDate.length === 0 ? (
+                    <div className="spatial-calendar-grid-content">
+                      {groupedEventsByDate.length === 0 ? (
                       <div className="empty-calendar-state">
                         <span className="empty-icon">🔍</span>
                         <h3>No items match your filters</h3>
@@ -1295,7 +1296,8 @@ export function FestivalMapApp({
                                     className="calendar-parent-header-cell departments" 
                                     style={{ 
                                       flex: `${displayDeptsForDay.length} ${displayDeptsForDay.length} 0%`, 
-                                      minWidth: isStretched ? "0px" : `${displayDeptsForDay.length * columnWidthScale}px` 
+                                      minWidth: isStretched ? "0px" : `${displayDeptsForDay.length * columnWidthScale}px`,
+                                      maxWidth: isStretched ? `${displayDeptsForDay.length * 400}px` : "none"
                                     }}
                                   >
                                     <span className="sticky-parent-label">🏢 Departments</span>
@@ -1306,7 +1308,8 @@ export function FestivalMapApp({
                                     className="calendar-parent-header-cell locations" 
                                     style={{ 
                                       flex: `${displayLocsForDay.length} ${displayLocsForDay.length} 0%`, 
-                                      minWidth: isStretched ? "0px" : `${displayLocsForDay.length * columnWidthScale}px` 
+                                      minWidth: isStretched ? "0px" : `${displayLocsForDay.length * columnWidthScale}px`,
+                                      maxWidth: isStretched ? `${displayLocsForDay.length * 400}px` : "none"
                                     }}
                                   >
                                     <span className="sticky-parent-label">📍 Locations</span>
@@ -1331,7 +1334,11 @@ export function FestivalMapApp({
                                     <div 
                                       key={`hdr-dept-${dept}`} 
                                       className="calendar-column-header-cell department" 
-                                      style={{ flex: "1 1 0%", minWidth: isStretched ? "0px" : `${columnWidthScale}px` }}
+                                      style={{ 
+                                        flex: "1 1 0%", 
+                                        minWidth: isStretched ? "0px" : `${columnWidthScale}px`,
+                                        maxWidth: isStretched ? "400px" : "none"
+                                      }}
                                     >
                                       <CalendarChip
                                         variant="header"
@@ -1391,7 +1398,11 @@ export function FestivalMapApp({
                                     <div 
                                       key={`hdr-loc-${loc}`} 
                                       className="calendar-column-header-cell location" 
-                                      style={{ flex: "1 1 0%", minWidth: isStretched ? "0px" : `${columnWidthScale}px` }}
+                                      style={{ 
+                                        flex: "1 1 0%", 
+                                        minWidth: isStretched ? "0px" : `${columnWidthScale}px`,
+                                        maxWidth: isStretched ? "400px" : "none"
+                                      }}
                                     >
                                       <CalendarChip
                                         variant="header"
@@ -1509,7 +1520,11 @@ export function FestivalMapApp({
                                     <div 
                                       key={`lane-dept-${dept}`} 
                                       className="calendar-grid-column department-lane" 
-                                      style={{ flex: "1 1 0%", minWidth: isStretched ? "0px" : `${columnWidthScale}px` }}
+                                      style={{ 
+                                        flex: "1 1 0%", 
+                                        minWidth: isStretched ? "0px" : `${columnWidthScale}px`,
+                                        maxWidth: isStretched ? "400px" : "none"
+                                      }}
                                     >
                                       {timedEvents.map((event) => {
                                         const placement = calendarEventPlacements.get(`${event.id}::department::${dept}`);
@@ -1566,7 +1581,11 @@ export function FestivalMapApp({
                                     <div 
                                       key={`lane-loc-${loc}`} 
                                       className="calendar-grid-column location-lane" 
-                                      style={{ flex: "1 1 0%", minWidth: isStretched ? "0px" : `${columnWidthScale}px` }}
+                                      style={{ 
+                                        flex: "1 1 0%", 
+                                        minWidth: isStretched ? "0px" : `${columnWidthScale}px`,
+                                        maxWidth: isStretched ? "400px" : "none"
+                                      }}
                                     >
                                       {timedEvents.map((event) => {
                                         const placement = calendarEventPlacements.get(`${event.id}::location::${loc}`);
@@ -1619,6 +1638,7 @@ export function FestivalMapApp({
                         );
                       });
                     })()}
+                    </div>
                   </div>
                 )}
               </div>

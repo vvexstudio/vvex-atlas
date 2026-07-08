@@ -3685,12 +3685,18 @@ body.legacy-theme-dark .zoom-slider::-webkit-slider-thumb:hover {
   background: #fffeef;
   border: 1px solid #d9d4c5;
   border-radius: 12px;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: auto;
   -webkit-overflow-scrolling: touch;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
   min-height: 400px;
   position: relative;
+}
+
+.spatial-calendar-grid-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 100%;
+  width: max-content;
 }
 
 body.legacy-theme-dark .spatial-calendar-grid {
@@ -3791,8 +3797,6 @@ body.legacy-theme-dark .spatial-calendar-grid {
   position: relative;
   border-bottom: 8px solid #efe9d9;
   flex-shrink: 0;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
   width: 100%;
 }
 
