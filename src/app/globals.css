@@ -3848,7 +3848,8 @@ body.legacy-theme-dark .calendar-parent-header-row {
 .calendar-parent-header-cell {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  padding-left: 16px;
   font-size: 0.7rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -3856,6 +3857,15 @@ body.legacy-theme-dark .calendar-parent-header-row {
   color: #372f25;
   border-right: 1px solid #ded8c8;
   flex-shrink: 0;
+  overflow: visible;
+}
+
+.sticky-parent-label {
+  position: -webkit-sticky;
+  position: sticky;
+  left: 86px; /* offset to sit nicely next to 70px sticky UTC axis */
+  z-index: 5;
+  white-space: nowrap;
 }
 
 body.legacy-theme-dark .calendar-parent-header-cell {
@@ -4549,7 +4559,8 @@ body.legacy-theme-dark .switch-text {
 @media (max-width: 1080px) {
   .mobile-sticky-bottom-bar {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
     gap: 12px;
     position: fixed;
     bottom: 0;
@@ -4602,6 +4613,18 @@ body.legacy-theme-dark .switch-text {
   body.legacy-theme-dark .mobile-bar-btn.active {
     background: #2d3748;
     border-color: #4a5568;
+  }
+
+  .mobile-bar-btn.active.hide-empty-btn {
+    background: #bc5c2d !important;
+    border-color: #a34e23 !important;
+    color: #ffffff !important;
+  }
+  
+  body.legacy-theme-dark .mobile-bar-btn.active.hide-empty-btn {
+    background: #8b5cf6 !important;
+    border-color: #7c3aed !important;
+    color: #ffffff !important;
   }
 
   .mobile-badge {
