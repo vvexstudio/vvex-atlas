@@ -29,6 +29,19 @@ const getDepartmentIcon = (dept: string): string => {
   return DEPARTMENT_ICONS[clean] || "🏢";
 };
 
+const renderScheduleTime = (start: string, end: string) => {
+  const cleanStart = (start || "TBD").trim().toLowerCase().replace(/\s+/g, "");
+  const cleanEnd = (end || "TBD").trim().toLowerCase().replace(/\s+/g, "");
+
+  return (
+    <div className="schedule-time-box">
+      <span>{cleanStart}</span>
+      <span className="time-dash">-</span>
+      <span>{cleanEnd}</span>
+    </div>
+  );
+};
+
 // Helper utilities for time filtering
 const timeToMinutes = (timeStr: string): number => {
   if (!timeStr || timeStr === "TBD") return -1;
@@ -231,6 +244,12 @@ export function FestivalMapApp({
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [columnWidthScale, setColumnWidthScale] = useState<number>(180);
   const [hourHeightScale, setHourHeightScale] = useState<number>(60);
+  const [scheduleWidthScale, setScheduleWidthScale] = useState<number>(750);
+  const mainContentRef = useRef<HTMLDivElement>(null);
+  const scaleRef = useRef({ columnWidthScale, hourHeightScale, scheduleWidthScale });
+  useEffect(() => {
+    scaleRef.current = { columnWidthScale, hourHeightScale, scheduleWidthScale };
+  }, [columnWidthScale, hourHeightScale, scheduleWidthScale]);
   const [modalEvent, setModalEvent] = useState<FestivalEvent | null>(null);
   const [hideEmptyHours, setHideEmptyHours] = useState(true);
   const hideEmptyColumns = true;
@@ -246,6 +265,99 @@ export function FestivalMapApp({
       document.body.classList.remove("legacy-theme-dark");
     };
   }, [isDarkMode]);
+
+  // Prevent default Safari iOS pinch-to-zoom gestures globally
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleGestureStart = (e: Event) => {
+      e.preventDefault();
+    };
+    document.addEventListener("gesturestart", handleGestureStart);
+    return () => {
+      document.removeEventListener("gesturestart", handleGestureStart);
+    };
+  }, []);
+
+  // Handle custom pinch-to-zoom for scale features in main content tabs
+  useEffect(() => {
+    const el = mainContentRef.current;
+    if (!el) return;
+
+    let initialDist = 0;
+    let initialColScale = 0;
+    let initialHourScale = 0;
+    let initialSchedScale = 0;
+    
+    let initialTouch0 = { x: 0, y: 0 };
+    let initialTouch1 = { x: 0, y: 0 };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        
+        initialTouch0 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        initialTouch1 = { x: e.touches[1].clientX, y: e.touches[1].clientY };
+        
+        initialDist = Math.hypot(
+          initialTouch0.x - initialTouch1.x,
+          initialTouch0.y - initialTouch1.y
+        );
+        
+        const scales = scaleRef.current;
+        initialColScale = scales.columnWidthScale;
+        initialHourScale = scales.hourHeightScale;
+        initialSchedScale = scales.scheduleWidthScale;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        
+        const touch0 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        const touch1 = { x: e.touches[1].clientX, y: e.touches[1].clientY };
+        
+        const currentDist = Math.hypot(
+          touch0.x - touch1.x,
+          touch0.y - touch1.y
+        );
+
+        if (initialDist > 0) {
+          const ratio = currentDist / initialDist;
+          
+          if (mainTab === "calendar") {
+            const initialDeltaX = Math.abs(initialTouch0.x - initialTouch1.x);
+            const initialDeltaY = Math.abs(initialTouch0.y - initialTouch1.y);
+            
+            const currentDeltaX = Math.abs(touch0.x - touch1.x);
+            const currentDeltaY = Math.abs(touch0.y - touch1.y);
+            
+            if (initialDeltaX > 10) {
+              const scaleRatioX = currentDeltaX / (initialDeltaX || 1);
+              const newColScale = Math.min(400, Math.max(100, Math.round(initialColScale * scaleRatioX)));
+              setColumnWidthScale(newColScale);
+            }
+            if (initialDeltaY > 10) {
+              const scaleRatioY = currentDeltaY / (initialDeltaY || 1);
+              const newHourScale = Math.min(300, Math.max(30, Math.round(initialHourScale * scaleRatioY)));
+              setHourHeightScale(newHourScale);
+            }
+          } else if (mainTab === "schedule") {
+            const newSchedScale = Math.min(1500, Math.max(500, Math.round(initialSchedScale * ratio)));
+            setScheduleWidthScale(newSchedScale);
+          }
+        }
+      }
+    };
+
+    el.addEventListener("touchstart", handleTouchStart, { passive: false });
+    el.addEventListener("touchmove", handleTouchMove, { passive: false });
+
+    return () => {
+      el.removeEventListener("touchstart", handleTouchStart);
+      el.removeEventListener("touchmove", handleTouchMove);
+    };
+  }, [mainTab]);
 
   // Dropdown Filter States
   const [searchQuery, setSearchQuery] = useState("");
@@ -975,10 +1087,38 @@ export function FestivalMapApp({
           </div>
 
           {/* Main Content Render */}
-          <div className={`main-tab-content tab-${mainTab}`}>
+          <div ref={mainContentRef} className={`main-tab-content tab-${mainTab}`}>
             {mainTab === "schedule" ? (
               /* High-fidelity Schedule Grid View */
               <div className="main-schedule-container">
+                {groupedEventsByDate.length > 0 && (
+                  <div className="schedule-controls">
+                    <div className="scale-sliders-group">
+                      <div className="scale-slider-item">
+                        <label htmlFor="sched-zoom-slider">
+                          <svg className="control-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }}>
+                            <path d="m18 8 4 4-4 4" />
+                            <path d="m6 8-4 4 4 4" />
+                            <path d="M2 12h20" />
+                          </svg>
+                          <span className="label-full">Table Width:</span>
+                          <span className="label-short">W:</span>
+                          <span className="scale-value font-mono">{scheduleWidthScale}px</span>
+                        </label>
+                        <input
+                          id="sched-zoom-slider"
+                          type="range"
+                          min="500"
+                          max="1500"
+                          step="50"
+                          value={scheduleWidthScale}
+                          onChange={(e) => setScheduleWidthScale(Number(e.target.value))}
+                          className="zoom-slider"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {groupedEventsByDate.length === 0 ? (
                   <div className="empty-schedule-state">
                     <span className="empty-icon">🔍</span>
@@ -992,10 +1132,10 @@ export function FestivalMapApp({
                         {dateGroup.dateLabel}
                       </div>
                       <div className="main-schedule-table-wrap">
-                        <table className="main-schedule-table">
+                        <table className="main-schedule-table" style={{ minWidth: `${scheduleWidthScale}px` }}>
                           <thead>
                             <tr>
-                              <th style={{ width: "12%" }}>Time</th>
+                              <th style={{ width: "70px" }}>Time</th>
                               <th style={{ width: "15%" }}>Location</th>
                               <th style={{ width: "15%" }}>Action</th>
                               <th style={{ width: "15%" }}>Department</th>
@@ -1006,7 +1146,7 @@ export function FestivalMapApp({
                           <tbody>
                             {dateGroup.events.map((event) => (
                               <tr key={event.id} className="main-schedule-row">
-                                <td className="time-cell">{event.startTime} – {event.endTime}</td>
+                                <td className="time-cell">{renderScheduleTime(event.startTime, event.endTime)}</td>
                                 <td className="loc-cell font-semibold">
                                   {event.locationName ? (
                                     <span className="loc-tag" style={getColorStyle("Location", event.locationName)}>

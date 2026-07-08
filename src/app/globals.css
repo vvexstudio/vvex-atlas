@@ -3387,6 +3387,49 @@ body.legacy-theme-dark .calendar-controls {
   box-shadow: none;
 }
 
+/* Schedule controls (mirrors calendar controls) */
+.schedule-controls {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  background: #f1ebd9;
+  padding: 10px 18px;
+  border-radius: 12px;
+  border: 1px solid #dfd8c6;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 2px 4px rgba(0, 0, 0, 0.02);
+  margin-bottom: 12px;
+}
+
+body.legacy-theme-dark .schedule-controls {
+  background: #131722;
+  border-color: #242c3d;
+  box-shadow: none;
+}
+
+/* Schedule Time Box (stacked vertical format) */
+.schedule-time-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.25;
+}
+
+.schedule-time-box .time-dash {
+  margin: 1px 0;
+  opacity: 0.5;
+}
+
+.main-schedule-table th:first-child,
+.main-schedule-table td.time-cell {
+  width: 70px !important;
+  min-width: 70px !important;
+  max-width: 70px !important;
+  box-sizing: border-box;
+  text-align: center;
+}
+
 .label-short {
   display: none;
 }
@@ -3646,6 +3689,11 @@ body.legacy-theme-dark .spatial-calendar-grid {
   }
   .main-schedule-table-wrap {
     border-radius: 0 !important;
+  }
+  .schedule-controls {
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
   }
 }
 
