@@ -1061,8 +1061,14 @@ export function FestivalMapApp({
                   <div className="scale-sliders-group">
                     <div className="scale-slider-item">
                       <label htmlFor="horz-zoom-slider">
-                        <span className="label-full">↔️ Column Width: <span className="scale-value font-mono">{columnWidthScale}px</span></span>
-                        <span className="label-short">↔️ W: <span className="scale-value font-mono">{columnWidthScale}px</span></span>
+                        <svg className="control-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }}>
+                          <path d="m18 8 4 4-4 4" />
+                          <path d="m6 8-4 4 4 4" />
+                          <path d="M2 12h20" />
+                        </svg>
+                        <span className="label-full">Column Width:</span>
+                        <span className="label-short">W:</span>
+                        <span className="scale-value font-mono">{columnWidthScale}px</span>
                       </label>
                       <input
                         id="horz-zoom-slider"
@@ -1077,8 +1083,14 @@ export function FestivalMapApp({
                     </div>
                     <div className="scale-slider-item">
                       <label htmlFor="vert-zoom-slider">
-                        <span className="label-full">↕️ Hour Height: <span className="scale-value font-mono">{hourHeightScale}px</span></span>
-                        <span className="label-short">↕️ H: <span className="scale-value font-mono">{hourHeightScale}px</span></span>
+                        <svg className="control-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }}>
+                          <path d="m8 18 4 4 4-4" />
+                          <path d="m8 6 4-4 4 4" />
+                          <path d="M12 2v20" />
+                        </svg>
+                        <span className="label-full">Hour Height:</span>
+                        <span className="label-short">H:</span>
+                        <span className="scale-value font-mono">{hourHeightScale}px</span>
                       </label>
                       <input
                         id="vert-zoom-slider"
@@ -1092,22 +1104,28 @@ export function FestivalMapApp({
                       />
                     </div>
                     <div className="scale-slider-item">
-                      <div className="toggle-switch-container">
-                        <label className="switch-label" htmlFor="hide-empty-toggle">
-                          <input
-                            id="hide-empty-toggle"
-                            type="checkbox"
-                            checked={hideEmptyHours}
-                            onChange={(e) => setHideEmptyHours(e.target.checked)}
-                            className="switch-checkbox"
-                          />
-                          <span className="switch-slider"></span>
-                        </label>
-                        <span className="switch-text">
-                          <span className="label-full">🙈 Hide Empty Hours</span>
-                          <span className="label-short">🙈 Hide Empty</span>
-                        </span>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setHideEmptyHours(!hideEmptyHours)}
+                        className={`calendar-toggle-btn ${hideEmptyHours ? "active" : ""}`}
+                        aria-pressed={hideEmptyHours}
+                      >
+                        {hideEmptyHours ? (
+                          <svg className="control-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }}>
+                            <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                            <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                            <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                            <line x1="2" y1="2" x2="22" y2="22" />
+                          </svg>
+                        ) : (
+                          <svg className="control-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }}>
+                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                        )}
+                        <span className="label-full">Hide Empty Hours</span>
+                        <span className="label-short">Hide Empty</span>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1127,15 +1145,20 @@ export function FestivalMapApp({
                         <h3>No items match your filters</h3>
                         <p>Try resetting filters or typing another search query.</p>
                       </div>
-                    ) : (
-                      groupedEventsByDate.map((dateGroup) => {
-                        const displayDepts = hideEmptyColumns
-                          ? activeDepartments.filter(dept => dateGroup.events.some(e => e.department === dept))
-                          : activeDepartments;
-                        const displayLocs = hideEmptyColumns
-                          ? activeLocations.filter(loc => dateGroup.events.some(e => e.locationName === loc))
-                          : activeLocations;
-                        const totalGridWidth = 70 + (displayDepts.length + displayLocs.length) * columnWidthScale;
+                    ) : (() => {
+                      const displayDepts = hideEmptyColumns
+                        ? activeDepartments.filter(dept =>
+                            groupedEventsByDate.some(dg => dg.events.some(e => e.department === dept))
+                          )
+                        : activeDepartments;
+                      const displayLocs = hideEmptyColumns
+                        ? activeLocations.filter(loc =>
+                            groupedEventsByDate.some(dg => dg.events.some(e => e.locationName === loc))
+                          )
+                        : activeLocations;
+                      const totalGridWidth = 70 + (displayDepts.length + displayLocs.length) * columnWidthScale;
+
+                      return groupedEventsByDate.map((dateGroup) => {
                         const activeHours = hideEmptyHours ? getActiveHoursForDay(dateGroup.events) : hoursArray;
                         
                         return (
@@ -1477,8 +1500,8 @@ export function FestivalMapApp({
                             </div>
                           </div>
                         );
-                      })
-                    )}
+                      });
+                    })()}
                   </div>
                 )}
               </div>

@@ -3330,15 +3330,17 @@ body.legacy-theme-dark .spatial-calendar-container {
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  background: #efe9d9;
-  padding: 10px 16px;
-  border-radius: 10px;
-  border: 1px solid #d9d4c5;
+  background: #f1ebd9;
+  padding: 10px 18px;
+  border-radius: 12px;
+  border: 1px solid #dfd8c6;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
 body.legacy-theme-dark .calendar-controls {
-  background: #12161f;
-  border-color: #2d3443;
+  background: #131722;
+  border-color: #242c3d;
+  box-shadow: none;
 }
 
 .label-short {
@@ -3363,52 +3365,130 @@ body.legacy-theme-dark .calendar-controls {
 }
 
 .scale-slider-item label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #372f25;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #4c4135;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
   white-space: nowrap;
+  gap: 4px;
 }
 
 body.legacy-theme-dark .scale-slider-item label {
-  color: #e2e8f0;
+  color: #9ca3af;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.calendar-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #4c4135;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  white-space: nowrap;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+body.legacy-theme-dark .calendar-toggle-btn {
+  color: #9ca3af;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.calendar-toggle-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+body.legacy-theme-dark .calendar-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.calendar-toggle-btn.active {
+  background: #bc5c2d;
+  color: #ffffff;
+  border-color: #a34e23;
+  box-shadow: 0 1px 3px rgba(188, 92, 45, 0.2);
+}
+
+body.legacy-theme-dark .calendar-toggle-btn.active {
+  background: #8b5cf6;
+  color: #ffffff;
+  border-color: #7c3aed;
+  box-shadow: 0 1px 3px rgba(139, 92, 246, 0.3);
+}
+
+.calendar-toggle-btn.active .control-icon-svg {
+  color: #ffffff;
+}
+
+.control-icon-svg {
+  color: #8c7865;
+  transition: color 0.2s ease;
+}
+
+body.legacy-theme-dark .control-icon-svg {
+  color: #9ca3af;
 }
 
 .scale-value {
-  background: rgba(0, 0, 0, 0.05);
-  padding: 2px 6px;
+  background: #ffffff;
+  color: #bc5c2d;
+  padding: 1px 5px;
   border-radius: 4px;
   font-size: 0.72rem;
   font-weight: 700;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  margin-left: 2px;
 }
 
 body.legacy-theme-dark .scale-value {
-  background: rgba(255, 255, 255, 0.08);
+  background: #1d2433;
+  color: #c084fc;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
 }
 
 .zoom-slider {
   -webkit-appearance: none;
   appearance: none;
-  width: 150px;
-  height: 6px;
-  border-radius: 3px;
-  background: #d9d4c5;
+  width: 130px;
+  height: 4px;
+  border-radius: 2px;
+  background: #ded9ca;
   outline: none;
   cursor: pointer;
+  transition: background 0.15s ease;
 }
 
 body.legacy-theme-dark .zoom-slider {
-  background: #394356;
+  background: #2b3347;
 }
 
 .zoom-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: #bc5c2d;
   cursor: pointer;
-  transition: transform 0.1s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s ease, background-color 0.15s ease;
 }
 
 body.legacy-theme-dark .zoom-slider::-webkit-slider-thumb {
@@ -3417,6 +3497,11 @@ body.legacy-theme-dark .zoom-slider::-webkit-slider-thumb {
 
 .zoom-slider::-webkit-slider-thumb:hover {
   transform: scale(1.2);
+  background: #a34e23;
+}
+
+body.legacy-theme-dark .zoom-slider::-webkit-slider-thumb:hover {
+  background: #7c3aed;
 }
 
 /* Unified Scroll Grid Layout */
