@@ -1183,8 +1183,8 @@ export function FestivalMapApp({
                               <th style={{ width: "70px" }}>Time</th>
                               <th style={{ width: "15%" }}>Location</th>
                               <th style={{ width: "15%" }}>Action</th>
-                              <th style={{ width: "15%" }}>Department</th>
-                              <th style={{ width: "15%" }}>Lead Point Person</th>
+                              <th style={{ width: "15%" }}>Dept.</th>
+                              <th style={{ width: "15%" }}>Lead</th>
                               <th style={{ width: "28%" }}>Description</th>
                             </tr>
                           </thead>
@@ -1259,34 +1259,30 @@ export function FestivalMapApp({
                         <p>Try resetting filters or typing another search query.</p>
                       </div>
                     ) : (() => {
-                      const displayDepts = hideEmptyColumns
-                        ? activeDepartments.filter(dept =>
-                            groupedEventsByDate.some(dg => dg.events.some(e => e.department === dept))
-                          )
-                        : activeDepartments;
-                      const displayLocs = hideEmptyColumns
-                        ? activeLocations.filter(loc =>
-                            groupedEventsByDate.some(dg => dg.events.some(e => e.locationName === loc))
-                          )
-                        : activeLocations;
-                      const totalGridWidth = 70 + (displayDepts.length + displayLocs.length) * columnWidthScale;
-
                       return groupedEventsByDate.map((dateGroup) => {
                         const activeHours = hideEmptyHours ? getActiveHoursForDay(dateGroup.events) : hoursArray;
                         
+                        const displayDeptsForDay = hideEmptyHours
+                          ? activeDepartments.filter(dept =>
+                              dateGroup.events.some(e => e.department === dept)
+                            )
+                          : activeDepartments;
+
+                        const displayLocsForDay = hideEmptyHours
+                          ? activeLocations.filter(loc =>
+                              dateGroup.events.some(e => e.locationName === loc)
+                            )
+                          : activeLocations;
+
+                        const numCols = displayDeptsForDay.length + displayLocsForDay.length;
+                        const isStretched = numCols <= 3;
+                        const totalGridWidth = isStretched ? "100%" : `${70 + numCols * columnWidthScale}px`;
+
                         return (
-                          <div key={dateGroup.date} className="calendar-day-section" style={{ width: "100%", minWidth: `${totalGridWidth}px` }}>
+                          <div key={dateGroup.date} className="calendar-day-section" style={{ width: "100%", minWidth: totalGridWidth }}>
                             {/* Sticky Date/Day Banner */}
                             <div className="calendar-day-header font-bold">
                               <span>{dateGroup.dateLabel}</span>
-                              <button
-                                type="button"
-                                onClick={() => setHideEmptyHours(!hideEmptyHours)}
-                                className={`calendar-day-header-toggle-btn ${hideEmptyHours ? "active" : ""}`}
-                                aria-label="Toggle empty hours"
-                              >
-                                {hideEmptyHours ? "👁️ Hide Empty Hours" : "👁️ Show All Hours"}
-                              </button>
                             </div>
 
                             {/* Sticky Columns Headers */}
@@ -1294,26 +1290,26 @@ export function FestivalMapApp({
                               {/* Parent Row */}
                               <div className="calendar-parent-header-row">
                                 <div className="calendar-time-axis-header parent" style={{ width: "70px" }}></div>
-                                {displayDepts.length > 0 && (
+                                {displayDeptsForDay.length > 0 && (
                                   <div 
                                     className="calendar-parent-header-cell departments" 
                                     style={{ 
-                                      flex: `${displayDepts.length} ${displayDepts.length} 0%`, 
-                                      minWidth: `${displayDepts.length * columnWidthScale}px` 
+                                      flex: `${displayDeptsForDay.length} ${displayDeptsForDay.length} 0%`, 
+                                      minWidth: isStretched ? "0px" : `${displayDeptsForDay.length * columnWidthScale}px` 
                                     }}
                                   >
-                                    🏢 Departments
+                                    <span className="sticky-parent-label">🏢 Departments</span>
                                   </div>
                                 )}
-                                {displayLocs.length > 0 && (
+                                {displayLocsForDay.length > 0 && (
                                   <div 
                                     className="calendar-parent-header-cell locations" 
                                     style={{ 
-                                      flex: `${displayLocs.length} ${displayLocs.length} 0%`, 
-                                      minWidth: `${displayLocs.length * columnWidthScale}px` 
+                                      flex: `${displayLocsForDay.length} ${displayLocsForDay.length} 0%`, 
+                                      minWidth: isStretched ? "0px" : `${displayLocsForDay.length * columnWidthScale}px` 
                                     }}
                                   >
-                                    📍 Locations
+                                    <span className="sticky-parent-label">📍 Locations</span>
                                   </div>
                                 )}
                               </div>
@@ -1324,7 +1320,7 @@ export function FestivalMapApp({
                                   <span className="timezone-label">UTC</span>
                                 </div>
                                 
-                                {displayDepts.map((dept) => {
+                                {displayDeptsForDay.map((dept) => {
                                   const tbdEvents = dateGroup.events.filter(
                                     (e) => e.department === dept && timeToMinutes(e.startTime) === -1
                                   );
@@ -1335,7 +1331,7 @@ export function FestivalMapApp({
                                     <div 
                                       key={`hdr-dept-${dept}`} 
                                       className="calendar-column-header-cell department" 
-                                      style={{ flex: "1 1 0%", minWidth: `${columnWidthScale}px` }}
+                                      style={{ flex: "1 1 0%", minWidth: isStretched ? "0px" : `${columnWidthScale}px` }}
                                     >
                                       <CalendarChip
                                         variant="header"
@@ -1387,7 +1383,7 @@ export function FestivalMapApp({
                                   );
                                 })}
 
-                                {displayLocs.map((loc) => {
+                                {displayLocsForDay.map((loc) => {
                                   const tbdEvents = dateGroup.events.filter(
                                     (e) => e.locationName === loc && timeToMinutes(e.startTime) === -1
                                   );
@@ -1395,7 +1391,7 @@ export function FestivalMapApp({
                                     <div 
                                       key={`hdr-loc-${loc}`} 
                                       className="calendar-column-header-cell location" 
-                                      style={{ flex: "1 1 0%", minWidth: `${columnWidthScale}px` }}
+                                      style={{ flex: "1 1 0%", minWidth: isStretched ? "0px" : `${columnWidthScale}px` }}
                                     >
                                       <CalendarChip
                                         variant="header"
@@ -1505,7 +1501,7 @@ export function FestivalMapApp({
                               {/* Lanes Wrapper */}
                               <div className="calendar-columns-wrapper">
                                 {/* Department Lanes */}
-                                {displayDepts.map((dept) => {
+                                {displayDeptsForDay.map((dept) => {
                                   const timedEvents = dateGroup.events.filter(
                                     (e) => e.department === dept && timeToMinutes(e.startTime) !== -1
                                   );
@@ -1513,7 +1509,7 @@ export function FestivalMapApp({
                                     <div 
                                       key={`lane-dept-${dept}`} 
                                       className="calendar-grid-column department-lane" 
-                                      style={{ flex: "1 1 0%", minWidth: `${columnWidthScale}px` }}
+                                      style={{ flex: "1 1 0%", minWidth: isStretched ? "0px" : `${columnWidthScale}px` }}
                                     >
                                       {timedEvents.map((event) => {
                                         const placement = calendarEventPlacements.get(`${event.id}::department::${dept}`);
@@ -1562,7 +1558,7 @@ export function FestivalMapApp({
                                 })}
 
                                 {/* Location Lanes */}
-                                {displayLocs.map((loc) => {
+                                {displayLocsForDay.map((loc) => {
                                   const timedEvents = dateGroup.events.filter(
                                     (e) => e.locationName === loc && timeToMinutes(e.startTime) !== -1
                                   );
@@ -1570,7 +1566,7 @@ export function FestivalMapApp({
                                     <div 
                                       key={`lane-loc-${loc}`} 
                                       className="calendar-grid-column location-lane" 
-                                      style={{ flex: "1 1 0%", minWidth: `${columnWidthScale}px` }}
+                                      style={{ flex: "1 1 0%", minWidth: isStretched ? "0px" : `${columnWidthScale}px` }}
                                     >
                                       {timedEvents.map((event) => {
                                         const placement = calendarEventPlacements.get(`${event.id}::location::${loc}`);
@@ -1733,6 +1729,15 @@ export function FestivalMapApp({
         >
           🔍 Filters &amp; Search {activeFiltersCount > 0 && <span className="mobile-badge">{activeFiltersCount}</span>}
         </button>
+        {mainTab === "calendar" && (
+          <button
+            type="button"
+            className={`mobile-bar-btn hide-empty-btn ${hideEmptyHours ? "active" : ""}`}
+            onClick={() => setHideEmptyHours(!hideEmptyHours)}
+          >
+            {hideEmptyHours ? "👁️ Hide Empty Hours" : "👁️ Show All Hours"}
+          </button>
+        )}
         <button
           type="button"
           className={`mobile-bar-btn ${isMobileScheduleOpen ? "active" : ""}`}
