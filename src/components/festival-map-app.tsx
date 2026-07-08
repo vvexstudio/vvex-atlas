@@ -1283,7 +1283,7 @@ export function FestivalMapApp({
                           <div key={dateGroup.date} className="calendar-day-section" style={{ width: "100%", minWidth: totalGridWidth }}>
                             {/* Sticky Date/Day Banner */}
                             <div className="calendar-day-header font-bold">
-                              <span>{dateGroup.dateLabel}</span>
+                              <span className="sticky-date-label">{dateGroup.dateLabel}</span>
                             </div>
 
                             {/* Sticky Columns Headers */}

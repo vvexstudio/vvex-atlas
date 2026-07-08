@@ -3876,6 +3876,14 @@ body.legacy-theme-dark .calendar-parent-header-row {
   white-space: nowrap;
 }
 
+.sticky-date-label {
+  position: -webkit-sticky;
+  position: sticky;
+  left: 16px;
+  z-index: 5;
+  white-space: nowrap;
+}
+
 body.legacy-theme-dark .calendar-parent-header-cell {
   color: #cbd5e1;
   border-right-color: #2d3443;
