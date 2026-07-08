@@ -808,12 +808,12 @@ export function FestivalMapApp({
               <div className="sidebar-event-list">
                 {dateGroup.events.map((event) => (
                   <div key={event.id} className="sidebar-event-card" onClick={() => setModalEvent(event)} style={{ cursor: "pointer" }}>
-                    <div className="event-time-badge font-mono">
-                      ⏰ {event.startTime} - {event.endTime}
+                    <div className="event-time-badge">
+                      ⏰ {event.startTime} – {event.endTime}
                     </div>
                     <div className="event-card-title">{event.title}</div>
                     
-                    <div className="event-card-details font-mono">
+                    <div className="event-card-details">
                       {event.locationName && (
                         <span className="card-detail-badge loc-tag-sm" style={getColorStyle("Location", event.locationName)}>
                           📍 {event.locationName}
@@ -1006,8 +1006,8 @@ export function FestivalMapApp({
                           <tbody>
                             {dateGroup.events.map((event) => (
                               <tr key={event.id} className="main-schedule-row">
-                                <td className="time-cell font-mono">{event.startTime} - {event.endTime}</td>
-                                <td className="loc-cell font-mono font-semibold">
+                                <td className="time-cell">{event.startTime} – {event.endTime}</td>
+                                <td className="loc-cell font-semibold">
                                   {event.locationName ? (
                                     <span className="loc-tag" style={getColorStyle("Location", event.locationName)}>
                                       {event.locationName}
@@ -1424,8 +1424,8 @@ export function FestivalMapApp({
                                             onClick={() => setModalEvent(event)}
                                           >
                                             <div className="card-inner">
-                                              <div className="event-card-time font-mono">
-                                                {event.startTime} - {event.endTime}
+                                              <div className="event-card-time">
+                                                {event.startTime} – {event.endTime}
                                               </div>
                                               <div className="event-card-title">{event.title}</div>
                                               <div className="event-card-meta">
@@ -1481,8 +1481,8 @@ export function FestivalMapApp({
                                             onClick={() => setModalEvent(event)}
                                           >
                                             <div className="card-inner">
-                                              <div className="event-card-time font-mono">
-                                                {event.startTime} - {event.endTime}
+                                              <div className="event-card-time">
+                                                {event.startTime} – {event.endTime}
                                               </div>
                                               <div className="event-card-title">{event.title}</div>
                                               <div className="event-card-meta">
@@ -1676,8 +1676,8 @@ export function FestivalMapApp({
               <button type="button" className="close-modal-btn" onClick={() => setModalEvent(null)}>×</button>
             </header>
             <div className="portal-modal-body">
-              <div className="modal-info-row font-mono">
-                <span className="modal-time-range font-bold">⏰ {modalEvent.startTime} - {modalEvent.endTime}</span>
+              <div className="modal-info-row">
+                <span className="modal-time-range font-bold">⏰ {modalEvent.startTime} – {modalEvent.endTime}</span>
                 {modalEvent.scheduleDate && (
                   <span className="modal-date-tag">📅 {modalEvent.scheduleDate}</span>
                 )}
