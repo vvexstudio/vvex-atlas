@@ -2782,7 +2782,7 @@ body.legacy-theme-dark .main-schedule-day-group {
 .main-schedule-day-header {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 25; /* Higher than sticky table cells (z-index 11) to prevent overlap */
   background: #efe5d0;
   padding: 12px 16px;
   font-weight: 700;
@@ -3685,7 +3685,8 @@ body.legacy-theme-dark .zoom-slider::-webkit-slider-thumb:hover {
   background: #fffeef;
   border: 1px solid #d9d4c5;
   border-radius: 12px;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
   min-height: 400px;
@@ -3790,6 +3791,9 @@ body.legacy-theme-dark .spatial-calendar-grid {
   position: relative;
   border-bottom: 8px solid #efe9d9;
   flex-shrink: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
 }
 
 body.legacy-theme-dark .calendar-day-section {
