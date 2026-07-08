@@ -1151,7 +1151,7 @@ export function FestivalMapApp({
                         <circle cx="12" cy="12" r="3" />
                       </svg>
                     )}
-                    <span>Hide Empty</span>
+                    <span>Hide Empty Hours</span>
                   </button>
                 </>
               )}
@@ -1282,10 +1282,10 @@ export function FestivalMapApp({
                               <button
                                 type="button"
                                 onClick={() => setHideEmptyHours(!hideEmptyHours)}
-                                className="calendar-day-header-toggle-btn"
+                                className={`calendar-day-header-toggle-btn ${hideEmptyHours ? "active" : ""}`}
                                 aria-label="Toggle empty hours"
                               >
-                                {hideEmptyHours ? "👁️ Show All" : "👁️ Hide Empty"}
+                                {hideEmptyHours ? "👁️ Hide Empty Hours" : "👁️ Show All Hours"}
                               </button>
                             </div>
 

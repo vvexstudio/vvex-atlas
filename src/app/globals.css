@@ -2668,13 +2668,17 @@ body.legacy-theme-dark .tab-header-scale-item {
   .calendar-day-header-toggle-btn {
     display: inline-flex;
     align-items: center;
+    position: -webkit-sticky;
+    position: sticky;
+    right: 16px; /* Keep it pinned to the right edge of the viewport */
+    z-index: 40;
     background: rgba(255, 255, 255, 0.12);
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: #fffeef;
     font-size: 0.65rem;
     padding: 3px 8px;
     border-radius: 4px;
-    margin-left: auto;
+    margin-left: auto; /* Fallback alignment */
     cursor: pointer;
     font-weight: 600;
     transition: background 0.15s ease;
@@ -2682,6 +2686,18 @@ body.legacy-theme-dark .tab-header-scale-item {
   
   .calendar-day-header-toggle-btn:active {
     background: rgba(255, 255, 255, 0.25);
+  }
+  
+  .calendar-day-header-toggle-btn.active {
+    background: #bc5c2d !important;
+    border-color: #a34e23 !important;
+    color: #ffffff !important;
+  }
+  
+  body.legacy-theme-dark .calendar-day-header-toggle-btn.active {
+    background: #8b5cf6 !important;
+    border-color: #7c3aed !important;
+    color: #ffffff !important;
   }
 }
 body.legacy-theme-dark .main-tabs-header {
