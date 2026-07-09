@@ -17,7 +17,7 @@ A private, reusable interactive **map + run-of-show schedule** app for The Porta
 ## 3. Locked decisions (do not re-litigate without the client)
 - Build **toward Option B, ship Option A first**.
 - **Google Maps** (client supplies billed API key) — do not swap map providers.
-- Deploy **Vercel, password-protected**.
+- Deploy **Firebase, password-protected**.
 - Brand with **client's real assets** (pending) — use a neutral Portal interim theme meanwhile.
 
 ## 4. Data rules
@@ -30,7 +30,7 @@ A private, reusable interactive **map + run-of-show schedule** app for The Porta
 ## 5. How to work here
 - Match the surrounding code's style, naming, and structure. No broad rewrites of the big component in early milestones.
 - Before claiming something works, run it: `npm install`, `npm run dev`, `npm run lint`, `npm run build`. Report failures with the actual output.
-- Map rendering needs `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in `.env.local` (and Vercel env). Never commit `.env*`.
+- Map rendering needs `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in `.env.local` (and Firebase config/env). Never commit `.env*`.
 - Prefer small, reviewable commits. Branch off `main`; don't commit/push unless asked. **Do NOT add any Co-authored-by or co-committer trailers to commit messages. Agents must never take co-author credit or use the antigravity@google.com email.**
 - **Never push to remote without explicit permission from the user.** The repository is configured with a git pre-push hook that prevents pushes unless interactive confirmation is given, or bypassed via `PORTAL_ALLOW_PUSH=true git push`.
 - Keep `proposal.md`, `sprintboard.md`, and the schema template consistent with each other when scope changes.
@@ -44,4 +44,4 @@ npm run build        # production build / type-check gate
 ```
 
 ## 7. Open inputs blocking full delivery
-Tracked in `sprintboard.md` §3 — Google Maps key, brand assets, vocabulary/role sign-off, Vercel ownership. Don't invent final answers to these; flag them.
+Tracked in `sprintboard.md` §3 — Google Maps key, brand assets, vocabulary/role sign-off, Firebase ownership. Don't invent final answers to these; flag them.

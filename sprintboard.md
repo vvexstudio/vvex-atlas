@@ -24,7 +24,7 @@ A private, reusable **interactive map + run-of-show (ROS) schedule** app for **T
 |---|---|
 | **Build scope** | **Build toward Option B, ship Option A first** as milestone 1. |
 | **Map provider** | **Google Maps** (`@vis.gl/react-google-maps`). Client supplies a billed `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`. |
-| **Demo hosting** | **Vercel, password-protected** private preview for the Portal team. |
+| **Demo hosting** | **Firebase, password-protected** private preview for the Portal team. |
 | **Branding** | **Client's real brand assets** — pull from **https://theportal.is** ("Access the Portal" — boutique experiential design firm). Neutral interim theme until final assets confirmed. |
 | **Data architecture** | **Remote-first from day 1.** Canonical source = live Google Sheet `1rpmzT4_6NlAOSryN86ROv3mv1Jf4ydColAlk6MrY1zw`. Local KMZ/XLSX archived in `OFFLINE/` (gitignored). |
 
@@ -32,11 +32,11 @@ A private, reusable **interactive map + run-of-show (ROS) schedule** app for **T
 
 ## 3. Pending Inputs From Client (blockers / to chase)
 
-- [ ] **Google Maps API key** (billed, with Maps JavaScript API enabled) → for `.env.local` + Vercel env.
+- [ ] **Google Maps API key** (billed, with Maps JavaScript API enabled) → for `.env.local` + Firebase env.
 - [ ] **Brand assets**: logo (SVG/PNG), color palette, official event name + typography.
 - [ ] Confirm the **real run-of-show vocabulary** we should mirror in synthetic data (department names, role titles, location naming) — or sign off on ours.
 - [ ] Confirm the **role taxonomy** for Option B (proposal names: admin, lead, vendor, guest). Any others?
-- [ ] Vercel: which account/org owns the deploy, and the desired private URL/password policy.
+- [ ] Firebase: which account/org owns the deploy, and the desired private URL/password policy.
 
 ---
 
@@ -115,7 +115,7 @@ Goal: keep the way the client already works (the `ROS by TIME` columns are the b
 - [x] Verify location→placemark matching works once `location` + `Locations` aliases exist.
 - [x] Read/merge `ROS BY AREA` grid OR confirm `ROS by TIME` is the single source; reconcile the two.
 - [x] Interim neutral Portal theming (rename "festival" surface labels; remove BBB-specific copy).
-- [x] Deploy password-protected private preview to Vercel; share link with Portal team for the test event.
+- [x] Deploy password-protected private preview to Firebase; share link with Portal team for the test event.
 - [x] **Gate:** Portal team can open the demo, see the MARTIANS event on the map with a filterable schedule.
 
 ### M2 — Synthetic data + schema codification
@@ -139,7 +139,7 @@ Goal: keep the way the client already works (the `ROS by TIME` columns are the b
 ---
 
 ## 7. Deliverables Checklist
-- [x] Working private demo (Vercel) on the MARTIANS dataset.
+- [x] Working private demo (Firebase) on the MARTIANS dataset.
 - [x] Augmented synthetic dataset (`ROS_VVEX.xlsx` filled + new tabs).
 - [x] Master schema recommendation (this doc, Section 5) + annotated XLSX template + data dictionary.
 - [x] Production-data intake guide.
@@ -155,7 +155,7 @@ Tracked here so we know what to stand up vs. what the client owns. Env var names
 | **Google Maps Platform** | Map rendering | Billed API key, Maps JavaScript API enabled, restricted to demo domains → `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Client (billed) |
 | **Google Sheets API** | App reads `Locations`/`Personnel`/`ROS`; one-time tab pushes | **Service account** (recommended): GCP project → enable Sheets API → service account + JSON key → **share sheet as Editor with the SA email**. Vars: `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`. (API key alone = read-only; writes need SA or OAuth.) | Us (project), client shares sheet |
 | **Google My Maps** | Real `Locations` coordinates | Set map to "anyone with link can view" → KML export `…/maps/d/kml?mid=<MID>&forcekml=1` (`GOOGLE_MY_MAP_MID`) | Client (sharing) |
-| **Vercel** | Password-protected demo hosting | Project + env vars + deployment protection | Decide ownership (sprintboard §3) |
+| **Firebase** | Password-protected demo hosting | Project + env vars + deployment protection | Decide ownership (sprintboard §3) |
 | **Auth (Option B)** | Role-based access (admin/lead/vendor/guest) | NextAuth/Auth.js or Clerk; replaces single-password gate | Us |
 | **Calendar (Option B)** | `.ics` export / subscription | Per-person/role feed token | Us |
 
@@ -188,6 +188,7 @@ Tracked here so we know what to stand up vs. what the client owns. Env var names
 - **2026-07-07 — agent** — Refactored calendar grid layout and unified chips: Created one shared `CalendarChip` component for both department/location headers and TBD status tags, ensuring consistent padding, border-radius (6px), and layout structure; status tags now use a darker/muted tint of the primary color via CSS overlays; configured columns to stretch equally using `flex: 1` and align with proportional flex-grow parent cells; removed mobile horizontal padding on `.spatial-calendar-container` to extend the grid edge-to-edge.
 - **2026-07-07 — agent** — Maximized screen real estate: Consolidated header banner to a single-row flex layout on both desktop and mobile; hid user name/email on mobile and changed light/dark mode switch to a compact icon button; replaced bottom collapsible accordions on mobile with a sticky navigation bar that opens slide-up drawer panels (bottom sheets) for Filters & Search and the Running Schedule.
 - **2026-07-07 — agent** — Fixed mobile layout bugs: stacked filter dropdowns and date-time pickers vertically on screens ≤ 720px to prevent global horizontal page overflow; added horizontal scroll to main schedule table on mobile with 750px min-width to avoid column squishing; added minWidth constraint and flex-shrink: 0 to calendar-day-sections to prevent column squeezing in calendar view.
+- **2026-07-04 — Antigravity** — Implemented Google Calendar & role-gated Firebase Realtime Database Option B integration. Scaffolded Firebase Admin SDK on the server, built custom token-minting APIs, configured modular Web SDK onValue listeners in the client component, wrote the complete spreadsheet sync Google Apps Script, authored database rules, and successfully verified clean Next.js compilation.
 - **2026-07-03 — agent** — Expanded filters collapsible header support from mobile-only up to tablet stacked layouts (max-width: 1080px), styling and behaving identically to the running schedule collapse header.
 - **2026-07-03 — agent** — Made the running schedule collapsible on mobile/tablet stacked viewports. Compressed calendar controls into a single row on mobile with "W", "H", and "Hide Empty" abbreviations. Positioned the desktop sidebar toggle button on the left boundary of the sidebar.
 - **2026-07-03 — agent** — Simplified the calendar layout toolbar to a single toggle ("Hide Empty Hours", enabled by default). Converted "Hide Empty Columns" to a permanent background feature.

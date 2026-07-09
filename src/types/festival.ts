@@ -58,6 +58,7 @@ export type FestivalEvent = {
   department?: string;
   leadPointPerson?: string;
   locationName?: string;
+  history?: EventHistoryEntry[];
 };
 
 export interface Department {
@@ -69,4 +70,13 @@ export interface Department {
   Lat?: number;
   Long?: number;
 }
+
+export type EventHistoryEntry = {
+  timestamp: string;
+  eventId: string;
+  changedBy: string;
+  fieldName: string;
+  oldValue: string;
+  newValue: string;
+};
 

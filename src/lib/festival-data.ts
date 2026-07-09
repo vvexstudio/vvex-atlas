@@ -3,7 +3,7 @@ import path from "node:path";
 import JSZip from "jszip";
 import { XMLParser } from "fast-xml-parser";
 import * as XLSX from "xlsx";
-import { Department, FestivalDay, FestivalEvent, Venue } from "@/types/festival";
+import type { Department, FestivalDay, FestivalEvent, Venue, EventHistoryEntry } from "@/types/festival";
 import {
   getParsedSheetData,
   getParsedSheetDataFromPublicCsv,
@@ -11,6 +11,7 @@ import {
   getSpreadsheetWithFormatting,
   parseSheetDataWithColors,
 } from "./google-sheets-api";
+import { adminDb } from "./firebase-admin";
 
 export type LocationMatchDebug = {
   totalRows: number;
@@ -422,7 +423,7 @@ function createEventFromSheetRow(row: any, venuesById: Map<string, Venue>, index
   };
 }
 
-export async function getFestivalData(): Promise<FestivalDataResult> {
+export async function getFestivalData(role: string = "guest"): Promise<FestivalDataResult> {
   const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "19Xs3TScHhS369n_A8VvUGxszoxncx1p32T8iwNHSKTU";
   const useOAuth = !!(process.env.GOOGLE_REFRESH_TOKEN && process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
   const tabLocations = process.env.SHEETS_TAB_LOCATIONS || "Locations";
@@ -430,6 +431,42 @@ export async function getFestivalData(): Promise<FestivalDataResult> {
   const tabDepartments = process.env.SHEETS_TAB_DEPARTMENTS || "Departments";
   const tabActions = process.env.SHEETS_TAB_ACTIONS || "Actions";
   const tabRos = process.env.SHEETS_TAB_ROS || "ROS by TIME";
+
+  // Try to load data from Firebase RTD first (Option B cache & real-time sync)
+  try {
+    if (adminDb) {
+      const nodePath = role === "admin" ? "admin-data" : (role === "crew" ? "crew-data" : "public-data");
+      const snapshot = await adminDb.ref(nodePath).once("value");
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        
+        let colorsObj = {};
+        try {
+          const cachedColorsPath = path.join(process.cwd(), "src/data/sheet-colors.json");
+          const cachedColorsContent = await readFile(cachedColorsPath, "utf8");
+          colorsObj = JSON.parse(cachedColorsContent);
+        } catch (err) {}
+
+        const eventsList = data.events || [];
+        return {
+          venues: data.venues || [],
+          events: eventsList,
+          personnel: data.personnel || [],
+          departments: data.departments || [],
+          colors: colorsObj,
+          sourceLabel: `Firebase RTD (${role.toUpperCase()} View)`,
+          debug: {
+            totalRows: eventsList.length,
+            confirmedRows: eventsList.length,
+            matchedRows: eventsList.filter((e: any) => e.hasLocation || e.lat !== undefined).length,
+            unmatchedLocations: [],
+          }
+        };
+      }
+    }
+  } catch (firebaseErr) {
+    console.warn("Failed to load from Firebase Realtime Database. Falling back to Google Sheets API:", firebaseErr);
+  }
 
   let locationsData: any[] = [];
   let personnelData: any[] = [];

@@ -75,13 +75,21 @@ export async function GET(request: Request) {
       return NextResponse.redirect(new URL("/login?error=no-email", origin));
     }
 
+    // Check if Google verified the email address to prevent unverified domain attacks
+    if (userData.email_verified !== true) {
+      console.error(`Access denied: Google account email ${email} is not verified`);
+      return NextResponse.redirect(new URL("/login?error=email-unverified", origin));
+    }
+
+    const sanitizedEmail = email.trim().toLowerCase();
+
     // 3. Verify user email against Approved Emails tab
-    const approved = await isEmailApproved(email);
+    const approved = await isEmailApproved(sanitizedEmail);
 
     if (!approved) {
-      console.warn(`Access denied: ${email} is not in the approved list`);
+      console.warn(`Access denied: ${sanitizedEmail} is not in the approved list`);
       return NextResponse.redirect(
-        new URL(`/login?error=unauthorized&email=${encodeURIComponent(email)}`, origin)
+        new URL(`/login?error=unauthorized&email=${encodeURIComponent(sanitizedEmail)}`, origin)
       );
     }
 

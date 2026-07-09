@@ -37,7 +37,21 @@ One row per person/team. Feeds the Contacts Directory (Option B) and `ROS.lead_p
 | `email`, `phone` | | **Synthetic** (`*.example`, `+39 333 …`). Never commit real PII. |
 | `location_default` | | FK → `Locations.location_id`. |
 | `visibility` | | Role tags that may see this record, e.g. `admin,lead,crew`. |
+| `app_role` | ✓ | Access level controls: `admin` / `crew` / `guest`. |
+| `send_invite` | | Checkbox: `TRUE` / `FALSE`. Set `TRUE` to trigger Google Calendar subscription invite email. |
+| `invite_status` | | Auto-updated sync status log (e.g. `Access Synchronized on 2026-07-04`). |
 | `notes` | | Free text. |
+
+### `Departments` (production divisions index) — `Departments.csv`
+One row per operational division. Used to create separate calendar views.
+
+| Column | Required | Notes |
+|---|---|---|
+| `dept_id` | ✓ | Stable ID, e.g. `dep-lighting`. |
+| `name` | ✓ | Display name. |
+| `lead_contact_id` | | FK → `Personnel.personnel_id`. |
+| `color` | | Hex code used for UI accent styling. |
+| `google_calendar_id`| | Automatically populated Google Calendar ID, e.g., `xxxx@group.calendar.google.com`. |
 
 ### `ROS` (structured run-of-show) — `ROS.csv`
 One row per schedule item — the normalized form of the free-text `ROS BY AREA` grid. **91 sample rows**, every row mapped to a `location_id`.

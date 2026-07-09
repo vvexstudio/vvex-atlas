@@ -4,6 +4,9 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import { APIProvider, Map, AdvancedMarker, AdvancedMarkerAnchorPoint } from "@vis.gl/react-google-maps";
 import { Venue, FestivalEvent, FestivalDay, Department } from "@/types/festival";
 import sheetColors from "@/data/sheet-colors.json";
+import { clientAuth, clientDb } from "@/lib/firebase-client";
+import { signInWithCustomToken } from "firebase/auth";
+import { ref, onValue } from "firebase/database";
 
 const MAP_CENTER = { lat: 40.7864, lng: -119.2065 }; // Default Playa (BRC) coordinates
 const MAP_DEFAULT_ZOOM = 13;
@@ -208,15 +211,22 @@ export function CalendarChip({
 }
 
 export function FestivalMapApp({
-  venues,
-  events,
-  personnel = [],
-  departments = [],
-  colors,
-  dataSourceLabel: _dataSourceLabel,
+  venues: initialVenues,
+  events: initialEvents,
+  personnel: initialPersonnel = [],
+  departments: initialDepartments = [],
+  colors: initialColors,
+  dataSourceLabel,
   debug,
   userSession,
 }: FestivalMapAppProps) {
+  // Local state bound to dynamic Firebase updates (falls back to props)
+  const [venues, setVenues] = useState<Venue[]>(initialVenues);
+  const [events, setEvents] = useState<FestivalEvent[]>(initialEvents);
+  const [personnel, setPersonnel] = useState<any[]>(initialPersonnel);
+  const [departments, setDepartments] = useState<Department[]>(initialDepartments);
+  const colors = initialColors || {};
+  const [sourceLabel, setSourceLabel] = useState(dataSourceLabel || "Static Init");
   // Helper for tag coloring with dynamic sheets support and static fallback
   const getColorStyle = (category: "Location" | "Action" | "Department" | "Personnel", value: string | undefined) => {
     if (!value) return {};
@@ -359,6 +369,65 @@ export function FestivalMapApp({
       el.removeEventListener("touchmove", handleTouchMove);
     };
   }, [mainTab]);
+
+  // Real-time Firebase Realtime Database Sync (Option B WebSocket Listener)
+  useEffect(() => {
+    const auth = clientAuth;
+    const db = clientDb;
+
+    if (!auth || !db) {
+      console.log("Firebase client SDK is unconfigured. Running in static mode.");
+      return;
+    }
+
+    let unsubscribe: (() => void) | null = null;
+
+    async function setupRealtimeSync() {
+      try {
+        // 1. Fetch custom authentication token from Next.js backend
+        const tokenRes = await fetch("/api/auth/firebase-token");
+        if (!tokenRes.ok) {
+          throw new Error(`Token fetch failed: status ${tokenRes.status}`);
+        }
+        
+        const { token, role } = await tokenRes.json();
+        if (!token) {
+          throw new Error("No custom token returned from endpoint");
+        }
+
+        // 2. Sign in to Firebase Auth with the custom token
+        await signInWithCustomToken(auth!, token);
+        console.log(`Signed in to Firebase with custom claims. Role: ${role}`);
+
+        // 3. Establish listener on the appropriate role-based RTD node path
+        const nodePath = role === "admin" ? "admin-data" : (role === "crew" ? "crew-data" : "public-data");
+        const dbRef = ref(db!, nodePath);
+        
+        unsubscribe = onValue(dbRef, (snapshot) => {
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            console.log(`Realtime update received for path: /${nodePath}`);
+            if (data.venues) setVenues(data.venues);
+            if (data.events) setEvents(data.events);
+            if (data.personnel) setPersonnel(data.personnel);
+            if (data.departments) setDepartments(data.departments);
+            setSourceLabel(`Firebase RTD Live (${role.toUpperCase()})`);
+          }
+        });
+      } catch (err) {
+        console.error("Realtime sync setup failed, falling back to static load:", err);
+      }
+    }
+
+    setupRealtimeSync();
+
+    return () => {
+      if (unsubscribe) {
+        (unsubscribe as () => void)();
+        console.log("Unsubscribed from Firebase RTD live updates.");
+      }
+    };
+  }, []);
 
   // Dropdown Filter States
   const [searchQuery, setSearchQuery] = useState("");
@@ -973,8 +1042,13 @@ export function FestivalMapApp({
     <main className={`legacy-app ${isDarkMode ? "dark-theme" : ""}`}>
       {/* Header Banner */}
       <header className="legacy-banner">
-        <div className="legacy-banner-title">
+        <div className="legacy-banner-title" style={{ display: "flex", alignItems: "baseline", gap: "10px" }}>
           <h1 className="legacy-banner-heading">The Portal</h1>
+          {sourceLabel && (
+            <span style={{ fontSize: "0.75rem", color: "#94a3b8", fontWeight: "normal" }}>
+              ({sourceLabel})
+            </span>
+          )}
         </div>
         <div className="legacy-banner-actions">
           {userSession && (
