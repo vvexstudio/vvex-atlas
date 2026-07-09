@@ -8,8 +8,9 @@ export async function GET(request: Request) {
   const state = searchParams.get("state") || "/"; // callbackUrl
 
   // Detect origin dynamically from request headers (support x-forwarded-host for proxies)
-  const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
-  const proto = request.headers.get("x-forwarded-proto") || "http";
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
+  const isLocal = host.includes("localhost") || host.includes("127.0.0.1") || host.includes("0.0.0.0") || host.startsWith("192.168.");
+  const proto = isLocal ? "http" : "https";
   const origin = `${proto}://${host}`;
   const redirectUri = `${origin}/api/auth/callback`;
 
