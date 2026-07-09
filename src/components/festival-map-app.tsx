@@ -1296,7 +1296,8 @@ export function FestivalMapApp({
                                     className="calendar-parent-header-cell departments" 
                                     style={{ 
                                       flex: `${displayDeptsForDay.length} ${displayDeptsForDay.length} 0%`, 
-                                      minWidth: `${displayDeptsForDay.length * columnWidthScale}px`
+                                      minWidth: `${displayDeptsForDay.length * columnWidthScale}px`,
+                                      maxWidth: `${displayDeptsForDay.length * columnWidthScale * 1.25}px`
                                     }}
                                   >
                                     <span className="sticky-parent-label">🏢 Departments</span>
@@ -1307,7 +1308,8 @@ export function FestivalMapApp({
                                     className="calendar-parent-header-cell locations" 
                                     style={{ 
                                       flex: `${displayLocsForDay.length} ${displayLocsForDay.length} 0%`, 
-                                      minWidth: `${displayLocsForDay.length * columnWidthScale}px`
+                                      minWidth: `${displayLocsForDay.length * columnWidthScale}px`,
+                                      maxWidth: `${displayLocsForDay.length * columnWidthScale * 1.25}px`
                                     }}
                                   >
                                     <span className="sticky-parent-label">📍 Locations</span>
@@ -1334,7 +1336,8 @@ export function FestivalMapApp({
                                       className="calendar-column-header-cell department" 
                                       style={{ 
                                         flex: "1 1 0%", 
-                                        minWidth: `${columnWidthScale}px`
+                                        minWidth: `${columnWidthScale}px`,
+                                        maxWidth: `${columnWidthScale * 1.25}px`
                                       }}
                                     >
                                       <CalendarChip
@@ -1421,7 +1424,8 @@ export function FestivalMapApp({
                                       className="calendar-column-header-cell location" 
                                       style={{ 
                                         flex: "1 1 0%", 
-                                        minWidth: `${columnWidthScale}px`
+                                        minWidth: `${columnWidthScale}px`,
+                                        maxWidth: `${columnWidthScale * 1.25}px`
                                       }}
                                     >
                                       <CalendarChip
@@ -1565,7 +1569,8 @@ export function FestivalMapApp({
                                       className="calendar-grid-column department-lane" 
                                       style={{ 
                                         flex: "1 1 0%", 
-                                        minWidth: `${columnWidthScale}px`
+                                        minWidth: `${columnWidthScale}px`,
+                                        maxWidth: `${columnWidthScale * 1.25}px`
                                       }}
                                     >
                                       {timedEvents.map((event) => {
@@ -1625,7 +1630,8 @@ export function FestivalMapApp({
                                       className="calendar-grid-column location-lane" 
                                       style={{ 
                                         flex: "1 1 0%", 
-                                        minWidth: `${columnWidthScale}px`
+                                        minWidth: `${columnWidthScale}px`,
+                                        maxWidth: `${columnWidthScale * 1.25}px`
                                       }}
                                     >
                                       {timedEvents.map((event) => {
