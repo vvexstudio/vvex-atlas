@@ -256,6 +256,7 @@ export function FestivalMapApp({
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [isMobileScheduleOpen, setIsMobileScheduleOpen] = useState(false);
+  const [activeTbdDropdown, setActiveTbdDropdown] = useState<{ day: string; colKey: string } | null>(null);
 
   // Sync dark mode class on document body
   useEffect(() => {
@@ -1276,8 +1277,7 @@ export function FestivalMapApp({
                           : activeLocations;
 
                         const numCols = displayDeptsForDay.length + displayLocsForDay.length;
-                        const isStretched = numCols <= 3;
-                        const totalGridWidth = isStretched ? "100%" : `${70 + numCols * columnWidthScale}px`;
+                        const totalGridWidth = numCols === 0 ? "100%" : `max(100%, ${70 + numCols * columnWidthScale}px)`;
 
                         return (
                           <div key={dateGroup.date} className="calendar-day-section" style={{ width: "100%", minWidth: totalGridWidth }}>
@@ -1296,8 +1296,7 @@ export function FestivalMapApp({
                                     className="calendar-parent-header-cell departments" 
                                     style={{ 
                                       flex: `${displayDeptsForDay.length} ${displayDeptsForDay.length} 0%`, 
-                                      minWidth: isStretched ? "0px" : `${displayDeptsForDay.length * columnWidthScale}px`,
-                                      maxWidth: isStretched ? `${displayDeptsForDay.length * 400}px` : "none"
+                                      minWidth: `${displayDeptsForDay.length * columnWidthScale}px`
                                     }}
                                   >
                                     <span className="sticky-parent-label">🏢 Departments</span>
@@ -1308,8 +1307,7 @@ export function FestivalMapApp({
                                     className="calendar-parent-header-cell locations" 
                                     style={{ 
                                       flex: `${displayLocsForDay.length} ${displayLocsForDay.length} 0%`, 
-                                      minWidth: isStretched ? "0px" : `${displayLocsForDay.length * columnWidthScale}px`,
-                                      maxWidth: isStretched ? `${displayLocsForDay.length * 400}px` : "none"
+                                      minWidth: `${displayLocsForDay.length * columnWidthScale}px`
                                     }}
                                   >
                                     <span className="sticky-parent-label">📍 Locations</span>
@@ -1320,7 +1318,6 @@ export function FestivalMapApp({
                               {/* Specific Column Headers (Column names + TBD Shelves) */}
                               <div className="calendar-grid-header-row">
                                 <div className="calendar-time-axis-header" style={{ width: "70px" }}>
-                                  <span className="timezone-label">UTC</span>
                                 </div>
                                 
                                 {displayDeptsForDay.map((dept) => {
@@ -1330,14 +1327,14 @@ export function FestivalMapApp({
                                   const deptInfo = departments.find((d) => d.Department?.trim() === dept.trim());
                                   const icon = getDepartmentIcon(dept);
 
+                                  const isDropdownOpen = activeTbdDropdown?.day === dateGroup.date && activeTbdDropdown?.colKey === dept;
                                   return (
                                     <div 
                                       key={`hdr-dept-${dept}`} 
                                       className="calendar-column-header-cell department" 
                                       style={{ 
                                         flex: "1 1 0%", 
-                                        minWidth: isStretched ? "0px" : `${columnWidthScale}px`,
-                                        maxWidth: isStretched ? "400px" : "none"
+                                        minWidth: `${columnWidthScale}px`
                                       }}
                                     >
                                       <CalendarChip
@@ -1372,18 +1369,41 @@ export function FestivalMapApp({
                                         ) : null}
                                       />
                                       {tbdEvents.length > 0 && (
-                                        <div className="column-tbd-container">
-                                          {tbdEvents.map((event) => (
-                                            <CalendarChip
-                                              key={event.id}
-                                              variant="status-tag"
-                                              style={getColorStyle("Department", dept)}
-                                              label={event.title}
-                                              status="TBD"
-                                              onClick={() => setModalEvent(event)}
-                                              title={event.description}
-                                            />
-                                          ))}
+                                        <div className="header-tbd-wrapper">
+                                          <button
+                                            type="button"
+                                            className={`header-tbd-toggle-btn ${isDropdownOpen ? "active" : ""}`}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              if (isDropdownOpen) {
+                                                setActiveTbdDropdown(null);
+                                              } else {
+                                                setActiveTbdDropdown({ day: dateGroup.date, colKey: dept });
+                                              }
+                                            }}
+                                            title="View unassigned/TBD time events"
+                                          >
+                                            ⏳ {tbdEvents.length} TBD
+                                          </button>
+                                          {isDropdownOpen && (
+                                            <div className="header-tbd-dropdown-menu">
+                                              <div className="dropdown-title">Unassigned Items ({tbdEvents.length})</div>
+                                              {tbdEvents.map((event) => (
+                                                <button
+                                                  key={event.id}
+                                                  type="button"
+                                                  className="dropdown-item"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setModalEvent(event);
+                                                    setActiveTbdDropdown(null);
+                                                  }}
+                                                >
+                                                  📌 {event.title}
+                                                </button>
+                                              ))}
+                                            </div>
+                                          )}
                                         </div>
                                       )}
                                     </div>
@@ -1394,14 +1414,14 @@ export function FestivalMapApp({
                                   const tbdEvents = dateGroup.events.filter(
                                     (e) => e.locationName === loc && timeToMinutes(e.startTime) === -1
                                   );
+                                  const isDropdownOpen = activeTbdDropdown?.day === dateGroup.date && activeTbdDropdown?.colKey === loc;
                                   return (
                                     <div 
                                       key={`hdr-loc-${loc}`} 
                                       className="calendar-column-header-cell location" 
                                       style={{ 
                                         flex: "1 1 0%", 
-                                        minWidth: isStretched ? "0px" : `${columnWidthScale}px`,
-                                        maxWidth: isStretched ? "400px" : "none"
+                                        minWidth: `${columnWidthScale}px`
                                       }}
                                     >
                                       <CalendarChip
@@ -1410,18 +1430,41 @@ export function FestivalMapApp({
                                         label={loc}
                                       />
                                       {tbdEvents.length > 0 && (
-                                        <div className="column-tbd-container">
-                                          {tbdEvents.map((event) => (
-                                            <CalendarChip
-                                              key={event.id}
-                                              variant="status-tag"
-                                              style={getColorStyle("Location", loc)}
-                                              label={event.title}
-                                              status="TBD"
-                                              onClick={() => setModalEvent(event)}
-                                              title={event.description}
-                                            />
-                                          ))}
+                                        <div className="header-tbd-wrapper">
+                                          <button
+                                            type="button"
+                                            className={`header-tbd-toggle-btn ${isDropdownOpen ? "active" : ""}`}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              if (isDropdownOpen) {
+                                                setActiveTbdDropdown(null);
+                                              } else {
+                                                setActiveTbdDropdown({ day: dateGroup.date, colKey: loc });
+                                              }
+                                            }}
+                                            title="View unassigned/TBD time events"
+                                          >
+                                            ⏳ {tbdEvents.length} TBD
+                                          </button>
+                                          {isDropdownOpen && (
+                                            <div className="header-tbd-dropdown-menu">
+                                              <div className="dropdown-title">Unassigned Items ({tbdEvents.length})</div>
+                                              {tbdEvents.map((event) => (
+                                                <button
+                                                  key={event.id}
+                                                  type="button"
+                                                  className="dropdown-item"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setModalEvent(event);
+                                                    setActiveTbdDropdown(null);
+                                                  }}
+                                                >
+                                                  📌 {event.title}
+                                                </button>
+                                              ))}
+                                            </div>
+                                          )}
                                         </div>
                                       )}
                                     </div>
@@ -1522,8 +1565,7 @@ export function FestivalMapApp({
                                       className="calendar-grid-column department-lane" 
                                       style={{ 
                                         flex: "1 1 0%", 
-                                        minWidth: isStretched ? "0px" : `${columnWidthScale}px`,
-                                        maxWidth: isStretched ? "400px" : "none"
+                                        minWidth: `${columnWidthScale}px`
                                       }}
                                     >
                                       {timedEvents.map((event) => {
@@ -1583,8 +1625,7 @@ export function FestivalMapApp({
                                       className="calendar-grid-column location-lane" 
                                       style={{ 
                                         flex: "1 1 0%", 
-                                        minWidth: isStretched ? "0px" : `${columnWidthScale}px`,
-                                        maxWidth: isStretched ? "400px" : "none"
+                                        minWidth: `${columnWidthScale}px`
                                       }}
                                     >
                                       {timedEvents.map((event) => {
