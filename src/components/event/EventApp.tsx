@@ -3,12 +3,12 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Venue, FestivalEvent, FestivalDay, Department } from "@/types/festival";
 import sheetColors from "@/data/sheet-colors.json";
-import { EventModal } from "./event/EventModal";
-import { FilterBar } from "./event/FilterBar";
-import { MapView } from "./event/MapView";
-import { ScheduleGrid } from "./event/ScheduleGrid";
-import { RunningSchedule } from "./event/RunningSchedule";
-import { CalendarView } from "./event/CalendarView";
+import { EventModal } from "./EventModal";
+import { FilterBar } from "./FilterBar";
+import { MapView } from "./MapView";
+import { ScheduleGrid } from "./ScheduleGrid";
+import { RunningSchedule } from "./RunningSchedule";
+import { CalendarView } from "./CalendarView";
 import { useAuthProfile } from "@/hooks/useAuthProfile";
 import { useEventData } from "@/hooks/useEventData";
 import { useFilters } from "@/hooks/useFilters";
@@ -69,7 +69,7 @@ const getActiveMinuteOffset = (t: number, activeHours: number[]): number => {
 };
 
 
-type FestivalMapAppProps = {
+type EventAppProps = {
   venues: Venue[];
   events: FestivalEvent[];
   personnel?: unknown[];
@@ -86,7 +86,7 @@ type FestivalMapAppProps = {
 
 
 
-export function FestivalMapApp({
+export function EventApp({
   venues: initialVenues,
   events: initialEvents,
   personnel: initialPersonnel = [],
@@ -95,7 +95,7 @@ export function FestivalMapApp({
   dataSourceLabel,
   debug,
   userSession: initialUserSession,
-}: FestivalMapAppProps) {
+}: EventAppProps) {
   // 1. Auth Hook
   const { userSession, role } = useAuthProfile(initialUserSession);
 
