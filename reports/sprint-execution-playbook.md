@@ -143,17 +143,17 @@ grep -riE 'claude|anthropic|gemini|openai|gpt|copilot' --include='*' -l . \
 
 The file is ~2,000 lines and is the merge-conflict epicenter. Goal: mechanical extraction, **zero behavior change**.
 
-- [ ] A1. Take "before" screenshots: run `npm run dev`, capture the map view, schedule view, calendar view, an open event modal, and mobile viewport (390px). Save to a local folder (do not commit screenshots).
-- [ ] A2. Create `src/components/event/` and extract, one component per commit, in this order (each extraction = move JSX + its local state/handlers, wire props, build must stay green):
+- [x] A1. Take "before" screenshots: run `npm run dev`, capture the map view, schedule view, calendar view, an open event modal, and mobile viewport (390px). Save to a local folder (do not commit screenshots).
+- [x] A2. Create `src/components/event/` and extract, one component per commit, in this order (each extraction = move JSX + its local state/handlers, wire props, build must stay green):
   1. `EventModal.tsx` — **⛳ COMMIT:** `refactor: extract EventModal component`
   2. `FilterBar.tsx` — **⛳ COMMIT:** `refactor: extract FilterBar component`
   3. `MapView.tsx` — **⛳ COMMIT:** `refactor: extract MapView component`
   4. `ScheduleGrid.tsx` — **⛳ COMMIT:** `refactor: extract ScheduleGrid component`
   5. `RunningSchedule.tsx` — **⛳ COMMIT:** `refactor: extract RunningSchedule component`
   6. `CalendarView.tsx` — **⛳ COMMIT:** `refactor: extract CalendarView component`
-- [ ] A3. Extract hooks into `src/hooks/`: `useFilters.ts`, `useEventData.ts` (wraps the Firebase RTDB `onValue` listeners + Sheets/CSV fallback selection), `useAuthProfile.ts`. **⛳ COMMIT:** `refactor: extract data and filter hooks`
-- [ ] A4. Rename `festival-map-app.tsx` → `src/components/event/EventApp.tsx`; rename `festival-*` identifiers to `event-*` within Team A-owned files only (the `src/lib/festival-data.ts` rename is deferred to Sprint 4/WP-12 to respect the freeze). Update imports in `src/app/page.tsx`. **⛳ COMMIT:** `refactor: rename festival component namespace to event`
-- [ ] A5. After each extraction and at the end, compare against the "before" screenshots.
+- [x] A3. Extract hooks into `src/hooks/`: `useFilters.ts`, `useEventData.ts` (wraps the Firebase RTDB `onValue` listeners + Sheets/CSV fallback selection), `useAuthProfile.ts`. **⛳ COMMIT:** `refactor: extract data and filter hooks`
+- [x] A4. Rename `festival-map-app.tsx` → `src/components/event/EventApp.tsx`; rename `festival-*` identifiers to `event-*` within Team A-owned files only (the `src/lib/festival-data.ts` rename is deferred to Sprint 4/WP-12 to respect the freeze). Update imports in `src/app/page.tsx`. **⛳ COMMIT:** `refactor: rename festival component namespace to event`
+- [x] A5. After each extraction and at the end, compare against the "before" screenshots.
 
 **Benchmarks:** no file in `src/components/event/` or `src/hooks/` exceeds 300 lines; `EventApp.tsx` is a thin composition shell; UI pixel-identical to A1 screenshots; build + lint green.
 

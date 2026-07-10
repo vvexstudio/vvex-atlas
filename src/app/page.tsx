@@ -1,4 +1,4 @@
-import { FestivalMapApp } from "@/components/festival-map-app";
+import { EventApp } from "@/components/event/EventApp";
 import { getFestivalData } from "@/lib/festival-data";
 import { cookies } from "next/headers";
 import { verifySessionCookie } from "@/lib/auth";
@@ -30,7 +30,7 @@ export default async function Home() {
   const { venues, events, personnel, departments, colors, sourceLabel, debug } = await getFestivalData(role);
 
   return (
-    <FestivalMapApp
+    <EventApp
       venues={venues}
       events={events}
       personnel={personnel}
