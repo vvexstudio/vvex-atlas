@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from "react";
-import { Venue, FestivalEvent, Department } from "@/types/festival";
+import React, { useState } from "react";
+import { FestivalEvent, Department } from "@/types/festival";
 import { CalendarChip } from "./CalendarChip";
 
 interface DateGroup {

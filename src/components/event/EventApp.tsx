@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef } from "react";
-import { Venue, FestivalEvent, FestivalDay, Department } from "@/types/festival";
+import React, { useState, useEffect, useRef } from "react";
+import { Venue, FestivalEvent, Department } from "@/types/festival";
 import sheetColors from "@/data/sheet-colors.json";
 import { EventModal } from "./EventModal";
 import { FilterBar } from "./FilterBar";
@@ -132,7 +132,6 @@ export function EventApp({
     filteredAndSortedEvents,
     groupedEventsByDate,
     visibleMappableVenues,
-    mapCenterCoords,
     availableDates,
     activeDepartments,
     activeLocations,
@@ -180,7 +179,6 @@ export function EventApp({
   }, [columnWidthScale, hourHeightScale, scheduleWidthScale]);
   const [modalEvent, setModalEvent] = useState<FestivalEvent | null>(null);
   const [hideEmptyHours, setHideEmptyHours] = useState(true);
-  const hideEmptyColumns = true;
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [isMobileScheduleOpen, setIsMobileScheduleOpen] = useState(false);
@@ -366,8 +364,6 @@ export function EventApp({
       />
     );
   };
-
-  const hoursArray = Array.from({ length: 24 }, (_, i) => i);
 
   return (
     <main className={`legacy-app ${isDarkMode ? "dark-theme" : ""}`}>

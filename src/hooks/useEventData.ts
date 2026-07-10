@@ -6,7 +6,7 @@ import { Venue, FestivalEvent, Department } from "@/types/festival";
 interface InitialData {
   venues: Venue[];
   events: FestivalEvent[];
-  personnel?: any[];
+  personnel?: unknown[];
   departments?: Department[];
   dataSourceLabel?: string;
 }
@@ -14,7 +14,7 @@ interface InitialData {
 export const useEventData = (role: string | null, initialData: InitialData) => {
   const [venues, setVenues] = useState<Venue[]>(initialData.venues);
   const [events, setEvents] = useState<FestivalEvent[]>(initialData.events);
-  const [personnel, setPersonnel] = useState<any[]>(initialData.personnel || []);
+  const [personnel, setPersonnel] = useState<unknown[]>(initialData.personnel || []);
   const [departments, setDepartments] = useState<Department[]>(initialData.departments || []);
   const [sourceLabel, setSourceLabel] = useState(initialData.dataSourceLabel || "Static Init");
 
