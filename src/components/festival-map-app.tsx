@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { APIProvider, Map, AdvancedMarker, AdvancedMarkerAnchorPoint } from "@vis.gl/react-google-maps";
 import { Venue, FestivalEvent, FestivalDay, Department } from "@/types/festival";
 import sheetColors from "@/data/sheet-colors.json";
 import { EventModal } from "./event/EventModal";
 import { FilterBar } from "./event/FilterBar";
+import { MapView } from "./event/MapView";
 import { clientAuth, clientDb } from "@/lib/firebase-client";
 import { signInWithCustomToken } from "firebase/auth";
 import { ref, onValue } from "firebase/database";
@@ -1581,52 +1581,11 @@ export function FestivalMapApp({
                 )}
               </div>
             ) : (
-              /* Map View (Scaffolded Placeholder or Real Map) */
-              <div className="main-map-container" style={{ height: "100%", width: "100%" }}>
-                {visibleMappableVenues.length > 0 ? (
-                  <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""}>
-                    <Map
-                      center={mapCenterCoords}
-                      zoom={MAP_DEFAULT_ZOOM}
-                      mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || "2f9f04bb8e9c458045b99a65"}
-                      disableDefaultUI={false}
-                      style={{ width: "100%", height: "100%" }}
-                    >
-                      {visibleMappableVenues.map((venue) => (
-                        <AdvancedMarker
-                          key={venue.id}
-                          position={{ lat: venue.lat!, lng: venue.lng! }}
-                          anchorPoint={AdvancedMarkerAnchorPoint.CENTER}
-                        >
-                          <div className="custom-map-marker">
-                            <span className="marker-dot"></span>
-                            <span className="marker-label">{venue.name}</span>
-                          </div>
-                        </AdvancedMarker>
-                      ))}
-                    </Map>
-                  </APIProvider>
-                ) : (
-                  /* Greyed-out Blueprint Placeholder Map View */
-                  <div className="map-placeholder-container">
-                    <div className="map-placeholder-grid" />
-                    <div className="map-placeholder-card">
-                      <div className="map-placeholder-icon">🗺️</div>
-                      <h2>Interactive Map Scaffolded</h2>
-                      <p>
-                        The interactive map interface is pre-configured and ready. Geographical coordinates (Lat/Long) are currently pending in the Google Sheet database.
-                      </p>
-                      <div className="map-placeholder-badge">
-                        <span className="badge-dot"></span>
-                        Coordinates Pending (Scaffolded)
-                      </div>
-                      <div className="map-placeholder-hint">
-                        Populating latitude and longitude coordinates in the <strong>Locations</strong> sheet will automatically enable mapping layout markers.
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <MapView
+                venues={venues}
+                mapCenter={MAP_CENTER}
+                defaultZoom={MAP_DEFAULT_ZOOM}
+              />
             )}
           </div>
         </section>
