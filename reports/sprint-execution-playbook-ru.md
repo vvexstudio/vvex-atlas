@@ -143,17 +143,17 @@ grep -riE 'claude|anthropic|gemini|openai|gpt|copilot' --include='*' -l . \
 
 Этот файл содержит около 2000 строк кода и является эпицентром конфликтов слияния. Цель: механическое выделение компонентов, **без изменения поведения**.
 
-- [ ] A1. Сделайте скриншоты «до»: запустите `npm run dev`, сфотографируйте вид карты, расписание, сетку календаря, открытое модальное окно события и мобильный интерфейс (шириной 390px). Сохраните их в локальную папку (не коммитьте скриншоты).
-- [ ] A2. Создайте папку `src/components/event/` и последовательно выделите компоненты (один коммит на каждый выделенный компонент; переносим JSX и его локальный стейт/обработчики, связываем пропсы, проект должен успешно собираться):
+- [x] A1. Сделайте скриншоты «до»: запустите `npm run dev`, сфотографируйте вид карты, расписание, сетку календаря, открытое модальное окно события и мобильный интерфейс (шириной 390px). Сохраните их в локальную папку (не коммитьте скриншоты).
+- [x] A2. Создайте папку `src/components/event/` и последовательно выделите компоненты (один коммит на каждый выделенный компонент; переносим JSX и его локальный стейт/обработчики, связываем пропсы, проект должен успешно собираться):
   1. `EventModal.tsx` — **⛳ КОММИТ:** `refactor: extract EventModal component`
   2. `FilterBar.tsx` — **⛳ КОММИТ:** `refactor: extract FilterBar component`
   3. `MapView.tsx` — **⛳ КОММИТ:** `refactor: extract MapView component`
   4. `ScheduleGrid.tsx` — **⛳ КОММИТ:** `refactor: extract ScheduleGrid component`
   5. `RunningSchedule.tsx` — **⛳ КОММИТ:** `refactor: extract RunningSchedule component`
   6. `CalendarView.tsx` — **⛳ КОММИТ:** `refactor: extract CalendarView component`
-- [ ] A3. Выделите хуки в `src/hooks/`: `useFilters.ts`, `useEventData.ts` (оборачивает слушатели `onValue` из Firebase RTDB и логику работы с CSV/Sheets), `useAuthProfile.ts`. **⛳ КОММИТ:** `refactor: extract data and filter hooks`
-- [ ] A4. Переименуйте `festival-map-app.tsx` → `src/components/event/EventApp.tsx`; переименуйте идентификаторы с `festival-*` на `event-*` исключительно внутри файлов во владении Команды А (переименование `src/lib/festival-data.ts` отложено до Спринта 4 для соблюдения заморозки путей). Обновите импорты в `src/app/page.tsx`. **⛳ КОММИТ:** `refactor: rename festival component namespace to event`
-- [ ] A5. После каждого шага выделения и в конце работы сверяйте результат со скриншотами «до».
+- [x] A3. Выделите хуки в `src/hooks/`: `useFilters.ts`, `useEventData.ts` (оборачивает слушатели `onValue` из Firebase RTDB и логику работы с CSV/Sheets), `useAuthProfile.ts`. **⛳ КОММИТ:** `refactor: extract data and filter hooks`
+- [x] A4. Переименуйте `festival-map-app.tsx` → `src/components/event/EventApp.tsx`; переименуйте идентификаторы с `festival-*` на `event-*` исключительно внутри файлов во владении Команды А (переименование `src/lib/festival-data.ts` отложено до Спринта 4 для соблюдения заморозки путей). Обновите импорты в `src/app/page.tsx`. **⛳ КОММИТ:** `refactor: rename festival component namespace to event`
+- [x] A5. После каждого шага выделения и в конце работы сверяйте результат со скриншотами «до».
 
 **Критерии готовности:** ни один файл в `src/components/event/` или `src/hooks/` не превышает 300 строк; `EventApp.tsx` представляет собой тонкую сборочную оболочку; интерфейс пиксель-в-пиксель совпадает со скриншотами из A1; сборка и линтер зеленые.
 
