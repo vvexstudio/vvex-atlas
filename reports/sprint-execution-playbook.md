@@ -90,26 +90,26 @@ One worker, directly on `main`. Nothing else may start until Sprint 0's smoke te
 
 ### Tasks
 
-- [ ] **S0.1 — Gitignore hardening.** Append to `.gitignore` if not present: `client_secret.json`, `.env`, `.env.*` (keep `!.env.example`), `OFFLINE/`, `*service-account*.json`.
-- [ ] **S0.2 — History audit.** Run `git log --all --full-history --oneline -- client_secret.json` and the same for any `*service-account*.json`. Record the result in `sprintboard.md`. If any hit exists, flag **HUMAN-ROTATE** in `sprintboard.md` (human must rotate the OAuth client secret in Google Cloud Console).
-- [ ] **S0.3 — Working-tree sweep.** `git status --porcelain` — confirm no secret-bearing file is staged or untracked-but-committable. `.env.local` must be ignored after S0.1.
+- [x] **S0.1 — Gitignore hardening.** Append to `.gitignore` if not present: `client_secret.json`, `.env`, `.env.*` (keep `!.env.example`), `OFFLINE/`, `*service-account*.json`.
+- [x] **S0.2 — History audit.** Run `git log --all --full-history --oneline -- client_secret.json` and the same for any `*service-account*.json`. Record the result in `sprintboard.md`. If any hit exists, flag **HUMAN-ROTATE** in `sprintboard.md` (human must rotate the OAuth client secret in Google Cloud Console).
+- [x] **S0.3 — Working-tree sweep.** `git status --porcelain` — confirm no secret-bearing file is staged or untracked-but-committable. `.env.local` must be ignored after S0.1.
 
   **⛳ COMMIT POINT 1:** `chore: harden gitignore for secrets`
 
-- [ ] **S0.4 — Commit the merged Firebase work.** The following exist in the tree but are untracked; review each for embedded secrets (search for `BEGIN PRIVATE KEY`, long random strings, real project IDs used as defaults), then add and commit:
+- [x] **S0.4 — Commit the merged Firebase work.** The following exist in the tree but are untracked; review each for embedded secrets (search for `BEGIN PRIVATE KEY`, long random strings, real project IDs used as defaults), then add and commit:
   - `src/lib/firebase-admin.ts`, `src/lib/firebase-client.ts`
   - `src/app/api/auth/firebase-token/` (whole directory)
   - `database.rules.json`
   - `scripts/PortalSyncScript.js` — **verify `CONFIG.FIREBASE_SECRET` / `FIREBASE_DB_URL` contain placeholder values, not real credentials.** If real values are present, replace with `"REPLACE_ME"` placeholders before committing.
   - `implementation-strategies/` (both planning docs + this playbook)
   - Decide with a look, not a guess: `google sheets automation.md` — if it duplicates `implementation_plan.md`, move its unique content into `implementation-strategies/` and delete it; otherwise commit it under `implementation-strategies/`.
-- [ ] **S0.5 — Env documentation.** Ensure `.env.example` lists every variable named in `implementation_plan.md` §2D (server: `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `FIREBASE_DATABASE_URL`; client: all seven `NEXT_PUBLIC_FIREBASE_*`) plus the existing OAuth/Sheets vars, values blank or dummy.
-- [ ] **S0.6 — Build check.** `npm run build` must succeed.
+- [x] **S0.5 — Env documentation.** Ensure `.env.example` lists every variable named in `implementation_plan.md` §2D (server: `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `FIREBASE_DATABASE_URL`; client: all seven `NEXT_PUBLIC_FIREBASE_*`) plus the existing OAuth/Sheets vars, values blank or dummy.
+- [x] **S0.6 — Build check.** `npm run build` must succeed.
 
   **⛳ COMMIT POINT 2:** `feat: land firebase realtime integration scaffold and sync script`
   **⛳ COMMIT POINT 3:** `docs: add implementation strategies and execution playbook`
 
-- [ ] **S0.7 — Declare canonical.** Add to `sprintboard.md`: "Canonical repo = portal-dev, branch = main, as of <date>. All other checkouts are read-only." Note in the entry that the second machine/checkout must `git pull` and discard local divergence — flag **HUMAN-VERIFY** for the human to confirm no unmerged work remains on the other machine.
+- [x] **S0.7 — Declare canonical.** Add to `sprintboard.md`: "Canonical repo = portal-dev, branch = main, as of <date>. All other checkouts are read-only." Note in the entry that the second machine/checkout must `git pull` and discard local divergence — flag **HUMAN-VERIFY** for the human to confirm no unmerged work remains on the other machine.
 
   **⛳ COMMIT POINT 4:** `docs: declare canonical branch in sprintboard`
 

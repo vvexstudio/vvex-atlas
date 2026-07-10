@@ -46,3 +46,8 @@ next-env.d.ts
 
 # local notes
 to do
+
+# secrets & credentials
+client_secret.json
+*service-account*.json
+
