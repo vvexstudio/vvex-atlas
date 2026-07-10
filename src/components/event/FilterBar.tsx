@@ -1,0 +1,266 @@
+import React from "react";
+
+interface FilterBarProps {
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  selectedLocations: string[];
+  setSelectedLocations: (locs: string[]) => void;
+  selectedActions: string[];
+  setSelectedActions: (acts: string[]) => void;
+  selectedDepartments: string[];
+  setSelectedDepartments: (depts: string[]) => void;
+  selectedLeads: string[];
+  setSelectedLeads: (leads: string[]) => void;
+  startTimeFilter: string;
+  setStartTimeFilter: (time: string) => void;
+  endTimeFilter: string;
+  setEndTimeFilter: (time: string) => void;
+  locationOptions: string[];
+  actionOptions: string[];
+  departmentOptions: string[];
+  leadOptions: string[];
+  getColorStyle: (category: "Location" | "Action" | "Department" | "Personnel", value: string | undefined) => React.CSSProperties;
+}
+
+const formatFilterDateTime = (dtStr: string): string => {
+  if (!dtStr) return "";
+  const dateObj = new Date(dtStr);
+  if (Number.isNaN(dateObj.getTime())) return dtStr;
+  return dateObj.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
+
+export const FilterBar: React.FC<FilterBarProps> = ({
+  searchQuery,
+  setSearchQuery,
+  selectedLocations,
+  setSelectedLocations,
+  selectedActions,
+  setSelectedActions,
+  selectedDepartments,
+  setSelectedDepartments,
+  selectedLeads,
+  setSelectedLeads,
+  startTimeFilter,
+  setStartTimeFilter,
+  endTimeFilter,
+  setEndTimeFilter,
+  locationOptions,
+  actionOptions,
+  departmentOptions,
+  leadOptions,
+  getColorStyle,
+}) => {
+  return (
+    <>
+      <div className="legacy-search-row">
+        <input
+          id="portal-search-input"
+          name="search"
+          type="search"
+          placeholder="Search description, action, dept, lead..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="legacy-search"
+          aria-label="Search schedule"
+        />
+      </div>
+
+      <div className="portal-dropdown-filters">
+        <div className="filter-dropdown-group">
+          <label htmlFor="filter-location">Location</label>
+          <select
+            id="filter-location"
+            name="location"
+            value="all"
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val !== "all" && !selectedLocations.includes(val)) {
+                setSelectedLocations([...selectedLocations, val]);
+              }
+            }}
+          >
+            <option value="all">Add Location Filter...</option>
+            {locationOptions.map((loc) => (
+              !selectedLocations.includes(loc) && (
+                <option key={loc} value={loc} style={getColorStyle("Location", loc)}>
+                  {loc}
+                </option>
+              )
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-dropdown-group">
+          <label htmlFor="filter-action">Action</label>
+          <select
+            id="filter-action"
+            name="action"
+            value="all"
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val !== "all" && !selectedActions.includes(val)) {
+                setSelectedActions([...selectedActions, val]);
+              }
+            }}
+          >
+            <option value="all">Add Action Filter...</option>
+            {actionOptions.map((act) => (
+              !selectedActions.includes(act) && (
+                <option key={act} value={act} style={getColorStyle("Action", act)}>
+                  {act}
+                </option>
+              )
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-dropdown-group">
+          <label htmlFor="filter-department">Department</label>
+          <select
+            id="filter-department"
+            name="department"
+            value="all"
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val !== "all" && !selectedDepartments.includes(val)) {
+                setSelectedDepartments([...selectedDepartments, val]);
+              }
+            }}
+          >
+            <option value="all">Add Department Filter...</option>
+            {departmentOptions.map((dept) => (
+              !selectedDepartments.includes(dept) && (
+                <option key={dept} value={dept} style={getColorStyle("Department", dept)}>
+                  {dept}
+                </option>
+              )
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-dropdown-group">
+          <label htmlFor="filter-lead">Lead Person</label>
+          <select
+            id="filter-lead"
+            name="lead"
+            value="all"
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val !== "all" && !selectedLeads.includes(val)) {
+                setSelectedLeads([...selectedLeads, val]);
+              }
+            }}
+          >
+            <option value="all">Add Lead Filter...</option>
+            {leadOptions.map((lead) => (
+              !selectedLeads.includes(lead) && (
+                <option key={lead} value={lead} style={getColorStyle("Personnel", lead)}>
+                  {lead}
+                </option>
+              )
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Time Range Filters */}
+      <div className="time-filter-row">
+        <div className="time-input-group">
+          <label htmlFor="time-start">Start Date &amp; Time</label>
+          <input
+            id="time-start"
+            type="datetime-local"
+            value={startTimeFilter}
+            onChange={(e) => setStartTimeFilter(e.target.value)}
+            className="time-picker-input"
+          />
+        </div>
+        <div className="time-input-group">
+          <label htmlFor="time-end">End Date &amp; Time</label>
+          <input
+            id="time-end"
+            type="datetime-local"
+            value={endTimeFilter}
+            onChange={(e) => setEndTimeFilter(e.target.value)}
+            className="time-picker-input"
+          />
+        </div>
+      </div>
+
+      {/* Active Filter Chips */}
+      {(selectedLocations.length > 0 ||
+        selectedActions.length > 0 ||
+        selectedDepartments.length > 0 ||
+        selectedLeads.length > 0 ||
+        startTimeFilter ||
+        endTimeFilter ||
+        searchQuery) && (
+        <div className="active-filters-row">
+          {searchQuery && (
+            <span className="filter-chip search-chip">
+              🔍 &quot;{searchQuery}&quot;
+              <button type="button" className="clear-chip-btn" onClick={() => setSearchQuery("")} aria-label="Clear search">×</button>
+            </span>
+          )}
+          {selectedLocations.map((loc) => (
+            <span key={`loc-${loc}`} className="filter-chip" style={getColorStyle("Location", loc)}>
+              📍 {loc}
+              <button type="button" className="clear-chip-btn" onClick={() => setSelectedLocations(selectedLocations.filter((l) => l !== loc))} aria-label="Clear location filter">×</button>
+            </span>
+          ))}
+          {selectedActions.map((act) => (
+            <span key={`act-${act}`} className="filter-chip" style={getColorStyle("Action", act)}>
+              ⚡ {act}
+              <button type="button" className="clear-chip-btn" onClick={() => setSelectedActions(selectedActions.filter((a) => a !== act))} aria-label="Clear action filter">×</button>
+            </span>
+          ))}
+          {selectedDepartments.map((dept) => (
+            <span key={`dept-${dept}`} className="filter-chip" style={getColorStyle("Department", dept)}>
+              🏢 {dept}
+              <button type="button" className="clear-chip-btn" onClick={() => setSelectedDepartments(selectedDepartments.filter((d) => d !== dept))} aria-label="Clear department filter">×</button>
+            </span>
+          ))}
+          {selectedLeads.map((lead) => (
+            <span key={`lead-${lead}`} className="filter-chip" style={getColorStyle("Personnel", lead)}>
+              👤 {lead}
+              <button type="button" className="clear-chip-btn" onClick={() => setSelectedLeads(selectedLeads.filter((l) => l !== lead))} aria-label="Clear lead filter">×</button>
+            </span>
+          ))}
+          {startTimeFilter && (
+            <span className="filter-chip time-chip">
+              ⏰ Start &ge; {formatFilterDateTime(startTimeFilter)}
+              <button type="button" className="clear-chip-btn" onClick={() => setStartTimeFilter("")} aria-label="Clear start time filter">×</button>
+            </span>
+          )}
+          {endTimeFilter && (
+            <span className="filter-chip time-chip">
+              ⏰ End &le; {formatFilterDateTime(endTimeFilter)}
+              <button type="button" className="clear-chip-btn" onClick={() => setEndTimeFilter("")} aria-label="Clear end time filter">×</button>
+            </span>
+          )}
+
+          <button
+            type="button"
+            className="clear-filters-btn"
+            onClick={() => {
+              setSelectedLocations([]);
+              setSelectedActions([]);
+              setSelectedDepartments([]);
+              setSelectedLeads([]);
+              setStartTimeFilter("");
+              setEndTimeFilter("");
+              setSearchQuery("");
+            }}
+          >
+            Clear All Filters
+          </button>
+        </div>
+      )}
+    </>
+  );
+};
