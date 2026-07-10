@@ -6,6 +6,7 @@ import sheetColors from "@/data/sheet-colors.json";
 import { EventModal } from "./event/EventModal";
 import { FilterBar } from "./event/FilterBar";
 import { MapView } from "./event/MapView";
+import { ScheduleGrid } from "./event/ScheduleGrid";
 import { clientAuth, clientDb } from "@/lib/firebase-client";
 import { signInWithCustomToken } from "firebase/auth";
 import { ref, onValue } from "firebase/database";
@@ -1053,83 +1054,11 @@ export function FestivalMapApp({
           {/* Main Content Render */}
           <div ref={mainContentRef} className={`main-tab-content tab-${mainTab}`}>
             {mainTab === "schedule" ? (
-              /* High-fidelity Schedule Grid View */
-              <div className="main-schedule-container">
-
-                {groupedEventsByDate.length === 0 ? (
-                  <div className="empty-schedule-state">
-                    <span className="empty-icon">🔍</span>
-                    <h3>No items match your filters</h3>
-                    <p>Try resetting filters or typing another search query.</p>
-                  </div>
-                ) : (
-                  groupedEventsByDate.map((dateGroup) => (
-                    <div key={dateGroup.date} className="main-schedule-day-group">
-                      <div className="main-schedule-day-header">
-                        {dateGroup.dateLabel}
-                      </div>
-                      <div className="main-schedule-table-wrap">
-                        <table className="main-schedule-table" style={{ minWidth: `${scheduleWidthScale}px` }}>
-                          <thead>
-                            <tr>
-                              <th style={{ width: "70px" }}>Time</th>
-                              <th style={{ width: "15%" }}>Location</th>
-                              <th style={{ width: "15%" }}>Action</th>
-                              <th style={{ width: "15%" }}>Dept.</th>
-                              <th style={{ width: "15%" }}>Lead</th>
-                              <th style={{ width: "28%" }}>Description</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {dateGroup.events.map((event) => (
-                              <tr key={event.id} className="main-schedule-row">
-                                <td className="time-cell">{renderScheduleTime(event.startTime, event.endTime)}</td>
-                                <td className="loc-cell font-semibold">
-                                  {event.locationName ? (
-                                    <span className="loc-tag" style={getColorStyle("Location", event.locationName)}>
-                                      {event.locationName}
-                                    </span>
-                                  ) : (
-                                    "-"
-                                  )}
-                                </td>
-                                <td className="action-cell">
-                                  {event.action ? (
-                                    <span className="action-tag" style={getColorStyle("Action", event.action)}>
-                                      {event.action}
-                                    </span>
-                                  ) : (
-                                    "-"
-                                  )}
-                                </td>
-                                <td className="dept-cell">
-                                  {event.department ? (
-                                    <span className="dept-tag" style={getColorStyle("Department", event.department)}>
-                                      {event.department}
-                                    </span>
-                                  ) : (
-                                    "-"
-                                  )}
-                                </td>
-                                <td className="lead-cell font-semibold">
-                                  {event.leadPointPerson ? (
-                                    <span className="lead-tag" style={getColorStyle("Personnel", event.leadPointPerson)}>
-                                      {event.leadPointPerson}
-                                    </span>
-                                  ) : (
-                                    "-"
-                                  )}
-                                </td>
-                                <td className="desc-cell">{event.description || "-"}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+              <ScheduleGrid
+                groupedEventsByDate={groupedEventsByDate}
+                scheduleWidthScale={scheduleWidthScale}
+                getColorStyle={getColorStyle}
+              />
             ) : mainTab === "calendar" ? (
               /* Spatial Calendar View */
               <div className="spatial-calendar-container">
