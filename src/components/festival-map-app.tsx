@@ -7,6 +7,7 @@ import { EventModal } from "./event/EventModal";
 import { FilterBar } from "./event/FilterBar";
 import { MapView } from "./event/MapView";
 import { ScheduleGrid } from "./event/ScheduleGrid";
+import { RunningSchedule } from "./event/RunningSchedule";
 import { clientAuth, clientDb } from "@/lib/firebase-client";
 import { signInWithCustomToken } from "firebase/auth";
 import { ref, onValue } from "firebase/database";
@@ -798,59 +799,11 @@ export function FestivalMapApp({
   // Helper to render the body of the running schedule
   const renderScheduleBody = () => {
     return (
-      <div className="sidebar-scroll-container">
-        {groupedEventsByDate.length === 0 ? (
-          <div className="sidebar-empty-state">No events match filters.</div>
-        ) : (
-          groupedEventsByDate.map((dateGroup) => (
-            <div key={dateGroup.date} className="sidebar-date-group">
-              <div className="sidebar-date-header">{dateGroup.dateLabel}</div>
-              <div className="sidebar-event-list">
-                {dateGroup.events.map((event) => (
-                  <div key={event.id} className="sidebar-event-card" onClick={() => setModalEvent(event)} style={{ cursor: "pointer" }}>
-                    <div className="event-time-badge">
-                      ⏰ {event.startTime} – {event.endTime}
-                    </div>
-                    <div className="event-card-title">{event.title}</div>
-                    
-                    <div className="event-card-details">
-                      {event.locationName && (
-                        <span className="card-detail-badge loc-tag-sm" style={getColorStyle("Location", event.locationName)}>
-                          📍 {event.locationName}
-                        </span>
-                      )}
-                      {event.action && (
-                        <span className="card-detail-badge action-tag-sm" style={getColorStyle("Action", event.action)}>
-                          ⚡ {event.action}
-                        </span>
-                      )}
-                    </div>
-
-                    {(event.leadPointPerson || event.department) && (
-                      <div className="event-card-badges">
-                        {event.leadPointPerson && (
-                          <span className="card-badge lead-badge" style={getColorStyle("Personnel", event.leadPointPerson)}>
-                            👤 {event.leadPointPerson}
-                          </span>
-                        )}
-                        {event.department && (
-                          <span className="card-badge dept-badge" style={getColorStyle("Department", event.department)}>
-                            🏢 {event.department}
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    {event.description && (
-                      <div className="event-card-desc">{event.description}</div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+      <RunningSchedule
+        groupedEventsByDate={groupedEventsByDate}
+        setModalEvent={setModalEvent}
+        getColorStyle={getColorStyle}
+      />
     );
   };
 
