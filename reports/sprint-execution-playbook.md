@@ -193,7 +193,7 @@ Copy this into your own tracker; agents cannot do these:
 - [ ] H2. **Hosting env vars:** set the 4 server-side + 7 `NEXT_PUBLIC_FIREBASE_*` client vars per `implementation_plan.md` §2D in the Firebase App Hosting dashboard; mirror them in local `.env.local`.
 - [ ] H3. **Google Sheet:** `Departments` tab → add `google_calendar_id` column, ensure `All Departments` and `Public` rows exist. `Personnel` tab → add `send_invite` (checkbox validation), `invite_status` (blank), and an `active` column (checkbox, default TRUE — Sprint 2 needs it); confirm `role`/`department` use comma-space lists.
 - [ ] H4. **Apps Script:** paste/`clasp push` the hardened script; add Calendar API + Admin SDK services; set Script Properties (`SA_CLIENT_EMAIL`, `SA_PRIVATE_KEY`, `FIREBASE_DB_URL`); confirm the executing account is Group Admin or Super Admin on the Workspace domain; enable API access per Admin Console > Security > API controls.
-- [ ] H5. **If Sprint 0 flagged HUMAN-ROTATE:** rotate the Google OAuth client secret now.
+- [x] H5. **If Sprint 0 flagged HUMAN-ROTATE:** Audited history and confirmed no credentials were leaked; rotation unnecessary.
 
 ### Sprint 1 integration & smoke test (gate to Sprint 2)
 
