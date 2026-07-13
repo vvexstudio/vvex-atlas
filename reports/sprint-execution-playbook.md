@@ -159,8 +159,8 @@ The file is ~2,000 lines and is the merge-conflict epicenter. Goal: mechanical e
 
 ### Team B — WP-3: Tests + CI (branch `sprint1/team-b-tests-ci`)
 
-- [ ] B1. `npm i -D vitest @vitest/coverage-v8` (separate `chore:` commit per rule 0.3). Add `"test": "vitest run"` to `package.json` scripts. Create `vitest.config.ts` (node environment is fine; these are pure-logic tests).
-- [ ] B2. Write tests against the **existing** functions in `src/lib/` (import them; do not modify them — if a function is untestable as written, note it in `sprintboard.md` Cross-team requests rather than refactoring):
+- [x] B1. `npm i -D vitest @vitest/coverage-v8` (separate `chore:` commit per rule 0.3). Add `"test": "vitest run"` to `package.json` scripts. Create `vitest.config.ts` (node environment is fine; these are pure-logic tests).
+- [x] B2. Write tests against the **existing** functions in `src/lib/` (import them; do not modify them — if a function is untestable as written, note it in `sprintboard.md` Cross-team requests rather than refactoring):
   - date/time normalization and overnight rollover logic (in `festival-data.ts`)
   - location alias matching
   - filter semantics: OR within a category, AND across categories
@@ -168,8 +168,8 @@ The file is ~2,000 lines and is the merge-conflict epicenter. Goal: mechanical e
   - CSV fallback triggering logic in `csv.ts` / `google-sheets-api.ts`
   - RTDB payload-shape validation: feed malformed objects (null nodes, missing keys, wrong types) into whatever parses the RTDB snapshot and assert it returns an error/empty state rather than throwing
   **⛳ COMMIT (per test file):** `test: cover <area>`
-- [ ] B3. GitHub Actions workflow `.github/workflows/ci.yml`: on push + PR → `npm ci`, `npm run lint`, `npx tsc --noEmit`, `npm run test`, `npm run build`. **⛳ COMMIT:** `chore: add CI workflow`
-- [ ] B4. Add a CI grep step that fails the build if any tracked file matches the forbidden-terms regex from rule 0.1.3 (excluding `node_modules`). Name the step neutrally, e.g. `vocabulary-check`. **⛳ COMMIT:** `chore: add vocabulary check to CI`
+- [x] B3. GitHub Actions workflow `.github/workflows/ci.yml`: on push + PR → `npm ci`, `npm run lint`, `npx tsc --noEmit`, `npm run test`, `npm run build`. **⛳ COMMIT:** `chore: add CI workflow`
+- [x] B4. Add a CI grep step that fails the build if any tracked file matches the forbidden-terms regex from rule 0.1.3 (excluding `node_modules`). Name the step neutrally, e.g. `vocabulary-check`. **⛳ COMMIT:** `chore: add vocabulary check to CI`
 
 **Benchmarks:** ≥ 30 meaningful assertions across ≥ 6 areas; CI green on the branch; a deliberately broken assertion makes CI red (verify once, then fix).
 
