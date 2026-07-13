@@ -1,6 +1,6 @@
-import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAuth, Auth } from "firebase/auth";
-import { getDatabase, Database } from "firebase/database";
+import { initializeApp, getApps } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getDatabase } from "firebase/database";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -12,22 +12,24 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-let clientApp: FirebaseApp | null = null;
-let clientAuth: Auth | null = null;
-let clientDb: Database | null = null;
+const isConfigured = !!(
+  firebaseConfig.apiKey &&
+  firebaseConfig.databaseURL &&
+  firebaseConfig.projectId
+);
 
-if (firebaseConfig.apiKey && firebaseConfig.databaseURL && firebaseConfig.projectId) {
+let app = null;
+
+if (getApps().length === 0 && isConfigured) {
   try {
-    clientApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    clientAuth = getAuth(clientApp);
-    clientDb = getDatabase(clientApp);
+    app = initializeApp(firebaseConfig);
+    console.log("Firebase Client SDK successfully initialized.");
   } catch (error) {
     console.error("Failed to initialize Firebase Client SDK:", error);
   }
-} else {
-  if (typeof window !== "undefined") {
-    console.log("Firebase Client SDK config missing. Running in static mode.");
-  }
+} else if (getApps().length > 0) {
+  app = getApps()[0];
 }
 
-export { clientApp, clientAuth, clientDb };
+export const clientAuth = app ? getAuth(app) : null;
+export const clientDb = app ? getDatabase(app) : null;

@@ -1,35 +1,42 @@
-import { App, initializeApp, getApps, getApp, cert } from "firebase-admin/app";
-import { Database, getDatabase } from "firebase-admin/database";
+import { initializeApp, getApps, cert } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
+import { getDatabase } from "firebase-admin/database";
 
 const projectId = process.env.FIREBASE_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-const privateKey = process.env.FIREBASE_PRIVATE_KEY;
-const databaseURL = process.env.FIREBASE_DATABASE_URL;
+let privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
-let adminApp: App | null = null;
-let adminDb: Database | null = null;
+if (privateKey) {
+  // Normalize newline formatting for private key strings in env files
+  privateKey = privateKey.replace(/\\n/g, "\n");
+}
 
-if (projectId && clientEmail && privateKey && databaseURL) {
-  try {
-    if (getApps().length === 0) {
-      const formattedPrivateKey = privateKey.replace(/\\n/g, "\n");
-      adminApp = initializeApp({
+let appInitialized = false;
+
+if (getApps().length === 0) {
+  if (projectId && clientEmail && privateKey) {
+    try {
+      initializeApp({
         credential: cert({
           projectId,
           clientEmail,
-          privateKey: formattedPrivateKey,
+          privateKey,
         }),
-        databaseURL,
+        databaseURL: process.env.FIREBASE_DATABASE_URL || `https://${projectId}-default-rtdb.firebaseio.com`,
       });
-    } else {
-      adminApp = getApp();
+      appInitialized = true;
+      console.log("Firebase Admin SDK successfully initialized.");
+    } catch (error) {
+      console.error("Failed to initialize Firebase Admin SDK:", error);
     }
-    adminDb = getDatabase(adminApp);
-  } catch (error) {
-    console.error("Failed to initialize Firebase Admin SDK:", error);
+  } else {
+    console.warn(
+      "Firebase Admin credentials missing. Realtime features requiring admin privileges will be disabled."
+    );
   }
 } else {
-  console.log("Firebase Admin SDK credentials missing. Admin database is unavailable.");
+  appInitialized = true;
 }
 
-export { adminApp, adminDb };
+export const adminAuth = appInitialized ? getAuth() : null;
+export const adminDb = appInitialized ? getDatabase() : null;
