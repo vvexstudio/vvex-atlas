@@ -19,6 +19,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             >
               ✉️ Approved Emails
             </Link>
+            <Link 
+              href="/admin/health" 
+              style={{ color: "#4b5563", textDecoration: "none", fontWeight: 600, fontSize: "0.95rem" }}
+            >
+              🩺 Data Health
+            </Link>
           </nav>
         </div>
         <Link href="/" style={{ color: "#6b7280", textDecoration: "none" }}>Back to Map</Link>

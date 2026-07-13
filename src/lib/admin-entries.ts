@@ -118,7 +118,28 @@ function normalizeEntry(raw: unknown, index: number): AdminEntry | null {
   };
 }
 
+import { adminDb } from "@/lib/firebase-admin";
+
 export async function readAdminEntries(): Promise<AdminEntry[]> {
+  if (adminDb) {
+    try {
+      const snapshot = await adminDb.ref("admin-data/entries").once("value");
+      if (snapshot.exists()) {
+        const val = snapshot.val();
+        if (val && typeof val === "object") {
+          const list = Array.isArray(val) ? val : Object.values(val);
+          return list
+            .map((entry, index) => normalizeEntry(entry, index))
+            .filter((entry): entry is AdminEntry => Boolean(entry));
+        }
+      }
+      return [];
+    } catch (e) {
+      console.error("Failed to read admin entries from Firebase:", e);
+      // Fallback to local file on error
+    }
+  }
+
   let raw = "";
   try {
     raw = await readFile(ADMIN_ENTRIES_PATH, "utf-8");
@@ -134,6 +155,20 @@ export async function readAdminEntries(): Promise<AdminEntry[]> {
 }
 
 async function writeAdminEntries(entries: AdminEntry[]): Promise<void> {
+  if (adminDb) {
+    try {
+      const entriesMap: Record<string, AdminEntry> = {};
+      entries.forEach((e) => {
+        entriesMap[e.id] = e;
+      });
+      await adminDb.ref("admin-data/entries").set(entriesMap);
+      return;
+    } catch (e) {
+      console.error("Failed to write admin entries to Firebase:", e);
+      // Fallback to local file on error
+    }
+  }
+
   const payload: AdminEntriesFile = { entries };
   await writeFile(ADMIN_ENTRIES_PATH, JSON.stringify(payload, null, 2), "utf-8");
 }

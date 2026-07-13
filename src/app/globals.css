@@ -19,6 +19,21 @@
   --lecture: #af6a00;
   --community: #22726f;
   --shadow: 0 24px 80px rgba(62, 35, 12, 0.14);
+
+  /* Spacing and typography tokens (WP-11 B1) */
+  --font-main: "Avenir Next", "Gill Sans Nova", "Trebuchet MS", sans-serif;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --gradient-color-1: rgba(255, 245, 222, 0.8);
+  --gradient-color-2: rgba(168, 126, 63, 0.18);
+  --gradient-start: #f5ead2;
+  --gradient-end: #e3d3b6;
 }
 
 html,
@@ -31,14 +46,10 @@ body {
 body {
   color: var(--ink);
   background:
-    radial-gradient(circle at top left, rgba(255, 245, 222, 0.8), transparent 28%),
-    radial-gradient(circle at bottom right, rgba(168, 126, 63, 0.18), transparent 24%),
-    linear-gradient(180deg, #f5ead2 0%, #e3d3b6 100%);
-  font-family:
-    "Avenir Next",
-    "Gill Sans Nova",
-    "Trebuchet MS",
-    sans-serif;
+    radial-gradient(circle at top left, var(--gradient-color-1), transparent 28%),
+    radial-gradient(circle at bottom right, var(--gradient-color-2), transparent 24%),
+    linear-gradient(180deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+  font-family: var(--font-main);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -2541,8 +2552,19 @@ body.legacy-theme-dark .user-profile-section {
 }
 
 body.legacy-theme-dark {
-  background: #0f1115;
-  color: #ece8de;
+  --background: #0f1115;
+  --panel: #171b23;
+  --panel-strong: #242b38;
+  --ink: #ece8de;
+  --muted: #a0aec0;
+  --line: #2d3443;
+  --gradient-color-1: rgba(15, 17, 21, 0.8);
+  --gradient-color-2: rgba(36, 43, 56, 0.2);
+  --gradient-start: #12161f;
+  --gradient-end: #0f1115;
+
+  background: var(--background);
+  color: var(--ink);
 }
 
 body.legacy-theme-dark .legacy-app,
@@ -4863,5 +4885,58 @@ body.legacy-theme-dark .mobile-drawer-close:hover {
   }
   to {
     transform: translateY(0);
+  }
+}
+
+/* @media print styles for WP-11 B3 */
+@media print {
+  /* Hide non-printable app chrome */
+  .legacy-banner,
+  .legacy-map-panel,
+  .legacy-list-controls,
+  .legacy-sidebar-resize-handle,
+  .legacy-sidebar-toggle-edge,
+  .mobile-bottom-nav,
+  .zoom-controls,
+  .mobile-drawer-overlay,
+  .portal-modal-overlay,
+  button,
+  .user-profile-section {
+    display: none !important;
+  }
+
+  /* Reset layout structure for plain paper page flows */
+  body, 
+  .legacy-app, 
+  .legacy-shell, 
+  .legacy-list-panel {
+    background: #ffffff !important;
+    color: #000000 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Force page breaks by schedule days */
+  .main-schedule-day-container,
+  .calendar-day-section,
+  .spatial-calendar-grid-day-section {
+    page-break-after: always !important;
+    break-after: page !important;
+    display: block !important;
+    overflow: visible !important;
+    padding: 20px 0 !important;
+  }
+
+  /* Ensure colors and background-colors print clearly */
+  * {
+    color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }

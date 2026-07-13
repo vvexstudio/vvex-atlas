@@ -82,7 +82,12 @@ export const useFilters = ({ events, venues, mapCenter }: UseFiltersProps) => {
   const departmentOptions = useMemo(() => {
     const unique = new Set<string>();
     events.forEach((e) => {
-      if (e.department) unique.add(e.department);
+      if (e.department) {
+        e.department.split(",").forEach((d) => {
+          const trimmed = d.trim();
+          if (trimmed) unique.add(trimmed);
+        });
+      }
     });
     return Array.from(unique).sort();
   }, [events]);
@@ -125,8 +130,11 @@ export const useFilters = ({ events, venues, mapCenter }: UseFiltersProps) => {
       }
 
       // 4. Department Dropdown Filter
-      if (selectedDepartments.length > 0 && (!event.department || !selectedDepartments.includes(event.department))) {
-        return false;
+      if (selectedDepartments.length > 0) {
+        if (!event.department) return false;
+        const eventDepts = event.department.split(",").map((d) => d.trim()).filter(Boolean);
+        const hasMatch = eventDepts.some((d) => selectedDepartments.includes(d));
+        if (!hasMatch) return false;
       }
 
       // 5. Lead Dropdown Filter

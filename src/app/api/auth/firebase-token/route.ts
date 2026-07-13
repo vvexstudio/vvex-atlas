@@ -55,6 +55,13 @@ export async function GET() {
 
     if (userSnapshot.exists()) {
       const userData = userSnapshot.val();
+      
+      // Enforce active offboarding gate (C2)
+      if (userData.active === false || userData.active === "FALSE") {
+        console.warn(`User ${email} is inactive. Denying token generation.`);
+        return NextResponse.json({ error: "Forbidden: Account is inactive" }, { status: 403 });
+      }
+
       role = userData.role || "guest";
       
       // Parse departments if defined

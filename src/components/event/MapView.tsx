@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { APIProvider, Map, AdvancedMarker, AdvancedMarkerAnchorPoint } from "@vis.gl/react-google-maps";
 import { Venue } from "@/types/festival";
+import mapStyles from "@/data/map-styles.json";
 
 interface MapViewProps {
   venues: Venue[];
@@ -35,6 +36,7 @@ export const MapView: React.FC<MapViewProps> = ({
             mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || "2f9f04bb8e9c458045b99a65"}
             disableDefaultUI={false}
             style={{ width: "100%", height: "100%" }}
+            styles={mapStyles}
           >
             {visibleMappableVenues.map((venue) => (
               <AdvancedMarker

@@ -157,4 +157,45 @@ describe("useFilters - event filtering semantics", () => {
     });
     expect(hookResult.filteredEvents).toHaveLength(0);
   });
+
+  it("should split and filter comma-separated departments correctly", () => {
+    const multiDeptEvents: FestivalEvent[] = [
+      {
+        id: "e3",
+        title: "Rigging Setup",
+        description: "Rigging lights on main stage",
+        startTime: "12:00",
+        endTime: "14:00",
+        day: "sun",
+        scheduleDate: "2026-08-23",
+        type: "performance",
+        hasLocation: true,
+        venueId: "forest",
+        locationName: "Forest",
+        department: "Lighting, Rigging, Production",
+        leadPointPerson: "Alice",
+        source: "schedule",
+        action: "Setup",
+        host: "Production",
+        thumbnailUrl: "",
+      }
+    ];
+
+    act(() => {
+      const root = createRoot(container!);
+      root.render(<TestWrapper events={multiDeptEvents} venues={mockVenues} />);
+    });
+
+    // Check dropdown options
+    expect(hookResult.departmentOptions).toContain("Lighting");
+    expect(hookResult.departmentOptions).toContain("Rigging");
+    expect(hookResult.departmentOptions).toContain("Production");
+
+    // Check filtering
+    act(() => {
+      hookResult.setSelectedDepartments(["Rigging"]);
+    });
+    expect(hookResult.filteredEvents).toHaveLength(1);
+    expect(hookResult.filteredEvents[0].id).toBe("e3");
+  });
 });

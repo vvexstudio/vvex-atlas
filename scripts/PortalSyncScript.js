@@ -82,16 +82,22 @@ function syncAllToFirebase() {
       // Find department key
       const deptKey = Object.keys(person).find(k => k.toLowerCase().includes("dept") || k.toLowerCase().includes("department"));
       const departmentsList = deptKey ? String(person[deptKey]).trim() : "";
+
+      // Find active status (defaulting to true if column is missing or blank)
+      const activeKey = Object.keys(person).find(k => k.toLowerCase().includes("active"));
+      const active = activeKey ? (person[activeKey] !== false && String(person[activeKey]).toUpperCase() !== "FALSE") : true;
       
       // Merge or create
       if (!authDirectory[escapedEmail]) {
         authDirectory[escapedEmail] = {
           role: role || "guest",
-          departments: parseCsvList(departmentsList)
+          departments: parseCsvList(departmentsList),
+          active: active
         };
       } else {
         if (role) authDirectory[escapedEmail].role = role;
         if (departmentsList) authDirectory[escapedEmail].departments = parseCsvList(departmentsList);
+        authDirectory[escapedEmail].active = active;
       }
     }
   });
@@ -107,6 +113,13 @@ function syncAllToFirebase() {
  * (Option B Operational Features)
  */
 function processOnboardingInvites(startRow) {
+  // Run offboarding removals first to sync inactive flags
+  try {
+    processOffboardingRemovals();
+  } catch (offboardingErr) {
+    Logger.log("Error during offboarding removals phase: " + offboardingErr);
+  }
+
   startRow = startRow || 2;
   const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID || SpreadsheetApp.getActiveSpreadsheet().getId());
   const sheet = ss.getSheetByName("Personnel");
@@ -236,16 +249,38 @@ function processOnboardingInvites(startRow) {
         // STEP 4: Send Onboarding Email (Idempotent)
         const step4Pattern = "email:ok";
         if (currentStatus.indexOf(step4Pattern) === -1) {
+          let htmlBody = "";
+          try {
+            // Load responsive HTML template pushed via clasp
+            const template = HtmlService.createHtmlOutputFromFile("email-templates/onboarding").getContent();
+            
+            // Build calendar subscription buttons
+            const calendarLinksHtml = depts.map(dept => {
+              const groupEmail = dept.toLowerCase().replace(/\s+/g, "-") + "@yourdomain.com";
+              const cid = encodeURIComponent(groupEmail);
+              const link = "https://calendar.google.com/calendar/render?cid=" + cid;
+              return `<p style="margin: 4px 0;"><a href="${link}" style="color: #bc5c2d; text-decoration: underline; font-weight: bold;">Subscribe to ${dept} Calendar</a></p>`;
+            }).join("");
+
+            htmlBody = template
+              .replace("{{name}}", email.split("@")[0])
+              .replace("{{departments}}", departmentsList)
+              .replace("{{calendar_links}}", calendarLinksHtml)
+              .replace("{{app_url}}", CONFIG.APP_URL || "https://your-domain.vercel.app");
+          } catch (templateErr) {
+            Logger.log("Could not load onboarding HTML template: " + templateErr + ". Falling back to plain text email.");
+            htmlBody = `
+              <h2>Welcome to The Portal!</h2>
+              <p>You have been onboarded to: <strong>${departmentsList}</strong>.</p>
+              <p>You can access the live map and schedule here: <a href="https://your-domain.vercel.app">Map Web App</a></p>
+            `;
+          }
+
           const subject = "Welcome to The Portal Map & Run of Show!";
-          const body = `
-            <h2>Welcome!</h2>
-            <p>You have been onboarded to the following departments: <strong>${departmentsList}</strong>.</p>
-            <p>You can access the live map and schedule here: <a href="https://your-domain.vercel.app">Map Web App</a></p>
-          `;
           executeWithRetry(() => MailApp.sendEmail({
             to: email,
             subject: subject,
-            htmlBody: body
+            htmlBody: htmlBody
           }));
           updateInviteProgress(sheet, rowNum, inviteStatusColIdx, step4Pattern);
         }
@@ -432,6 +467,65 @@ function resumeOnboarding() {
     props.deleteProperty("ONBOARDING_CURSOR");
     Logger.log("Resuming onboarding process from row: " + cursor);
     processOnboardingInvites(cursor);
+  }
+}
+
+/**
+ * Audit checks the Personnel sheet for active=false.
+ * Removes inactive members from all assigned Workspace groups.
+ */
+function processOffboardingRemovals() {
+  const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID || SpreadsheetApp.getActiveSpreadsheet().getId());
+  const sheet = ss.getSheetByName("Personnel");
+  if (!sheet) return;
+
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(h => String(h).trim().toLowerCase().replace(/\s+/g, "_"));
+  const emailColIdx = headers.indexOf("email") + 1;
+  const inviteStatusColIdx = headers.indexOf("invite_status") + 1;
+  const activeColIdx = headers.indexOf("active") + 1;
+  const deptColIdx = headers.indexOf("department") + 1;
+
+  if (!emailColIdx || !activeColIdx || !inviteStatusColIdx) {
+    Logger.log("Required offboarding columns (email, active, invite_status) not found.");
+    return;
+  }
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+
+  const dataRange = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn());
+  const values = dataRange.getValues();
+
+  for (let i = 0; i < values.length; i++) {
+    const rowNum = i + 2;
+    const row = values[i];
+    const email = row[emailColIdx - 1];
+    const active = row[activeColIdx - 1];
+    const departmentsList = row[deptColIdx - 1];
+    const status = String(row[inviteStatusColIdx - 1] || "");
+
+    // Run offboarding if marked active=false and not yet flagged as offboarded
+    if (active === false && email && status.indexOf("Offboarded") === -1) {
+      Logger.log("Processing offboarding for: " + email);
+      try {
+        const depts = parseCsvList(departmentsList);
+
+        depts.forEach(dept => {
+          const groupEmail = dept.toLowerCase().replace(/\s+/g, "-") + "@yourdomain.com";
+          try {
+            executeWithRetry(() => AdminDirectory.Members.remove(groupEmail, email));
+            Logger.log("Removed " + email + " from group: " + groupEmail);
+          } catch (removeErr) {
+            Logger.log("Could not remove " + email + " from group " + groupEmail + ": " + removeErr);
+          }
+        });
+
+        sheet.getRange(rowNum, inviteStatusColIdx).setValue("Offboarded on " + new Date().toISOString());
+      } catch (err) {
+        Logger.log("Failed offboarding for " + email + ": " + err);
+        sheet.getRange(rowNum, inviteStatusColIdx).setValue("Offboard failed: " + err.message);
+      }
+    }
   }
 }
 
