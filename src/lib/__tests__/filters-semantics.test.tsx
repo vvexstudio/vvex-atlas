@@ -52,7 +52,10 @@ describe("useFilters - event filtering semantics", () => {
   ];
 
   function TestWrapper({ events, venues }: { events: FestivalEvent[]; venues: Venue[] }) {
-    hookResult = useFilters({ events, venues, mapCenter: { lat: 0, lng: 0 } });
+    const res = useFilters({ events, venues, mapCenter: { lat: 0, lng: 0 } });
+    React.useEffect(() => {
+      hookResult = res;
+    });
     return null;
   }
 

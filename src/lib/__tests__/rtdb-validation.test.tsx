@@ -33,7 +33,10 @@ describe("useEventData hook RTDB robustness tests", () => {
   };
 
   function TestWrapper({ role }: { role: string | null }) {
-    hookResult = useEventData(role, initialData);
+    const res = useEventData(role, initialData);
+    React.useEffect(() => {
+      hookResult = res;
+    });
     return null;
   }
 
