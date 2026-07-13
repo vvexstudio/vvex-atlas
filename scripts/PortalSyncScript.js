@@ -39,6 +39,12 @@ function syncAllToFirebase() {
   writeToFirebase("crew-data/events", ros);
   writeToFirebase("crew-data/departments", departments);
   writeToFirebase("crew-data/personnel", personnel);
+  
+  // 3a. Write sync heartbeat
+  writeToFirebase("crew-data/metadata/heartbeat", {
+    last_sync: new Date().toISOString(),
+    rows: ros.length
+  });
 
   writeToFirebase("admin-data", data);
 
@@ -100,8 +106,9 @@ function syncAllToFirebase() {
  * Google Workspace Groups and onboarding sequence flow
  * (Option B Operational Features)
  */
-function processOnboardingInvites() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+function processOnboardingInvites(startRow) {
+  startRow = startRow || 2;
+  const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID || SpreadsheetApp.getActiveSpreadsheet().getId());
   const sheet = ss.getSheetByName("Personnel");
   if (!sheet) return;
 
@@ -118,18 +125,30 @@ function processOnboardingInvites() {
   }
 
   const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return;
+  if (lastRow < startRow) return;
 
-  const dataRange = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn());
+  const dataRange = sheet.getRange(startRow, 1, lastRow - startRow + 1, sheet.getLastColumn());
   const values = dataRange.getValues();
 
+  const startTime = Date.now();
+
   for (let i = 0; i < values.length; i++) {
-    const rowNum = i + 2;
+    const rowNum = i + startRow;
     const row = values[i];
     const email = row[emailColIdx - 1];
     const sendInvite = row[sendInviteColIdx - 1];
-    const role = row[roleColIdx - 1];
     const departmentsList = row[deptColIdx - 1];
+    const currentStatus = String(row[inviteStatusColIdx - 1] || "");
+
+    // Execution time limit check (4.5 minutes)
+    const elapsed = Date.now() - startTime;
+    if (elapsed > 4.5 * 60 * 1000) {
+      const props = PropertiesService.getScriptProperties();
+      props.setProperty("ONBOARDING_CURSOR", String(rowNum));
+      createResumeTrigger();
+      Logger.log("Onboarding time limit approaching (4.5m). Saved cursor at row " + rowNum + " and scheduled trigger.");
+      return;
+    }
 
     if (sendInvite === true && email) {
       Logger.log("Processing invite for: " + email);
@@ -139,57 +158,120 @@ function processOnboardingInvites() {
         depts.forEach(dept => {
           const groupEmail = dept.toLowerCase().replace(/\s+/g, "-") + "@yourdomain.com";
 
+          // STEP 1: Workspace Group (Idempotent)
           let group = null;
-          try {
-            group = AdminDirectory.Groups.get(groupEmail);
-          } catch (e) {
-            group = AdminDirectory.Groups.insert({
-              email: groupEmail,
-              name: dept + " Group",
-              description: "Automated group for " + dept
-            });
-            Utilities.sleep(5000); // Sleep for replication
-
-            const calendarId = "primary"; // placeholder
+          const step1Pattern = "group:" + groupEmail + ":ok";
+          if (currentStatus.indexOf(step1Pattern) === -1) {
             try {
-              Calendar.Acl.insert({
-                role: "reader",
-                scope: { type: "group", value: groupEmail }
-              }, calendarId);
-            } catch (calErr) {
-              Logger.log("Could not set calendar ACL for new group: " + calErr);
+              group = executeWithRetry(() => AdminDirectory.Groups.get(groupEmail));
+            } catch (e) {
+              group = executeWithRetry(() => AdminDirectory.Groups.insert({
+                email: groupEmail,
+                name: dept + " Group",
+                description: "Automated group for " + dept
+              }));
+              Utilities.sleep(5000); // Sleep for replication only after creation
             }
+            updateInviteProgress(sheet, rowNum, inviteStatusColIdx, step1Pattern);
           }
 
-          try {
-            AdminDirectory.Members.insert({
-              email: email,
-              role: "MEMBER"
-            }, groupEmail);
-          } catch (memberErr) {
-            Logger.log("Could not add user to group: " + memberErr);
+          // STEP 2: Calendar ACL (Idempotent)
+          const calendarId = "primary"; // placeholder
+          const step2Pattern = "cal:" + groupEmail + ":ok";
+          if (currentStatus.indexOf(step2Pattern) === -1) {
+            let aclExists = false;
+            try {
+              const aclList = executeWithRetry(() => Calendar.Acl.list(calendarId));
+              if (aclList && aclList.items) {
+                for (let j = 0; j < aclList.items.length; j++) {
+                  const rule = aclList.items[j];
+                  if (rule.scope && rule.scope.type === "group" && rule.scope.value === groupEmail) {
+                    aclExists = true;
+                    break;
+                  }
+                }
+              }
+            } catch (aclListErr) {
+              Logger.log("Could not check calendar ACL list: " + aclListErr);
+            }
+
+            if (!aclExists) {
+              try {
+                executeWithRetry(() => Calendar.Acl.insert({
+                  role: "reader",
+                  scope: { type: "group", value: groupEmail }
+                }, calendarId));
+              } catch (calErr) {
+                Logger.log("Could not set calendar ACL for group: " + calErr);
+              }
+            }
+            updateInviteProgress(sheet, rowNum, inviteStatusColIdx, step2Pattern);
+          }
+
+          // STEP 3: Member Addition (Idempotent)
+          const step3Pattern = "member:" + groupEmail + ":ok";
+          if (currentStatus.indexOf(step3Pattern) === -1) {
+            let isMember = false;
+            try {
+              const checkResult = executeWithRetry(() => AdminDirectory.Members.hasMember(groupEmail, email));
+              isMember = checkResult.isMember;
+            } catch (e) {
+              // If check fails, member is likely not present
+            }
+
+            if (!isMember) {
+              try {
+                executeWithRetry(() => AdminDirectory.Members.insert({
+                  email: email,
+                  role: "MEMBER"
+                }, groupEmail));
+              } catch (memberErr) {
+                Logger.log("Could not add user to group: " + memberErr);
+              }
+            }
+            updateInviteProgress(sheet, rowNum, inviteStatusColIdx, step3Pattern);
           }
         });
 
-        const subject = "Welcome to The Portal Map & Run of Show!";
-        const body = `
-          <h2>Welcome!</h2>
-          <p>You have been onboarded to the following departments: <strong>${departmentsList}</strong>.</p>
-          <p>You can access the live map and schedule here: <a href="https://your-domain.vercel.app">Map Web App</a></p>
-        `;
-        MailApp.sendEmail({
-          to: email,
-          subject: subject,
-          htmlBody: body
-        });
+        // STEP 4: Send Onboarding Email (Idempotent)
+        const step4Pattern = "email:ok";
+        if (currentStatus.indexOf(step4Pattern) === -1) {
+          const subject = "Welcome to The Portal Map & Run of Show!";
+          const body = `
+            <h2>Welcome!</h2>
+            <p>You have been onboarded to the following departments: <strong>${departmentsList}</strong>.</p>
+            <p>You can access the live map and schedule here: <a href="https://your-domain.vercel.app">Map Web App</a></p>
+          `;
+          executeWithRetry(() => MailApp.sendEmail({
+            to: email,
+            subject: subject,
+            htmlBody: body
+          }));
+          updateInviteProgress(sheet, rowNum, inviteStatusColIdx, step4Pattern);
+        }
 
+        // Complete Onboarding
         sheet.getRange(rowNum, inviteStatusColIdx).setValue("Onboarded on " + new Date().toISOString());
         sheet.getRange(rowNum, sendInviteColIdx).setValue(false);
       } catch (err) {
         Logger.log("Failed to process invite for " + email + ": " + err);
-        sheet.getRange(rowNum, inviteStatusColIdx).setValue("Failed: " + err.message);
+        const cell = sheet.getRange(rowNum, inviteStatusColIdx);
+        const currentVal = String(cell.getValue() || "");
+        cell.setValue(currentVal + (currentVal ? "; " : "") + "failed: " + err.message);
       }
     }
+  }
+}
+
+/**
+ * Appends a step status pattern to the invite_status cell.
+ */
+function updateInviteProgress(sheet, rowNum, colIdx, statusPattern) {
+  const cell = sheet.getRange(rowNum, colIdx);
+  const val = String(cell.getValue() || "");
+  if (val.indexOf(statusPattern) === -1) {
+    const newVal = val ? val + "; " + statusPattern : statusPattern;
+    cell.setValue(newVal);
   }
 }
 
@@ -212,6 +294,7 @@ function readSheetToJson(sheet) {
   }
   return rows;
 }
+
 function getFirebaseAccessToken() {
   const props = PropertiesService.getScriptProperties();
   const clientEmail = props.getProperty("SA_CLIENT_EMAIL");
@@ -297,3 +380,58 @@ function testPersonnelData() {
     Logger.log("First row data: " + JSON.stringify(data[0]));
   }
 }
+
+/**
+ * Helper to execute an API call with exponential backoff.
+ * Retries up to 3 times on 403 Rate Limit or 5xx Server errors.
+ */
+function executeWithRetry(apiCall) {
+  const attempts = 3;
+  const delays = [2000, 4000, 8000];
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return apiCall();
+    } catch (e) {
+      const msg = e.message || String(e);
+      const isRetryable = msg.indexOf("403") !== -1 || msg.indexOf("50") !== -1 || msg.indexOf("rateLimit") !== -1 || msg.indexOf("User Rate Limit Exceeded") !== -1;
+      if (isRetryable && i < attempts - 1) {
+        Logger.log("Temporary error encountered: " + msg + ". Retrying in " + delays[i] + "ms...");
+        Utilities.sleep(delays[i]);
+      } else {
+        throw e;
+      }
+    }
+  }
+}
+
+/**
+ * Creates a one-shot time trigger to resume onboarding execution.
+ * Deletes any existing resume triggers first to prevent accumulation.
+ */
+function createResumeTrigger() {
+  const triggers = ScriptApp.getProjectTriggers();
+  for (let i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === "resumeOnboarding") {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  ScriptApp.newTrigger("resumeOnboarding")
+    .timeBased()
+    .after(60 * 1000)
+    .create();
+}
+
+/**
+ * Entry point for script trigger to resume onboarding from the saved cursor.
+ */
+function resumeOnboarding() {
+  const props = PropertiesService.getScriptProperties();
+  const cursorStr = props.getProperty("ONBOARDING_CURSOR");
+  if (cursorStr) {
+    const cursor = parseInt(cursorStr, 10);
+    props.deleteProperty("ONBOARDING_CURSOR");
+    Logger.log("Resuming onboarding process from row: " + cursor);
+    processOnboardingInvites(cursor);
+  }
+}
+
