@@ -127,7 +127,7 @@ Goal: keep the way the client already works (the `ROS by TIME` columns are the b
 - [x] Document the schema + "how to give us production data" guide.
 
 ### M3 — Option B operational (PLUS features, pitched + staged)
-- [/] Role-based auth (admin / lead / vendor / guest) replacing the single shared cookie (OAuth credentials configured, fixing redirect logic for reverse proxy / dev envs).
+- [x] Role-based auth (admin / lead / vendor / guest) replacing the single shared cookie (OAuth credentials configured, fixing redirect logic for reverse proxy / dev envs).
 - [ ] Admin dashboard to scope what each role sees (`Roles` tab → runtime filter).
 - [ ] Row-level `visibility` + FOH/BOH gating in the map/schedule.
 - [ ] Contacts Directory + personal view.
@@ -184,6 +184,7 @@ Tracked here so we know what to stand up vs. what the client owns. Env var names
 ## 10. Session Log
 > Append newest at top. Format: `YYYY-MM-DD — who — what changed / decided / discovered`.
 
+- **2026-07-13 — agent** — Securely wired the Google Apps Script synchronization to Firebase using Google Service Account OAuth 2.0 token flow (removing legacy database secrets). Enhanced the sync logic to merge the 'Approved Emails' tab (as default guests) with the 'Personnel' tab (roles and departments) into the Firebase 'auth-directory' node, making all column name lookups case-insensitive and robust. Verified successful real-time population of 'auth-directory' in the Firebase Console.
 - **2026-07-10 — agent** — Completed Sprint 1 Team A (Decompose Main Component). Extracted UI components (EventModal, FilterBar, MapView, ScheduleGrid, RunningSchedule, CalendarView) and custom React hooks (useFilters, useEventData, useAuthProfile). Renamed main client entry from festival-map-app.tsx to EventApp.tsx, and updated page.tsx references. Cleaned up all unused imports, variables, and type warnings. Verified successful production build and linting.
 - **2026-07-09 — agent** — Hardened .gitignore (added client_secret.json and *service-account*.json) and conducted a git history audit for client_secret.json (confirmed no occurrences in history). Marked S0.1, S0.2, and S0.3 tasks as completed in playbooks.
 - **2026-07-09 — agent** — Reconciled local repository: reset frontend-ui branch to origin/frontend-ui, checked out main and fast-forwarded main to origin/main. Recreated missing Firebase integration files (firebase-admin.ts, firebase-client.ts, api/auth/firebase-token/route.ts, database.rules.json, PortalSyncScript.js) which were omitted in the remote merge. Fixed all modular import/type errors. Verified production build builds cleanly. Committed recreated files to local main branch.
