@@ -26,7 +26,23 @@ describe("useEventData hook RTDB robustness tests", () => {
   let hookResult: any = null;
 
   const initialData = {
-    venues: [{ id: "v1", name: "Initial Venue", label: "Location", mapLabel: "v1", x: 0, y: 0, lat: 10, lng: 10, hasLocation: true }],
+    venues: [
+      {
+        id: "v1",
+        name: "Initial Venue",
+        label: "Location",
+        mapLabel: "v1",
+        x: 0,
+        y: 0,
+        lat: 10,
+        lng: 10,
+        hasLocation: true,
+        shortDescription: "Initial Venue",
+        description: "Initial Venue",
+        thumbnailUrl: "",
+        accent: "#6b7280",
+      },
+    ],
     events: [],
     personnel: [],
     departments: [],
@@ -77,7 +93,23 @@ describe("useEventData hook RTDB robustness tests", () => {
       mockOnValueCallback({
         exists: () => true,
         val: () => ({
-          venues: [{ id: "v2", name: "Updated Venue", label: "Location", mapLabel: "v2", x: 0, y: 0, lat: 20, lng: 20, hasLocation: true }],
+          venues: [
+            {
+              id: "v2",
+              name: "Updated Venue",
+              label: "Location",
+              mapLabel: "v2",
+              x: 0,
+              y: 0,
+              lat: 20,
+              lng: 20,
+              hasLocation: true,
+              shortDescription: "Updated Venue",
+              description: "Updated Venue",
+              thumbnailUrl: "",
+              accent: "#6b7280",
+            },
+          ],
           events: [],
           personnel: [],
           departments: [],

@@ -26,6 +26,8 @@ describe("useFilters - event filtering semantics", () => {
       leadPointPerson: "Alice",
       source: "schedule",
       action: "Show",
+      host: "Production",
+      thumbnailUrl: "",
     },
     {
       id: "e2",
@@ -43,12 +45,42 @@ describe("useFilters - event filtering semantics", () => {
       leadPointPerson: "Bob",
       source: "schedule",
       action: "Setup",
+      host: "Catering",
+      thumbnailUrl: "",
     },
   ];
 
   const mockVenues: Venue[] = [
-    { id: "forest", name: "Forest", label: "Location", mapLabel: "Forest", x: 0, y: 0, lat: 43, lng: 11, hasLocation: true },
-    { id: "catering-area", name: "Catering Area", label: "Location", mapLabel: "Catering Area", x: 0, y: 0, lat: 43, lng: 11, hasLocation: true },
+    {
+      id: "forest",
+      name: "Forest",
+      label: "Location",
+      mapLabel: "Forest",
+      x: 0,
+      y: 0,
+      lat: 43,
+      lng: 11,
+      hasLocation: true,
+      shortDescription: "Forest area",
+      description: "Forest area",
+      thumbnailUrl: "",
+      accent: "#6b7280",
+    },
+    {
+      id: "catering-area",
+      name: "Catering Area",
+      label: "Location",
+      mapLabel: "Catering Area",
+      x: 0,
+      y: 0,
+      lat: 43,
+      lng: 11,
+      hasLocation: true,
+      shortDescription: "Catering area",
+      description: "Catering area",
+      thumbnailUrl: "",
+      accent: "#6b7280",
+    },
   ];
 
   function TestWrapper({ events, venues }: { events: FestivalEvent[]; venues: Venue[] }) {
