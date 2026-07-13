@@ -226,26 +226,26 @@ Then run the sprint smoke test on `main`:
 
 ### Team A — WP-6 Data-health panel + comma-separated departments (branch `sprint2/team-a-health-panel`)
 
-- [ ] A1. **Comma-separated department parsing in the UI.** In `useEventData`/`useFilters` + `FilterBar`, treat `department` and `role` as arrays (split on comma, trim). A person in `Lighting, Rigging` must appear under both filters; profile matching must match any of the user's departments. Add the parsing helper to wherever Team B's Sprint 1 tests import from, so existing tests cover it. **⛳ COMMIT:** `feat: support multi-department membership in filters and profiles`
-- [ ] A2. **Data-health admin panel** (admin role only), showing: active data path (RTDB / Sheets API / CSV fallback — read from the `DataProvider`-ish selection logic in `useEventData`), heartbeat age from `metadata/heartbeat` with red state when older than 2× the sync interval, row counts per tab, unmapped-location list, pending/failed `invite_status` summary. **⛳ COMMIT:** `feat: add data-health admin panel`
-- [ ] A3. **Move admin pin entries to RTDB** under `admin-data/` (replacing the local-JSON persistence that dies on Cloud Run). Requires a narrow authenticated write path — coordinate via `sprintboard.md` with Team C who owns `database.rules.json`: rule = `admin-data/entries` writable when `auth.token.role === 'admin'`. **⛳ COMMIT:** `feat: persist admin entries to realtime database`
+- [x] A1. **Comma-separated department parsing in the UI.** In `useEventData`/`useFilters` + `FilterBar`, treat `department` and `role` as arrays (split on comma, trim). A person in `Lighting, Rigging` must appear under both filters; profile matching must match any of the user's departments. Add the parsing helper to wherever Team B's Sprint 1 tests import from, so existing tests cover it. **⛳ COMMIT:** `feat: support multi-department membership in filters and profiles`
+- [x] A2. **Data-health admin panel** (admin role only), showing: active data path (RTDB / Sheets API / CSV fallback — read from the `DataProvider`-ish selection logic in `useEventData`), heartbeat age from `metadata/heartbeat` with red state when older than 2× the sync interval, row counts per tab, unmapped-location list, pending/failed `invite_status` summary. **⛳ COMMIT:** `feat: add data-health admin panel`
+- [x] A3. **Move admin pin entries to RTDB** under `admin-data/` (replacing the local-JSON persistence that dies on Cloud Run). Requires a narrow authenticated write path — coordinate via `sprintboard.md` with Team C who owns `database.rules.json`: rule = `admin-data/entries` writable when `auth.token.role === 'admin'`. **⛳ COMMIT:** `feat: persist admin entries to realtime database`
 
 **Benchmark:** with the Apps Script trigger disabled, the panel turns red within one heartbeat interval; re-enabling turns it green without reload.
 
 ### Team B — WP-11 Theming tokens + print (branch `sprint2/team-b-theming`)
 
-- [ ] B1. Extract every hard-coded color/font/radius/spacing in the app into CSS variables in one theme file; wire the existing dark/light toggle through the tokens; add a styled-Google-Maps JSON slot in the map config. **⛳ COMMIT:** `refactor: extract theme tokens to css variables`
-- [ ] B2. Branded onboarding-email HTML template in `scripts/email-templates/onboarding.html` using the same token values (inline styles — email clients ignore stylesheets); placeholders `{{name}}`, `{{departments}}`, `{{calendar_links}}`, `{{app_url}}`. Team C wires it in Sprint 2 C3. **⛳ COMMIT:** `feat: add branded onboarding email template`
-- [ ] B3. Print stylesheet: `@media print` — one day per page, schedule only, no map/nav/chrome. **⛳ COMMIT:** `feat: add print stylesheet`
+- [x] B1. Extract every hard-coded color/font/radius/spacing in the app into CSS variables in one theme file; wire the existing dark/light toggle through the tokens; add a styled-Google-Maps JSON slot in the map config. **⛳ COMMIT:** `refactor: extract theme tokens to css variables`
+- [x] B2. Branded onboarding-email HTML template in `scripts/email-templates/onboarding.html` using the same token values (inline styles — email clients ignore stylesheets); placeholders `{{name}}`, `{{departments}}`, `{{calendar_links}}`, `{{app_url}}`. Team C wires it in Sprint 2 C3. **⛳ COMMIT:** `feat: add branded onboarding email template`
+- [x] B3. Print stylesheet: `@media print` — one day per page, schedule only, no map/nav/chrome. **⛳ COMMIT:** `feat: add print stylesheet`
 
 **Benchmark:** changing one token file visibly rebrands the app and the email template; print preview of a filtered day is clean on A4 and US Letter.
 
 ### Team C — WP-5 Offboarding (branch `sprint2/team-c-offboarding`)
 
-- [ ] C1. Script: when Personnel `active` is unchecked (or an `offboard` checkbox is checked — match whatever column H3 created), remove the member from all department groups via `AdminDirectory.Members.remove` (group-bound calendar access revokes automatically), append an audit line to `invite_status` with timestamp, idempotent (already-removed = success). **⛳ COMMIT:** `feat: add offboarding removal flow`
-- [ ] C2. Token route: `firebase-token` mint must consult the personnel data's `active` flag — inactive users get no role claims (or are denied). **⛳ COMMIT:** `feat: deny role claims to inactive personnel`
-- [ ] C3. Wire Team B's email template into the onboarding send (replace default HTML); load template text via clasp-pushed file or inline constant generated from it. **⛳ COMMIT:** `feat: use branded onboarding email template`
-- [ ] C4. Document the full "person leaves" runbook in `implementation-strategies/offboarding-runbook.md`: sheet flag → groups removed → calendar gone → app token denied → audit trail. **⛳ COMMIT:** `docs: add offboarding runbook`
+- [x] C1. Script: when Personnel `active` is unchecked (or an `offboard` checkbox is checked — match whatever column H3 created), remove the member from all department groups via `AdminDirectory.Members.remove` (group-bound calendar access revokes automatically), append an audit line to `invite_status` with timestamp, idempotent (already-removed = success). **⛳ COMMIT:** `feat: add offboarding removal flow`
+- [x] C2. Token route: `firebase-token` mint must consult the personnel data's `active` flag — inactive users get no role claims (or are denied). **⛳ COMMIT:** `feat: deny role claims to inactive personnel`
+- [x] C3. Wire Team B's email template into the onboarding send (replace default HTML); load template text via clasp-pushed file or inline constant generated from it. **⛳ COMMIT:** `feat: use branded onboarding email template`
+- [x] C4. Document the full "person leaves" runbook in `implementation-strategies/offboarding-runbook.md`: sheet flag → groups removed → calendar gone → app token denied → audit trail. **⛳ COMMIT:** `docs: add offboarding runbook`
 
 **Benchmark:** the GDPR-relevant path is one checkbox and fully audited.
 
