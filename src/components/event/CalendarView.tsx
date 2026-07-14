@@ -21,6 +21,9 @@ interface CalendarViewProps {
   setModalEvent: (event: FestivalEvent) => void;
   departments: Department[];
   getColorStyle: (category: "Location" | "Action" | "Department" | "Personnel", value: string | undefined) => React.CSSProperties;
+  currentTime: Date | null;
+  effectiveDateStr: string;
+  highlightedEventId: string | null;
 }
 
 const DEPARTMENT_ICONS: Record<string, string> = {
@@ -110,6 +113,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   setModalEvent,
   departments,
   getColorStyle,
+  currentTime,
+  effectiveDateStr,
+  highlightedEventId,
 }) => {
   const [activeTbdDropdown, setActiveTbdDropdown] = useState<{ day: string; colKey: string } | null>(null);
 
@@ -136,6 +142,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           ) : (
             groupedEventsByDate.map((dateGroup) => {
               const activeHours = hideEmptyHours ? getActiveHoursForDay(dateGroup.events) : hoursArray;
+              
+              const currentMinutes = currentTime ? currentTime.getHours() * 60 + currentTime.getMinutes() : -1;
+              const isToday = dateGroup.date === effectiveDateStr;
+              const activeCurrent = isToday && currentMinutes !== -1 && hideEmptyHours
+                ? getActiveMinuteOffset(currentMinutes, activeHours)
+                : currentMinutes;
+              const lineTop = (activeCurrent / 60) * hourHeightScale;
               
               const displayDeptsForDay = hideEmptyHours
                 ? activeDepartments.filter(dept =>
@@ -470,7 +483,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                               return (
                                 <div
                                   key={`card-dept-${event.id}`}
-                                  className={`calendar-event-card ${isHighlighted ? "highlighted" : ""} ${searchQuery.trim() !== "" && !isHighlighted ? "dimmed" : ""}`}
+                                  id={`event-card-dept-${event.id}`}
+                                  className={`calendar-event-card ${isHighlighted ? "highlighted" : ""} ${searchQuery.trim() !== "" && !isHighlighted ? "dimmed" : ""} ${highlightedEventId === event.id ? "highlight-active" : ""}`}
                                   style={cardStyle}
                                   onClick={() => setModalEvent(event)}
                                 >
@@ -529,12 +543,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                               };
 
                               return (
-                                <div
-                                  key={`card-loc-${event.id}`}
-                                  className={`calendar-event-card ${isHighlighted ? "highlighted" : ""} ${searchQuery.trim() !== "" && !isHighlighted ? "dimmed" : ""}`}
-                                  style={cardStyle}
-                                  onClick={() => setModalEvent(event)}
-                                >
+                                 <div
+                                   key={`card-loc-${event.id}`}
+                                   id={`event-card-loc-${event.id}`}
+                                   className={`calendar-event-card ${isHighlighted ? "highlighted" : ""} ${searchQuery.trim() !== "" && !isHighlighted ? "dimmed" : ""} ${highlightedEventId === event.id ? "highlight-active" : ""}`}
+                                   style={cardStyle}
+                                   onClick={() => setModalEvent(event)}
+                                 >
                                   <div className="card-inner">
                                     <div className="event-card-time">
                                       {event.startTime} – {event.endTime}
@@ -552,6 +567,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         );
                       })}
                     </div>
+                    {isToday && activeCurrent >= 0 && activeCurrent <= activeHours.length * 60 && (
+                      <div
+                        className="calendar-live-time-line"
+                        style={{ top: `${lineTop}px` }}
+                      >
+                        <span className="live-line-dot"></span>
+                        <span className="live-line-label">
+                          {currentTime!.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               );

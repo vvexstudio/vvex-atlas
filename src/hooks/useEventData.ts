@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { ref, onValue } from "firebase/database";
 import { clientDb } from "@/lib/firebase-client";
 import { Venue, FestivalEvent, Department } from "@/types/festival";
+import { saveOfflineSnapshot, loadOfflineSnapshot } from "@/lib/offline-cache";
 
 interface InitialData {
   venues: Venue[];
@@ -17,9 +18,53 @@ export const useEventData = (role: string | null, initialData: InitialData) => {
   const [personnel, setPersonnel] = useState<unknown[]>(initialData.personnel || []);
   const [departments, setDepartments] = useState<Department[]>(initialData.departments || []);
   const [sourceLabel, setSourceLabel] = useState(initialData.dataSourceLabel || "Static Init");
+  const [isOffline, setIsOffline] = useState(false);
+  const [lastSynced, setLastSynced] = useState<string | null>(null);
+
+  // Monitor online/offline status and hydrate cache if offline
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleOffline = () => {
+      setIsOffline(true);
+      const cached = loadOfflineSnapshot();
+      if (cached) {
+        setVenues(cached.venues);
+        setEvents(cached.events);
+        setPersonnel(cached.personnel);
+        setDepartments(cached.departments);
+        const timeStr = new Date(cached.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        setSourceLabel(`Offline Cache (Synced ${timeStr})`);
+        setLastSynced(cached.timestamp);
+      }
+    };
+
+    const handleOnline = () => {
+      setIsOffline(false);
+    };
+
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
+
+    // Initial check
+    if (!navigator.onLine) {
+      handleOffline();
+    }
+
+    return () => {
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
+    };
+  }, []);
 
   useEffect(() => {
     const db = clientDb;
+    
+    // If offline, do not attempt to listen to RTDB (keep cached state)
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      return;
+    }
+
     if (!db || !role) {
       console.log("Firebase DB or user role is unavailable. Using local/static data.");
       return;
@@ -29,23 +74,50 @@ export const useEventData = (role: string | null, initialData: InitialData) => {
     const dbRef = ref(db, nodePath);
     
     console.log(`Establishing real-time listener on path: /${nodePath}`);
-    const unsubscribe = onValue(dbRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        console.log(`Realtime update received for path: /${nodePath}`);
-        if (data.venues) setVenues(data.venues);
-        if (data.events) setEvents(data.events);
-        if (data.personnel) setPersonnel(data.personnel);
-        if (data.departments) setDepartments(data.departments);
-        setSourceLabel(`Firebase RTD Live (${role.toUpperCase()})`);
+    const unsubscribe = onValue(
+      dbRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          console.log(`Realtime update received for path: /${nodePath}`);
+          
+          const newVenues = data.venues || [];
+          const newEvents = data.events || [];
+          const newPersonnel = data.personnel || [];
+          const newDepartments = data.departments || [];
+
+          setVenues(newVenues);
+          setEvents(newEvents);
+          setPersonnel(newPersonnel);
+          setDepartments(newDepartments);
+          setSourceLabel(`Firebase RTD Live (${role.toUpperCase()})`);
+          
+          // Cache snapshot locally for offline fallback
+          saveOfflineSnapshot(newVenues, newEvents, newPersonnel, newDepartments);
+          setLastSynced(new Date().toISOString());
+        }
+      },
+      (error) => {
+        console.warn("RTDB read failed, falling back to cache if available:", error);
+        // Fallback to cache on DB error
+        const cached = loadOfflineSnapshot();
+        if (cached) {
+          setVenues(cached.venues);
+          setEvents(cached.events);
+          setPersonnel(cached.personnel);
+          setDepartments(cached.departments);
+          const timeStr = new Date(cached.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+          setSourceLabel(`Offline Cache (Fallback, Synced ${timeStr})`);
+          setLastSynced(cached.timestamp);
+        }
       }
-    });
+    );
 
     return () => {
       unsubscribe();
       console.log(`Unsubscribed from path: /${nodePath}`);
     };
-  }, [role]);
+  }, [role, isOffline]);
 
-  return { venues, events, personnel, departments, sourceLabel };
+  return { venues, events, personnel, departments, sourceLabel, isOffline, lastSynced };
 };

@@ -4,6 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "The Portal Map App",
   description: "Interactive MARTIANS map and run-of-show app for The Portal.",
+  manifest: "/manifest.json",
   icons: {
     icon: "/icon.png",
     shortcut: "/icon.png",

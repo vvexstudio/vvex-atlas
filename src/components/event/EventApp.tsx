@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { Venue, FestivalEvent, Department } from "@/types/festival";
 import sheetColors from "@/data/sheet-colors.json";
@@ -13,6 +13,12 @@ import { CalendarView } from "./CalendarView";
 import { useAuthProfile } from "@/hooks/useAuthProfile";
 import { useEventData } from "@/hooks/useEventData";
 import { useFilters } from "@/hooks/useFilters";
+
+import { useStarredEvents } from "@/hooks/useStarredEvents";
+import { NowNext } from "./NowNext";
+import { Toasts, ToastMessage } from "./Toasts";
+import { parseUrlParams, buildUrlQuery, UrlState } from "@/lib/url-state";
+import { Legend } from "./Legend";
 
 const MAP_CENTER = { lat: 40.7864, lng: -119.2065 }; // Default Playa (BRC) coordinates
 const MAP_DEFAULT_ZOOM = 13;
@@ -102,13 +108,120 @@ export function EventApp({
   const { userSession, role } = useAuthProfile(initialUserSession);
 
   // 2. Event Data Hook
-  const { venues, events, personnel, departments, sourceLabel } = useEventData(role, {
+  const { venues, events, personnel, departments, sourceLabel, isOffline, lastSynced } = useEventData(role, {
     venues: initialVenues,
     events: initialEvents,
     personnel: initialPersonnel,
     departments: initialDepartments,
     dataSourceLabel,
   });
+
+  // 2b. Starred Personal Agenda Hook
+  const { starredIds, toggleStar, isStarred } = useStarredEvents(userSession?.email);
+
+  // 2c. Custom States for Day-of-Show and Linkage
+  const [isMyScheduleOnly, setIsMyScheduleOnly] = useState(false);
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [focusedVenueId, setFocusedVenueId] = useState<string | null>(null);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [activeCategories, setActiveCategories] = useState<string[]>([]);
+  const prevEventsRef = useRef<FestivalEvent[]>([]);
+
+  // 2d. Live Ticker / Clock / Simulated Time states
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
+  const [isTimeSimulated, setIsTimeSimulated] = useState(false);
+  const [effectiveDateStr, setEffectiveDateStr] = useState("");
+
+  const getEffectiveTime = (evtList: FestivalEvent[]) => {
+    const now = new Date();
+    const eventDates = evtList.map(e => e.scheduleDate).filter(Boolean) as string[];
+    if (eventDates.length === 0) return { time: now, isSimulated: false, dateStr: "" };
+
+    const sortedDates = [...new Set(eventDates)].sort();
+    const startDateStr = sortedDates[0];
+    const endDateStr = sortedDates[sortedDates.length - 1];
+
+    const start = new Date(`${startDateStr}T00:00:00`);
+    const end = new Date(`${endDateStr}T23:59:59`);
+
+    if (now >= start && now <= end) {
+      return { time: now, isSimulated: false, dateStr: now.toISOString().split("T")[0] };
+    }
+
+    // Fall back to simulated time: first day of event, keeping current HH:MM:SS
+    const simulatedTime = new Date(now);
+    const [y, m, d] = startDateStr.split("-").map(Number);
+    simulatedTime.setFullYear(y, m - 1, d);
+    return { time: simulatedTime, isSimulated: true, dateStr: startDateStr };
+  };
+
+  useEffect(() => {
+    if (events.length === 0) return;
+
+    const updateClock = () => {
+      const { time, isSimulated, dateStr } = getEffectiveTime(events);
+      setCurrentTime(time);
+      setIsTimeSimulated(isSimulated);
+      setEffectiveDateStr(dateStr);
+    };
+
+    updateClock();
+    const timer = setInterval(updateClock, 60000);
+    return () => clearInterval(timer);
+  }, [events]);
+
+  // Toast adder helper
+  const addToast = (title: string, message: string, type: "info" | "warning" | "success" = "info") => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setToasts(prev => [...prev, { id, title, message, type, timestamp: new Date() }]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  // Diff successive snapshots to trigger toasts
+  useEffect(() => {
+    if (events.length === 0) return;
+
+    if (prevEventsRef.current.length === 0) {
+      prevEventsRef.current = events;
+      return;
+    }
+
+    const prevEvents = prevEventsRef.current;
+    events.forEach((curr) => {
+      const prev = prevEvents.find((p) => p.id === curr.id);
+      if (!prev) return;
+
+      const timeChanged = prev.startTime !== curr.startTime || prev.endTime !== curr.endTime;
+      const locChanged = prev.locationName !== curr.locationName;
+      const dateChanged = prev.scheduleDate !== curr.scheduleDate;
+
+      if (timeChanged || locChanged || dateChanged) {
+        let msg = "";
+        if (dateChanged) msg += `Date: ${curr.scheduleDate} (was ${prev.scheduleDate}) `;
+        if (timeChanged) msg += `Time: ${curr.startTime}-${curr.endTime} (was ${prev.startTime}-${prev.endTime}) `;
+        if (locChanged) msg += `Location: ${curr.locationName || "TBD"} (was ${prev.locationName || "TBD"}) `;
+        addToast("Event Updated", `"${curr.title}" updated: ${msg.trim()}`, "warning");
+      }
+    });
+
+    prevEventsRef.current = events;
+  }, [events]);
+
+  // Extract unique categories from venues
+  const categoriesList = useMemo(() => {
+    return Array.from(new Set(venues.map(v => v.permanence).filter((p): p is string => !!p))).sort();
+  }, [venues]);
+
+  // 2e. Filter events by Personal Agenda if toggled
+  const activeEventList = useMemo(() => {
+    if (isMyScheduleOnly) {
+      return events.filter(e => starredIds.includes(e.id));
+    }
+    return events;
+  }, [events, isMyScheduleOnly, starredIds]);
 
   // 3. Filters Hook
   const {
@@ -140,7 +253,7 @@ export function EventApp({
     calendarEventPlacements,
     activeFiltersCount,
   } = useFilters({
-    events,
+    events: activeEventList,
     venues,
     mapCenter: MAP_CENTER,
   });
@@ -169,7 +282,24 @@ export function EventApp({
     return {};
   };
   // Tabs & Layout States
-  const [mainTab, setMainTab] = useState<"schedule" | "calendar" | "map">("schedule");
+  const [mainTab, setMainTab] = useState<"now-next" | "schedule" | "calendar" | "map">("schedule");
+  const [highlightedEventId, setHighlightedEventId] = useState<string | null>(null);
+  const isProgrammaticScrollRef = useRef(false);
+  const programmaticScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const handleScrollCapture = () => {
+      if (isProgrammaticScrollRef.current) return;
+      if (highlightedEventId) {
+        setHighlightedEventId(null);
+      }
+    };
+    window.addEventListener("scroll", handleScrollCapture, true);
+    return () => {
+      window.removeEventListener("scroll", handleScrollCapture, true);
+    };
+  }, [highlightedEventId]);
+
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [columnWidthScale, setColumnWidthScale] = useState<number>(180);
   const [hourHeightScale, setHourHeightScale] = useState<number>(60);
@@ -184,6 +314,89 @@ export function EventApp({
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [isMobileScheduleOpen, setIsMobileScheduleOpen] = useState(false);
+
+  // Register PWA Service Worker
+  useEffect(() => {
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js").then(
+          (reg) => console.log("ServiceWorker registered with scope: ", reg.scope),
+          (err) => console.error("ServiceWorker registration failed: ", err)
+        );
+      });
+    }
+  }, []);
+
+  // URL state synchronization
+  const [urlInitialized, setUrlInitialized] = useState(false);
+
+  // Restore state from URL on client mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const state = parseUrlParams(params);
+
+    setTimeout(() => {
+      if (state.view && ["now-next", "schedule", "calendar", "map"].includes(state.view)) {
+        setMainTab(state.view as any);
+      }
+      if (state.day) {
+        setSelectedDay(state.day);
+      }
+      if (state.eventId) {
+        const found = initialEvents.find(e => e.id === state.eventId);
+        if (found) setModalEvent(found);
+      }
+      if (state.query) setSearchQuery(state.query);
+      if (state.locations && state.locations.length > 0) setSelectedLocations(state.locations);
+      if (state.actions && state.actions.length > 0) setSelectedActions(state.actions);
+      if (state.departments && state.departments.length > 0) setSelectedDepartments(state.departments);
+      if (state.leads && state.leads.length > 0) setSelectedLeads(state.leads);
+      if (state.mySchedule) setIsMyScheduleOnly(true);
+
+      setUrlInitialized(true);
+    }, 0);
+  }, [initialEvents, setSearchQuery, setSelectedLocations, setSelectedActions, setSelectedDepartments, setSelectedLeads]);
+
+  // Save changes back to URL params
+  useEffect(() => {
+    if (!urlInitialized || typeof window === "undefined") return;
+
+    const state: UrlState = {
+      view: mainTab,
+      day: selectedDay || undefined,
+      eventId: modalEvent?.id || undefined,
+      query: searchQuery || undefined,
+      locations: selectedLocations.length > 0 ? selectedLocations : undefined,
+      actions: selectedActions.length > 0 ? selectedActions : undefined,
+      departments: selectedDepartments.length > 0 ? selectedDepartments : undefined,
+      leads: selectedLeads.length > 0 ? selectedLeads : undefined,
+      mySchedule: isMyScheduleOnly || undefined,
+    };
+
+    const newQuery = buildUrlQuery(state);
+    const newUrl = window.location.pathname + newQuery;
+    window.history.replaceState(null, "", newUrl);
+  }, [
+    urlInitialized,
+    mainTab,
+    selectedDay,
+    modalEvent,
+    searchQuery,
+    selectedLocations,
+    selectedActions,
+    selectedDepartments,
+    selectedLeads,
+    isMyScheduleOnly,
+  ]);
+
+  // Compute filtered groupedEventsByDate matching day tabs
+  const dayFilteredGroupedEvents = useMemo(() => {
+    if (selectedDay) {
+      return groupedEventsByDate.filter((g) => g.date === selectedDay);
+    }
+    return groupedEventsByDate;
+  }, [groupedEventsByDate, selectedDay]);
 
 
   // Sync dark mode class on document body
@@ -295,15 +508,29 @@ export function EventApp({
   useEffect(() => {
     if (mainTab !== "calendar" || availableDates.length === 0) return;
     
-    const firstDate = availableDates[0].date;
+    // Find target date to focus: selectedDay or today fallback
+    const targetDate = selectedDay || (availableDates.some(d => d.date === effectiveDateStr) ? effectiveDateStr : availableDates[0].date);
+    
     const dayEvents = filteredEvents.filter(
-      (e) => e.scheduleDate === firstDate && timeToMinutes(e.startTime) !== -1
+      (e) => e.scheduleDate === targetDate && timeToMinutes(e.startTime) !== -1
     );
     
     if (dayEvents.length > 0) {
+      let scrollOffset = 60;
       const earliestStart = Math.min(...dayEvents.map((e) => timeToMinutes(e.startTime)));
-      if (calendarScrollContainerRef.current) {
-        let scrollOffset = 0;
+      
+      const currentMinutes = currentTime ? currentTime.getHours() * 60 + currentTime.getMinutes() : -1;
+      const isTargetToday = targetDate === effectiveDateStr;
+      
+      if (isTargetToday && currentMinutes !== -1) {
+        const hoursArray = Array.from({ length: 24 }, (_, i) => i);
+        const activeHours = hideEmptyHours ? getActiveHoursForDay(dayEvents) : hoursArray;
+        const activeCurrent = hideEmptyHours
+          ? getActiveMinuteOffset(currentMinutes, activeHours)
+          : currentMinutes;
+        // Center on the line (scroll minus 2 hours for context)
+        scrollOffset = (Math.max(0, activeCurrent - 120) / 60) * hourHeightScale;
+      } else {
         if (hideEmptyHours) {
           const activeHours = getActiveHoursForDay(dayEvents);
           const activeStart = getActiveMinuteOffset(earliestStart, activeHours);
@@ -311,10 +538,13 @@ export function EventApp({
         } else {
           scrollOffset = (Math.max(0, earliestStart - 60) / 60) * hourHeightScale;
         }
+      }
+      
+      if (calendarScrollContainerRef.current) {
         calendarScrollContainerRef.current.scrollTop = scrollOffset + 60;
       }
     }
-  }, [mainTab, availableDates, filteredEvents, hourHeightScale, hideEmptyHours]);
+  }, [mainTab, availableDates, filteredEvents, hourHeightScale, hideEmptyHours, selectedDay, effectiveDateStr, currentTime]);
 
 
   // Prevent body scroll when mobile drawers are open
@@ -352,23 +582,65 @@ export function EventApp({
         departmentOptions={departmentOptions}
         leadOptions={leadOptions}
         getColorStyle={getColorStyle}
+        selectedDay={selectedDay}
+        setSelectedDay={setSelectedDay}
+        availableDates={availableDates}
       />
     );
+  };
+
+  const handleRunningScheduleEventClick = (event: FestivalEvent) => {
+    setModalEvent(event);
+
+    if (programmaticScrollTimeoutRef.current) {
+      clearTimeout(programmaticScrollTimeoutRef.current);
+    }
+    isProgrammaticScrollRef.current = true;
+    setHighlightedEventId(event.id);
+
+    if (mainTab === "schedule") {
+      setTimeout(() => {
+        const el = document.getElementById(`event-row-${event.id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 50);
+    } else if (mainTab === "calendar") {
+      setTimeout(() => {
+        const el = document.getElementById(`event-card-dept-${event.id}`) ||
+                   document.getElementById(`event-card-loc-${event.id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 50);
+    }
+
+    programmaticScrollTimeoutRef.current = setTimeout(() => {
+      isProgrammaticScrollRef.current = false;
+    }, 1000);
   };
 
   // Helper to render the body of the running schedule
   const renderScheduleBody = () => {
     return (
       <RunningSchedule
-        groupedEventsByDate={groupedEventsByDate}
+        groupedEventsByDate={dayFilteredGroupedEvents}
         setModalEvent={setModalEvent}
         getColorStyle={getColorStyle}
+        currentTime={currentTime}
+        onEventClick={handleRunningScheduleEventClick}
       />
     );
   };
 
   return (
     <main className={`legacy-app ${isDarkMode ? "dark-theme" : ""}`}>
+      {isOffline && (
+        <div className="offline-banner">
+          <span className="offline-icon">⚠️</span>
+          <span>Offline Mode. Displaying cached data (last synced: {lastSynced ? new Date(lastSynced).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Never"}).</span>
+        </div>
+      )}
       {/* Header Banner */}
       <header className="legacy-banner">
         <div className="legacy-banner-title" style={{ display: "flex", alignItems: "baseline", gap: "10px" }}>
@@ -509,6 +781,22 @@ export function EventApp({
               >
                 🗺️ Map View {visibleMappableVenues.length === 0 ? "(Scaffolded)" : ""}
               </button>
+              <button
+                type="button"
+                className={`main-tab-btn ${mainTab === "now-next" ? "active" : ""}`}
+                onClick={() => setMainTab("now-next")}
+              >
+                ⚡ Now &amp; Next
+              </button>
+              <button
+                type="button"
+                className={`main-tab-btn starred-tab-btn ${isMyScheduleOnly ? "active" : ""}`}
+                onClick={() => setIsMyScheduleOnly(!isMyScheduleOnly)}
+                title={isMyScheduleOnly ? "Showing Starred Only" : "Show Starred"}
+                style={{ minWidth: "40px", padding: "0", fontSize: "1.1rem" }}
+              >
+                ⭐
+              </button>
             </div>
             
             <div className="main-tabs-header-controls">
@@ -582,17 +870,33 @@ export function EventApp({
             </div>
           </div>
 
+
+
           {/* Main Content Render */}
           <div ref={mainContentRef} className={`main-tab-content tab-${mainTab}`}>
-            {mainTab === "schedule" ? (
+            {mainTab === "now-next" ? (
+              currentTime && (
+                <NowNext
+                  events={events}
+                  currentTime={currentTime}
+                  effectiveDateStr={effectiveDateStr}
+                  isSimulated={isTimeSimulated}
+                  setModalEvent={setModalEvent}
+                  getColorStyle={getColorStyle}
+                />
+              )
+            ) : mainTab === "schedule" ? (
               <ScheduleGrid
-                groupedEventsByDate={groupedEventsByDate}
+                groupedEventsByDate={dayFilteredGroupedEvents}
                 scheduleWidthScale={scheduleWidthScale}
                 getColorStyle={getColorStyle}
+                currentTime={currentTime}
+                setModalEvent={setModalEvent}
+                highlightedEventId={highlightedEventId}
               />
             ) : mainTab === "calendar" ? (
               <CalendarView
-                groupedEventsByDate={groupedEventsByDate}
+                groupedEventsByDate={dayFilteredGroupedEvents}
                 hideEmptyHours={hideEmptyHours}
                 activeDepartments={activeDepartments}
                 activeLocations={activeLocations}
@@ -604,13 +908,39 @@ export function EventApp({
                 setModalEvent={setModalEvent}
                 departments={departments}
                 getColorStyle={getColorStyle}
+                currentTime={currentTime}
+                effectiveDateStr={effectiveDateStr}
+                highlightedEventId={highlightedEventId}
               />
             ) : (
-              <MapView
-                venues={venues}
-                mapCenter={MAP_CENTER}
-                defaultZoom={MAP_DEFAULT_ZOOM}
-              />
+              <div style={{ position: "relative", width: "100%", height: "100%" }}>
+                <MapView
+                  venues={venues}
+                  mapCenter={MAP_CENTER}
+                  defaultZoom={MAP_DEFAULT_ZOOM}
+                  focusedVenueId={focusedVenueId}
+                  setFocusedVenueId={setFocusedVenueId}
+                  setSelectedLocations={setSelectedLocations}
+                  setMainTab={setMainTab}
+                  events={events}
+                  getColorStyle={getColorStyle}
+                  activeCategories={activeCategories.length > 0 ? activeCategories : categoriesList}
+                />
+                {categoriesList.length > 0 && (
+                  <Legend
+                    categories={categoriesList}
+                    activeCategories={activeCategories.length > 0 ? activeCategories : categoriesList}
+                    onToggleCategory={(cat) => {
+                      const active = activeCategories.length > 0 ? activeCategories : [...categoriesList];
+                      const newActive = active.includes(cat)
+                        ? active.filter((c) => c !== cat)
+                        : [...active, cat];
+                      setActiveCategories(newActive.length === categoriesList.length ? [] : newActive);
+                    }}
+                    getColorStyle={getColorStyle}
+                  />
+                )}
+              </div>
             )}
           </div>
         </section>
@@ -733,10 +1063,19 @@ export function EventApp({
         </footer>
       )}
 
+      <Toasts toasts={toasts} onRemove={removeToast} />
+
       <EventModal
         modalEvent={modalEvent}
         onClose={() => setModalEvent(null)}
         getColorStyle={getColorStyle}
+        isStarred={isStarred}
+        onToggleStar={toggleStar}
+        onShowOnMap={(venueId) => {
+          setFocusedVenueId(venueId);
+          setMainTab("map");
+        }}
+        venues={venues}
       />
     </main>
   );

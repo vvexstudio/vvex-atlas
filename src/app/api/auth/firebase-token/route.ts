@@ -78,6 +78,7 @@ export async function GET() {
     const customToken = await adminAuth.createCustomToken(email, {
       role,
       departments,
+      escapedEmail,
     });
 
     return NextResponse.json({ 

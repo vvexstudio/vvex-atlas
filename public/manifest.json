@@ -1,0 +1,18 @@
+{
+  "name": "The Portal Map App",
+  "short_name": "Portal Map",
+  "description": "Interactive MARTIANS operational map and schedule for The Portal.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#1e1b4b",
+  "background_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

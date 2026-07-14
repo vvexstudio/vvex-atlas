@@ -20,6 +20,9 @@ interface FilterBarProps {
   departmentOptions: string[];
   leadOptions: string[];
   getColorStyle: (category: "Location" | "Action" | "Department" | "Personnel", value: string | undefined) => React.CSSProperties;
+  selectedDay: string | null;
+  setSelectedDay: (day: string | null) => void;
+  availableDates: { date: string; weekday: string; shortDate: string; fullLabel: string }[];
 }
 
 const formatFilterDateTime = (dtStr: string): string => {
@@ -54,6 +57,9 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   departmentOptions,
   leadOptions,
   getColorStyle,
+  selectedDay,
+  setSelectedDay,
+  availableDates,
 }) => {
   return (
     <>
@@ -71,6 +77,23 @@ export const FilterBar: React.FC<FilterBarProps> = ({
       </div>
 
       <div className="portal-dropdown-filters">
+        <div className="filter-dropdown-group">
+          <label htmlFor="filter-day">Day</label>
+          <select
+            id="filter-day"
+            name="day"
+            value={selectedDay || ""}
+            onChange={(e) => setSelectedDay(e.target.value || null)}
+          >
+            <option value="">All Days</option>
+            {availableDates.map((d) => (
+              <option key={d.date} value={d.date}>
+                {d.weekday}, {d.shortDate}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="filter-dropdown-group">
           <label htmlFor="filter-location">Location</label>
           <select
@@ -144,7 +167,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         </div>
 
         <div className="filter-dropdown-group">
-          <label htmlFor="filter-lead">Lead Person</label>
+          <label htmlFor="filter-lead">Lead</label>
           <select
             id="filter-lead"
             name="lead"
@@ -199,6 +222,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         selectedLeads.length > 0 ||
         startTimeFilter ||
         endTimeFilter ||
+        selectedDay ||
         searchQuery) && (
         <div className="active-filters-row">
           {searchQuery && (
@@ -207,6 +231,16 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               <button type="button" className="clear-chip-btn" onClick={() => setSearchQuery("")} aria-label="Clear search">×</button>
             </span>
           )}
+          {selectedDay && (() => {
+            const found = availableDates.find((d) => d.date === selectedDay);
+            const label = found ? `${found.weekday}, ${found.shortDate}` : selectedDay;
+            return (
+              <span className="filter-chip day-chip">
+                🗓️ Day: {label}
+                <button type="button" className="clear-chip-btn" onClick={() => setSelectedDay(null)} aria-label="Clear day filter">×</button>
+              </span>
+            );
+          })()}
           {selectedLocations.map((loc) => (
             <span key={`loc-${loc}`} className="filter-chip" style={getColorStyle("Location", loc)}>
               📍 {loc}
@@ -255,6 +289,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               setStartTimeFilter("");
               setEndTimeFilter("");
               setSearchQuery("");
+              setSelectedDay(null);
             }}
           >
             Clear All Filters

@@ -1,18 +1,34 @@
 import React from "react";
-import { FestivalEvent } from "@/types/festival";
+import { FestivalEvent, Venue } from "@/types/festival";
 
 interface EventModalProps {
   modalEvent: FestivalEvent | null;
   onClose: () => void;
   getColorStyle: (category: "Location" | "Action" | "Department" | "Personnel", value: string | undefined) => React.CSSProperties;
+  isStarred?: (id: string) => boolean;
+  onToggleStar?: (id: string) => void;
+  onShowOnMap?: (venueId: string) => void;
+  venues?: Venue[];
 }
 
 export const EventModal: React.FC<EventModalProps> = ({
   modalEvent,
   onClose,
-  getColorStyle
+  getColorStyle,
+  isStarred,
+  onToggleStar,
+  onShowOnMap,
+  venues = []
 }) => {
   if (!modalEvent) return null;
+
+  const isEventStarred = isStarred ? isStarred(modalEvent.id) : false;
+
+  // Find corresponding venue for coordinates check
+  const venue = venues.find(
+    (v) => v.id === modalEvent.venueId || (modalEvent.locationName && v.name.toLowerCase() === modalEvent.locationName.toLowerCase())
+  );
+  const hasCoords = venue && typeof venue.lat === "number" && typeof venue.lng === "number";
 
   return (
     <div className="portal-modal-overlay" onClick={onClose}>
@@ -21,15 +37,30 @@ export const EventModal: React.FC<EventModalProps> = ({
           className="portal-modal-header"
           style={getColorStyle(modalEvent.department ? "Department" : "Location", modalEvent.department || modalEvent.locationName)}
         >
-          <button type="button" className="close-modal-btn" onClick={onClose}>×</button>
+          <div className="modal-header-actions">
+            {onToggleStar && (
+              <button
+                type="button"
+                className={`modal-star-btn ${isEventStarred ? "starred" : ""}`}
+                onClick={() => onToggleStar(modalEvent.id)}
+                aria-label={isEventStarred ? "Remove from schedule" : "Add to schedule"}
+              >
+                {isEventStarred ? "⭐" : "☆"}
+              </button>
+            )}
+            <button type="button" className="close-modal-btn" onClick={onClose}>×</button>
+          </div>
         </header>
         <div className="portal-modal-body">
+          <h2 className="modal-title font-bold text-xl mb-2">{modalEvent.title}</h2>
+          
           <div className="modal-info-row">
             <span className="modal-time-range font-bold">⏰ {modalEvent.startTime} – {modalEvent.endTime}</span>
             {modalEvent.scheduleDate && (
               <span className="modal-date-tag">📅 {modalEvent.scheduleDate}</span>
             )}
           </div>
+          
           <div className="modal-details-grid">
             {modalEvent.locationName && (
               <div className="modal-detail-item">
@@ -64,12 +95,28 @@ export const EventModal: React.FC<EventModalProps> = ({
               </div>
             )}
           </div>
+          
           {modalEvent.description && (
             <div className="modal-description-box">
               <span className="detail-label">Description</span>
               <p className="description-text">{modalEvent.description}</p>
             </div>
           )}
+
+          <div className="modal-bottom-actions">
+            {hasCoords && onShowOnMap && (
+              <button
+                type="button"
+                className="modal-action-btn show-on-map-btn"
+                onClick={() => {
+                  onShowOnMap(venue.id);
+                  onClose();
+                }}
+              >
+                🗺️ Show on Map
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

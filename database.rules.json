@@ -24,6 +24,12 @@
       ".read": "auth.token.role === 'admin'",
       ".write": "false"
     },
+    "user-data": {
+      "$escaped_email": {
+        ".read": "auth != null && auth.token.escapedEmail === $escaped_email",
+        ".write": "auth != null && auth.token.escapedEmail === $escaped_email"
+      }
+    },
     "auth-directory": {
       ".read": "auth != null",
       ".write": "false"
