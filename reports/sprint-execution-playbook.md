@@ -267,6 +267,12 @@ Merge order: Team B, Team C, Team A (A depends on C's rules change and B's token
 
 **⛳ COMMIT + tag `sprint-2`, update `sprintboard.md`.**
 
+### CUSTOM SPRINT 2 REFINEMENTS (Vincent requested)
+- [x] Deprecate Approved Emails tab, routing login callback validation and auth sync directory strictly to the `Personnel` sheet data.
+- [x] Expose a `⚙️ Admin Panel` button in the user profile top bar actions list.
+- [x] Configure passwordless admin panel access check in proxy middleware checking the session cookie role, falling back to server-side `ADMIN_EMAILS` environment configurations if the database sync is not yet initialized.
+- [x] Fix print layout spacing: let daily grid containers stack naturally without forcing single-day breaks (`break-inside: avoid`), scale column headers/grid lanes to fit portrait/landscape printable page width, and purge heights to prevent trailing blank page previews.
+
 ---
 
 ## 5. SPRINT 3 — Day-of-Show Experience (Weeks 3–4, two teams)

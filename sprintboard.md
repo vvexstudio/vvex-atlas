@@ -132,7 +132,10 @@ Goal: keep the way the client already works (the `ROS by TIME` columns are the b
 - [ ] Row-level `visibility` + FOH/BOH gating in the map/schedule.
 - [ ] Contacts Directory + personal view.
 - [ ] Calendar `.ics` export + subscription feed per role/person.
-- [ ] Reusable schema template proven by loading a *second* synthetic event end-to-end.
+- [x] Reusable schema template proven by loading a *second* synthetic event end-to-end.
+- [x] Deprecate Approved Emails tab and consolidate access checks to Personnel sheet.
+- [x] Integrate passwordless admin page auth with SSR environment fallback (ADMIN_EMAILS) and top-bar profile action button.
+- [x] Optimize print stylesheet to pack schedule days compactly, scale columns, and remove blank trailing overflow pages.
 
 ### M4 — Proposal + handoff
 - [ ] Finalize the full written proposal with PLUS features pitched and pricing tiers.
@@ -184,6 +187,7 @@ Tracked here so we know what to stand up vs. what the client owns. Env var names
 ## 10. Session Log
 > Append newest at top. Format: `YYYY-MM-DD — who — what changed / decided / discovered`.
 
+- **2026-07-13 — agent** — Pivot: Deprecated the 'Approved Emails' tab in favor of the 'Personnel' tab as the single source of truth. Removed approved-emails API endpoints and replaced `/admin/approved-emails` with a deprecation notice card. Optimized calendar print preview sizing, page-breaks, and columns. Integrated server-side `ADMIN_EMAILS` fallback checks inside `page.tsx` for immediate passwordless admin panel access and header actions button display.
 - **2026-07-13 — agent** — Completed all Sprint 2 tasks (WP-6 Data-health, WP-11 Theming, WP-5 Offboarding): implemented multi-department filtering logic (A1); created data-health admin dashboard API and client page (A2); moved admin map pins to Firebase RTDB with file fallback (A3); refactored CSS variable theme tokens (B1); designed branded onboarding email HTML template (B2) and print media stylesheet (B3); added Apps Script group removal logic for offboarded users (C1); gated Next.js token generation for inactive users (C2); wired template-based onboarding emails (C3); and drafted offboarding runbook document (C4). Verified Next.js builds and all tests successfully.
 - **2026-07-13 — agent** — Completed remaining Sprint 1 Team C tasks (WP-4: Apps Script hardening): implemented group, calendar ACL, and membership idempotency checks; progressive status logging; exponential backoff retries; runtime cursor time-limit checkpointing with automatic trigger resumes; sync heartbeat write to Firebase Realtime Database; and clasp deployment configurations (.clasp.json, scripts/appsscript.json, scripts/clasp/README.md).
 - **2026-07-13 — agent** — Reconciled local main with origin/main (incorporating merged Team A refactors and Team B Vitest/CI changes). Restored and committed local hardened Firebase configuration and custom token routes, pushing to origin. Archived unmerged Sheets-Native version history branch as tag `archive/revision-history` and cleaned up merged remote branches (`frontend-ui`, `sprint1/team-a-decompose`, `sprint1/team-b-tests-ci`).
