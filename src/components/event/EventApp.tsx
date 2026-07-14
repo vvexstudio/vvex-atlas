@@ -416,6 +416,26 @@ export function EventApp({
                   {userSession.email}
                 </span>
               </div>
+              {role === "admin" && (
+                <Link
+                  href="/admin"
+                  style={{
+                    padding: "0.25rem 0.6rem",
+                    backgroundColor: "var(--accent-soft)",
+                    border: "1px solid var(--line)",
+                    color: "var(--accent)",
+                    borderRadius: "5px",
+                    fontSize: "0.7rem",
+                    fontWeight: 600,
+                    textDecoration: "none",
+                    marginRight: "0.5rem",
+                    display: "inline-flex",
+                    alignItems: "center"
+                  }}
+                >
+                  ⚙️ Admin Panel
+                </Link>
+              )}
               <a
                 href="/api/auth/logout"
                 style={{
@@ -439,26 +459,6 @@ export function EventApp({
                 Logout
               </a>
             </div>
-          )}
-          {role === "admin" && (
-            <Link
-              href="/admin"
-              style={{
-                padding: "0.25rem 0.6rem",
-                backgroundColor: "var(--accent-soft)",
-                border: "1px solid var(--line)",
-                color: "var(--accent)",
-                borderRadius: "5px",
-                fontSize: "0.7rem",
-                fontWeight: 600,
-                textDecoration: "none",
-                marginRight: "0.5rem",
-                display: "inline-flex",
-                alignItems: "center"
-              }}
-            >
-              ⚙️ Admin Panel
-            </Link>
           )}
           <button
             type="button"
