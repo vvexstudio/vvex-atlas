@@ -14,7 +14,7 @@ export interface ApprovedEmail {
 export async function getApprovedEmails(): Promise<ApprovedEmail[]> {
   const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "19Xs3TScHhS369n_A8VvUGxszoxncx1p32T8iwNHSKTU";
   try {
-    const list = await getParsedSheetData<any>(spreadsheetId, "Approved Emails");
+    const list = await getParsedSheetData<any>(spreadsheetId, "Personnel");
     return list.map(item => {
       let email = "";
       let name = "";

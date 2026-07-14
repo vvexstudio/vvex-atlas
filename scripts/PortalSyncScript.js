@@ -21,7 +21,6 @@ function syncAllToFirebase() {
   const personnel = readSheetToJson(ss.getSheetByName("Personnel"));
   const ros = readSheetToJson(ss.getSheetByName("ROS by TIME") || ss.getSheetByName("ROS"));
   const departments = readSheetToJson(ss.getSheetByName("Departments"));
-  const approvedEmails = readSheetToJson(ss.getSheetByName("Approved Emails") || ss.getSheetByName("Approved_Emails"));
 
   // 2. Format & Map data to structure
   const data = {
@@ -48,26 +47,11 @@ function syncAllToFirebase() {
 
   writeToFirebase("admin-data", data);
 
-  // 4. Build/Update Auth Directory for authentication tokens
+  // 4. Build/Update Auth Directory for authentication tokens from Personnel tab
   const authDirectory = {};
 
-  Logger.log("Approved Emails count: " + approvedEmails.length);
   Logger.log("Personnel count: " + personnel.length);
 
-  // 4a. Initialize with Approved Emails as guests
-  approvedEmails.forEach(entry => {
-    const emailKey = Object.keys(entry).find(k => k.toLowerCase().includes("email"));
-    const email = emailKey ? String(entry[emailKey]).trim() : "";
-    if (email) {
-      const escapedEmail = email.toLowerCase().replace(/\./g, ",");
-      authDirectory[escapedEmail] = {
-        role: "guest",
-        departments: []
-      };
-    }
-  });
-
-  // 4b. Overlay/Merge details from Personnel (which have specific roles/departments)
   personnel.forEach(person => {
     const emailKey = Object.keys(person).find(k => k.toLowerCase().includes("email"));
     const email = emailKey ? String(person[emailKey]).trim() : "";
@@ -87,18 +71,11 @@ function syncAllToFirebase() {
       const activeKey = Object.keys(person).find(k => k.toLowerCase().includes("active"));
       const active = activeKey ? (person[activeKey] !== false && String(person[activeKey]).toUpperCase() !== "FALSE") : true;
       
-      // Merge or create
-      if (!authDirectory[escapedEmail]) {
-        authDirectory[escapedEmail] = {
-          role: role || "guest",
-          departments: parseCsvList(departmentsList),
-          active: active
-        };
-      } else {
-        if (role) authDirectory[escapedEmail].role = role;
-        if (departmentsList) authDirectory[escapedEmail].departments = parseCsvList(departmentsList);
-        authDirectory[escapedEmail].active = active;
-      }
+      authDirectory[escapedEmail] = {
+        role: role || "guest",
+        departments: parseCsvList(departmentsList),
+        active: active
+      };
     }
   });
 

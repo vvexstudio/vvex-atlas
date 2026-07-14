@@ -14,12 +14,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               📍 Local Pins
             </Link>
             <Link 
-              href="/admin/approved-emails" 
-              style={{ color: "#4b5563", textDecoration: "none", fontWeight: 600, fontSize: "0.95rem" }}
-            >
-              ✉️ Approved Emails
-            </Link>
-            <Link 
               href="/admin/health" 
               style={{ color: "#4b5563", textDecoration: "none", fontWeight: 600, fontSize: "0.95rem" }}
             >
