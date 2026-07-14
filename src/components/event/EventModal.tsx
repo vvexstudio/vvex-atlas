@@ -44,8 +44,17 @@ export const EventModal: React.FC<EventModalProps> = ({
                 className={`modal-star-btn ${isEventStarred ? "starred" : ""}`}
                 onClick={() => onToggleStar(modalEvent.id)}
                 aria-label={isEventStarred ? "Remove from schedule" : "Add to schedule"}
+                title={isEventStarred ? "Remove from My Schedule" : "Add to My Schedule"}
               >
-                {isEventStarred ? "⭐" : "☆"}
+                {isEventStarred ? (
+                  <svg className="modal-star-icon filled" viewBox="0 0 24 24" width="22" height="22">
+                    <path fill="#facc15" stroke="#eab308" strokeWidth="1.5" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                  </svg>
+                ) : (
+                  <svg className="modal-star-icon outlined" viewBox="0 0 24 24" width="22" height="22">
+                    <path fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                  </svg>
+                )}
               </button>
             )}
             <button type="button" className="close-modal-btn" onClick={onClose}>×</button>

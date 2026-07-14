@@ -47,7 +47,7 @@ We have completed the implementation and verification of all Day-of-Show Experie
 - [route.ts](file:///Users/vincentnaples/Documents/github/portal-dev/src/app/api/auth/firebase-token/route.ts) — Escaped email claim token injections.
 - [database.rules.json](file:///Users/vincentnaples/Documents/github/portal-dev/database.rules.json) — `/user-data` path authorization security rules.
 - [useEventData.ts](file:///Users/vincentnaples/Documents/github/portal-dev/src/hooks/useEventData.ts) — Offline storage hydration.
-- [EventModal.tsx](file:///Users/vincentnaples/Documents/github/portal-dev/src/components/event/EventModal.tsx) — Starring and Show on Map buttons.
+- [EventModal.tsx](file:///Users/vincentnaples/Documents/github/portal-dev/src/components/event/EventModal.tsx) — Added high-contrast custom SVG star outline shapes and hover tooltip titles.
 - [MapView.tsx](file:///Users/vincentnaples/Documents/github/portal-dev/src/components/event/MapView.tsx) — InfoWindow direction deep links, category markers, and programmatic centering.
 - [CalendarView.tsx](file:///Users/vincentnaples/Documents/github/portal-dev/src/components/event/CalendarView.tsx) — Added event card DOM IDs for department and location lanes.
 - [RunningSchedule.tsx](file:///Users/vincentnaples/Documents/github/portal-dev/src/components/event/RunningSchedule.tsx) — Added sidebar card click interceptor triggers.
