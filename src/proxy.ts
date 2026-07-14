@@ -24,7 +24,7 @@ export async function proxy(request: NextRequest) {
   // 3. Handle admin routes protection
   if (pathname.startsWith("/admin")) {
     const hasAdminAccess = request.cookies.get("admin_access")?.value === "true";
-    const hasOAuthAdminAccess = session ? isAdminEmail(session.email) : false;
+    const hasOAuthAdminAccess = session ? (session.role === "admin" || isAdminEmail(session.email)) : false;
     const isAuthorized = hasAdminAccess || hasOAuthAdminAccess;
 
     if (!isAuthorized && pathname !== "/admin/login") {

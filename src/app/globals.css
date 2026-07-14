@@ -4892,7 +4892,9 @@ body.legacy-theme-dark .mobile-drawer-close:hover {
 @media print {
   /* Hide non-printable app chrome */
   .legacy-banner,
-  .legacy-map-panel,
+  .main-tabs-header,
+  .main-map-container,
+  .map-placeholder-container,
   .legacy-list-controls,
   .legacy-sidebar-resize-handle,
   .legacy-sidebar-toggle-edge,
@@ -4909,6 +4911,7 @@ body.legacy-theme-dark .mobile-drawer-close:hover {
   body, 
   .legacy-app, 
   .legacy-shell, 
+  .legacy-map-panel,
   .legacy-list-panel {
     background: #ffffff !important;
     color: #000000 !important;

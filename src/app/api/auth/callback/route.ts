@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { isEmailApproved, createSessionCookie } from "@/lib/auth";
+import { adminDb } from "@/lib/firebase-admin";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -94,11 +95,26 @@ export async function GET(request: Request) {
       );
     }
 
-    // 4. Create and sign session cookie
+    // 4. Resolve the user's role from Firebase RTD auth-directory (if available)
+    let role = "guest";
+    if (adminDb) {
+      try {
+        const escapedEmail = sanitizedEmail.replace(/\./g, ",");
+        const userSnapshot = await adminDb.ref(`auth-directory/${escapedEmail}`).once("value");
+        if (userSnapshot.exists()) {
+          role = userSnapshot.val().role || "guest";
+        }
+      } catch (dbErr) {
+        console.error("Failed to query user role during OAuth callback:", dbErr);
+      }
+    }
+
+    // 5. Create and sign session cookie
     const sessionCookieVal = await createSessionCookie({
       email,
       name,
       picture,
+      role,
     });
 
     // Set cookie using next/headers cookies API

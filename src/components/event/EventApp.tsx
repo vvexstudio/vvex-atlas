@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { Venue, FestivalEvent, Department } from "@/types/festival";
 import sheetColors from "@/data/sheet-colors.json";
 import { EventModal } from "./EventModal";
@@ -437,6 +438,26 @@ export function EventApp({
                 Logout
               </a>
             </div>
+          )}
+          {role === "admin" && (
+            <Link
+              href="/admin"
+              style={{
+                padding: "0.25rem 0.6rem",
+                backgroundColor: "var(--accent-soft)",
+                border: "1px solid var(--line)",
+                color: "var(--accent)",
+                borderRadius: "5px",
+                fontSize: "0.7rem",
+                fontWeight: 600,
+                textDecoration: "none",
+                marginRight: "0.5rem",
+                display: "inline-flex",
+                alignItems: "center"
+              }}
+            >
+              ⚙️ Admin Panel
+            </Link>
           )}
           <button
             type="button"
