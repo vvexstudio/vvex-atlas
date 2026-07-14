@@ -1,7 +1,7 @@
 import { EventApp } from "@/components/event/EventApp";
 import { getFestivalData } from "@/lib/festival-data";
 import { cookies } from "next/headers";
-import { verifySessionCookie } from "@/lib/auth";
+import { verifySessionCookie, isAdminEmail } from "@/lib/auth";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -13,7 +13,9 @@ export default async function Home() {
 
   let role = "guest";
   if (userSession?.email) {
-    if (userSession.role) {
+    if (isAdminEmail(userSession.email)) {
+      role = "admin";
+    } else if (userSession.role) {
       role = userSession.role;
     } else {
       try {
