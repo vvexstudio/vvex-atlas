@@ -13,17 +13,21 @@ export default async function Home() {
 
   let role = "guest";
   if (userSession?.email) {
-    try {
-      const { adminDb } = await import("@/lib/firebase-admin");
-      if (adminDb) {
-        const escapedEmail = userSession.email.trim().toLowerCase().replace(/\./g, ",");
-        const snapshot = await adminDb.ref(`auth-directory/${escapedEmail}`).once("value");
-        if (snapshot.exists()) {
-          role = snapshot.val().role || "guest";
+    if (userSession.role) {
+      role = userSession.role;
+    } else {
+      try {
+        const { adminDb } = await import("@/lib/firebase-admin");
+        if (adminDb) {
+          const escapedEmail = userSession.email.trim().toLowerCase().replace(/\./g, ",");
+          const snapshot = await adminDb.ref(`auth-directory/${escapedEmail}`).once("value");
+          if (snapshot.exists()) {
+            role = snapshot.val().role || "guest";
+          }
         }
+      } catch (err) {
+        console.warn("Failed to check user role for SSR render. Defaulting to 'guest':", err);
       }
-    } catch (err) {
-      console.warn("Failed to check user role for SSR render. Defaulting to 'guest':", err);
     }
   }
 
@@ -41,7 +45,8 @@ export default async function Home() {
       userSession={userSession ? {
         email: userSession.email,
         name: userSession.name,
-        picture: userSession.picture
+        picture: userSession.picture,
+        role: role
       } : undefined}
     />
   );

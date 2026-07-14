@@ -82,6 +82,7 @@ type EventAppProps = {
     email: string;
     name?: string;
     picture?: string;
+    role?: string;
   };
 };
 

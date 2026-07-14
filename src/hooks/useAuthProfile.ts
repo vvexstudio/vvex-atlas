@@ -6,11 +6,12 @@ export interface UserSession {
   email: string;
   name?: string;
   picture?: string;
+  role?: string;
 }
 
 export const useAuthProfile = (initialSession?: UserSession) => {
   const [userSession] = useState<UserSession | undefined>(initialSession);
-  const [role, setRole] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(initialSession?.role || null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

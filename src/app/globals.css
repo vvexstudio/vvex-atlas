@@ -4925,15 +4925,40 @@ body.legacy-theme-dark .mobile-drawer-close:hover {
     margin: 0 !important;
   }
 
-  /* Force page breaks by schedule days */
+  /* Calendar column print fixes - Fit to Page width (Portrait/Landscape) */
+  .calendar-day-section {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .calendar-parent-header-cell,
+  .calendar-column-header-cell,
+  .calendar-grid-column {
+    flex: 1 1 0% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+
+  .spatial-calendar-grid,
+  .spatial-calendar-grid-content,
+  .spatial-calendar-container,
+  .main-tab-content {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Pack days efficiently without forcing empty trailing white pages */
   .main-schedule-day-container,
   .calendar-day-section,
   .spatial-calendar-grid-day-section {
-    page-break-after: always !important;
-    break-after: page !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
     display: block !important;
     overflow: visible !important;
-    padding: 20px 0 !important;
+    padding: 10px 0 !important;
   }
 
   /* Ensure colors and background-colors print clearly */
