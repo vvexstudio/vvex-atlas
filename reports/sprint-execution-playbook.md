@@ -291,24 +291,24 @@ Note: URL deep-linking (`url-state.ts`) is Team B's; Team A consumes it read-onl
 
 Phase 1 — Day-of-show (WP-7):
 
-- [ ] A1. **Now/Next mode** as default landing: events happening now + next 2 hours, auto-scrolled, live time indicator line, 1-minute ticker. **⛳ COMMIT:** `feat: add now/next default view`
-- [ ] A2. **Countdown labels** on event cards ("in 25 min", "started 10 min ago"). **⛳ COMMIT:** `feat: add countdown labels`
-- [ ] A3. **Personal agenda:** star events; persist per-uid in RTDB (needs the narrow write rule Team C added pattern for in Sprint 2 — request `user-data/$uid` writable by that uid via Cross-team note if not present; Team C owns the one-line rules change even mid-sprint-freeze), localStorage for unauthenticated users; "My Schedule" tab. **⛳ COMMIT:** `feat: add starred personal agenda`
-- [ ] A4. **Change toasts:** diff successive RTDB snapshots in `useEventData`; on a changed event, toast "«title» moved +30 min" with a badge count; "changes since you last looked" digest from a last-seen timestamp. **⛳ COMMIT:** `feat: surface live change notifications`
+- [x] A1. **Now/Next mode** as default landing: events happening now + next 2 hours, auto-scrolled, live time indicator line, 1-minute ticker. **⛳ COMMIT:** `feat: add now/next default view`
+- [x] A2. **Countdown labels** on event cards ("in 25 min", "started 10 min ago"). **⛳ COMMIT:** `feat: add countdown labels`
+- [x] A3. **Personal agenda:** star events; persist per-uid in RTDB (needs the narrow write rule Team C added pattern for in Sprint 2 — request `user-data/$uid` writable by that uid via Cross-team note if not present; Team C owns the one-line rules change even mid-sprint-freeze), localStorage for unauthenticated users; "My Schedule" tab. **⛳ COMMIT:** `feat: add starred personal agenda`
+- [x] A4. **Change toasts:** diff successive RTDB snapshots in `useEventData`; on a changed event, toast "«title» moved +30 min" with a badge count; "changes since you last looked" digest from a last-seen timestamp. **⛳ COMMIT:** `feat: surface live change notifications`
 
 Phase 1 smoke (run before starting Phase 2): sheet edit → open client shows a toast within seconds; stars survive logout/login; Now/Next line moves each minute. **⛳ tag `sprint-3-phase-1`.**
 
 Phase 2 — PWA/offline (WP-9):
 
-- [ ] A5. Web app manifest (icons, standalone, theme color from tokens); service worker caching the app shell. **⛳ COMMIT:** `feat: add pwa manifest and app-shell caching`
-- [ ] A6. Persist last-good RTDB snapshot to IndexedDB; on load without connectivity, rehydrate from it and show a staleness banner "data as of HH:MM" (reuse heartbeat timestamp). Pull-to-refresh showing last-synced time. **⛳ COMMIT:** `feat: add offline snapshot and staleness banner`
+- [x] A5. Web app manifest (icons, standalone, theme color from tokens); service worker caching the app shell. **⛳ COMMIT:** `feat: add pwa manifest and app-shell caching`
+- [x] A6. Persist last-good RTDB snapshot to IndexedDB; on load without connectivity, rehydrate from it and show a staleness banner "data as of HH:MM" (reuse heartbeat timestamp). Pull-to-refresh showing last-synced time. **⛳ COMMIT:** `feat: add offline snapshot and staleness banner`
 
 ### Team B — WP-8 (branch `sprint3/team-b-map-linkage`)
 
-- [ ] B1. `url-state.ts`: serialize filters/day/selected-event/view to URL params; restore on load. **⛳ COMMIT:** `feat: add deep-linkable url state`
-- [ ] B2. Pin tap → filters schedule to that location; event location chip → pans/zooms map + opens pin. **⛳ COMMIT:** `feat: link map pins and schedule bidirectionally`
-- [ ] B3. Category legend driven by the live palette (`sheet-colors.json` harvest); per-category pin shapes/icons; cluster count badges ("Stage A · 12 events today"). **⛳ COMMIT:** `feat: add legend and category pin icons`
-- [ ] B4. "Directions" button in pin popover → native maps deep link (`https://maps.google.com/?daddr=lat,lng`, works on iOS/Android). **⛳ COMMIT:** `feat: add walk-there directions link`
+- [x] B1. `url-state.ts`: serialize filters/day/selected-event/view to URL params; restore on load. **⛳ COMMIT:** `feat: add deep-linkable url state`
+- [x] B2. Pin tap → filters schedule to that location; event location chip → pans/zooms map + opens pin. **⛳ COMMIT:** `feat: link map pins and schedule bidirectionally`
+- [x] B3. Category legend driven by the live palette (`sheet-colors.json` harvest); per-category pin shapes/icons; cluster count badges ("Stage A · 12 events today"). **⛳ COMMIT:** `feat: add legend and category pin icons`
+- [x] B4. "Directions" button in pin popover → native maps deep link (`https://maps.google.com/?daddr=lat,lng`, works on iOS/Android). **⛳ COMMIT:** `feat: add walk-there directions link`
 
 ### Sprint 3 integration & smoke test (gate to Sprint 4)
 
