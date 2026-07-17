@@ -228,26 +228,30 @@ function processOnboardingInvites(startRow) {
         const step4Pattern = "email:ok";
         if (currentStatus.indexOf(step4Pattern) === -1) {
           let htmlBody = "";
+          // Build calendar subscription buttons
+          const calendarLinksHtml = depts.map(dept => {
+            const groupEmail = dept.toLowerCase().replace(/\s+/g, "-") + "@yourdomain.com";
+            const cid = encodeURIComponent(groupEmail);
+            const link = "https://calendar.google.com/calendar/render?cid=" + cid;
+            return `<p style="margin: 4px 0;"><a href="${link}" style="color: #bc5c2d; text-decoration: underline; font-weight: bold;">Subscribe to ${dept} Calendar</a></p>`;
+          }).join("");
+
           try {
             // Load responsive HTML template pushed via clasp
             const template = HtmlService.createHtmlOutputFromFile("email-templates/onboarding").getContent();
-            
-            // Build calendar subscription buttons
-            const calendarLinksHtml = depts.map(dept => {
-              const groupEmail = dept.toLowerCase().replace(/\s+/g, "-") + "@yourdomain.com";
-              const cid = encodeURIComponent(groupEmail);
-              const link = "https://calendar.google.com/calendar/render?cid=" + cid;
-              return `<p style="margin: 4px 0;"><a href="${link}" style="color: #bc5c2d; text-decoration: underline; font-weight: bold;">Subscribe to ${dept} Calendar</a></p>`;
-            }).join("");
-
             htmlBody = template
               .replace("{{name}}", email.split("@")[0])
               .replace("{{departments}}", departmentsList)
               .replace("{{calendar_links}}", calendarLinksHtml)
               .replace("{{app_url}}", CONFIG.APP_URL || "https://your-domain.vercel.app");
           } catch (templateErr) {
-            Logger.log("Could not load onboarding HTML template: " + templateErr + ". Falling back to plain text email.");
-            htmlBody = ""; // Clear HTML body so we use plain text body
+            Logger.log("Could not load onboarding HTML template from file: " + templateErr + ". Using embedded fallback template.");
+            htmlBody = getEmbeddedEmailTemplate(
+              email.split("@")[0],
+              departmentsList,
+              calendarLinksHtml,
+              CONFIG.APP_URL || "https://your-domain.vercel.app"
+            );
           }
 
           const subject = "Welcome to The Portal Map & Run of Show!";
@@ -256,7 +260,7 @@ function processOnboardingInvites(startRow) {
               htmlBody: htmlBody
             }));
           } else {
-            // Safe plain text fallback without spam-trigger links
+            // Safe plain text fallback without spam-trigger links (failsafe only)
             executeWithRetry(() => GmailApp.sendEmail(
               email,
               subject,
@@ -511,5 +515,86 @@ function processOffboardingRemovals() {
       }
     }
   }
+}
+
+/**
+ * Embedded fallback branded email template
+ */
+function getEmbeddedEmailTemplate(name, departments, calendarLinks, appUrl) {
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Welcome to The Portal</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #efe5d0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e1a16;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #efe5d0; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <!-- Main Card -->
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #fffdf3; border: 1px solid rgba(56, 38, 17, 0.15); border-radius: 12px; box-shadow: 0 10px 30px rgba(62, 35, 12, 0.08); overflow: hidden;">
+          <!-- Header Banner -->
+          <tr>
+            <td style="background-color: #1e1a16; padding: 32px; text-align: center; border-bottom: 4px solid #bc5c2d;">
+              <h1 style="margin: 0; color: #f5ead2; font-size: 24px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">The Portal</h1>
+              <p style="margin: 6px 0 0 0; color: #63584c; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;">Event Production Map & Schedule</p>
+            </td>
+          </tr>
+          
+          <!-- Content Body -->
+          <tr>
+            <td style="padding: 40px 32px;">
+              <h2 style="margin: 0 0 20px 0; color: #1e1a16; font-size: 20px; font-weight: 700;">Hello ${name},</h2>
+              <p style="margin: 0 0 24px 0; font-size: 15px; line-height: 1.6; color: #3a3229;">
+                You have been onboarded as crew for the upcoming event production. Below are your assigned departments and calendar access details:
+              </p>
+              
+              <!-- Department Badges Box -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 0 0 28px 0; background-color: rgba(188, 92, 45, 0.06); border-left: 4px solid #bc5c2d; border-radius: 4px; padding: 16px 20px;">
+                <tr>
+                  <td>
+                    <span style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; color: #bc5c2d; margin-bottom: 6px;">Your Departments</span>
+                    <strong style="font-size: 16px; color: #1e1a16;">${departments}</strong>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Calendar Subscriptions Box -->
+              <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 700; text-transform: uppercase; color: #63584c;">📅 Google Calendar Subscriptions</h3>
+              <p style="margin: 0 0 16px 0; font-size: 14px; line-height: 1.5; color: #50473d;">
+                You have been granted access to your department schedules on Google Calendar. Click below to add them to your calendar viewer:
+              </p>
+              <div style="margin: 0 0 32px 0; line-height: 1.6; font-size: 14px;">
+                ${calendarLinks}
+              </div>
+
+              <!-- Action Button -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="center" style="padding-top: 10px;">
+                    <a href="${appUrl}" target="_blank" style="display: inline-block; background-color: #1e1a16; color: #fffdf3; border: 1px solid #bc5c2d; border-radius: 6px; padding: 14px 28px; font-size: 14px; font-weight: 700; text-decoration: none; letter-spacing: 0.05em; text-transform: uppercase; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">Access the Map Web App</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: rgba(30, 26, 22, 0.03); border-top: 1px solid rgba(56, 38, 17, 0.08); padding: 24px 32px; text-align: center;">
+              <p style="margin: 0; font-size: 12px; color: #63584c; line-height: 1.5;">
+                This is an automated operational invite for crew members of event productions by The Portal.
+              </p>
+              <p style="margin: 4px 0 0 0; font-size: 11px; color: rgba(99, 88, 76, 0.7);">
+                &copy; 2026 The Portal. All rights reserved.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 }
 
