@@ -103,11 +103,12 @@ function processOnboardingInvites(startRow) {
   if (!sheet) return;
 
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(h => String(h).trim().toLowerCase().replace(/\s+/g, "_"));
-  const emailColIdx = headers.indexOf("email") + 1;
-  const sendInviteColIdx = headers.indexOf("send_invite") + 1;
-  const inviteStatusColIdx = headers.indexOf("invite_status") + 1;
-  const roleColIdx = headers.indexOf("role") + 1;
-  const deptColIdx = headers.indexOf("department") + 1;
+  const emailColIdx = headers.findIndex(h => h.includes("email")) + 1;
+  const sendInviteColIdx = headers.findIndex(h => h.includes("send_invite") || h.includes("send_invitation")) + 1;
+  const inviteStatusColIdx = headers.findIndex(h => h.includes("invite_status") || h.includes("invitation_status")) + 1;
+  const roleColIdx = headers.findIndex(h => h.includes("role")) + 1;
+  const deptColIdx = headers.findIndex(h => h.includes("dept") || h.includes("department")) + 1;
+  const activeColIdx = headers.findIndex(h => h.includes("active")) + 1;
 
   if (!emailColIdx || !sendInviteColIdx || !inviteStatusColIdx) {
     Logger.log("Required onboarding columns (email, send_invite, invite_status) not found.");
@@ -246,25 +247,31 @@ function processOnboardingInvites(startRow) {
               .replace("{{app_url}}", CONFIG.APP_URL || "https://your-domain.vercel.app");
           } catch (templateErr) {
             Logger.log("Could not load onboarding HTML template: " + templateErr + ". Falling back to plain text email.");
-            htmlBody = `
-              <h2>Welcome to The Portal!</h2>
-              <p>You have been onboarded to: <strong>${departmentsList}</strong>.</p>
-              <p>You can access the live map and schedule here: <a href="https://your-domain.vercel.app">Map Web App</a></p>
-            `;
+            htmlBody = ""; // Clear HTML body so we use plain text body
           }
 
           const subject = "Welcome to The Portal Map & Run of Show!";
-          executeWithRetry(() => MailApp.sendEmail({
-            to: email,
-            subject: subject,
-            htmlBody: htmlBody
-          }));
+          if (htmlBody) {
+            executeWithRetry(() => GmailApp.sendEmail(email, subject, "", {
+              htmlBody: htmlBody
+            }));
+          } else {
+            // Safe plain text fallback without spam-trigger links
+            executeWithRetry(() => GmailApp.sendEmail(
+              email,
+              subject,
+              "Welcome to The Portal!\n\nYou have been onboarded. You can access the event map and schedule once active."
+            ));
+          }
           updateInviteProgress(sheet, rowNum, inviteStatusColIdx, step4Pattern);
         }
 
         // Complete Onboarding
         sheet.getRange(rowNum, inviteStatusColIdx).setValue("Onboarded on " + new Date().toISOString());
         sheet.getRange(rowNum, sendInviteColIdx).setValue(false);
+        if (activeColIdx) {
+          sheet.getRange(rowNum, activeColIdx).setValue(true);
+        }
       } catch (err) {
         Logger.log("Failed to process invite for " + email + ": " + err);
         const cell = sheet.getRange(rowNum, inviteStatusColIdx);

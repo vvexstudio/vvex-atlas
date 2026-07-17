@@ -18,16 +18,19 @@ export async function getApprovedEmails(): Promise<ApprovedEmail[]> {
     return list.map(item => {
       let email = "";
       let name = "";
+      let active = true;
       for (const [key, val] of Object.entries(item)) {
         const cleanKey = key.trim().toLowerCase();
         if (cleanKey === "email") {
           email = String(val).trim();
         } else if (cleanKey === "name") {
           name = String(val).trim();
+        } else if (cleanKey === "active") {
+          active = val !== false && String(val).trim().toUpperCase() !== "FALSE";
         }
       }
-      return { email, name };
-    }).filter(item => item.email);
+      return { email, name, active };
+    }).filter(item => item.email && item.active);
   } catch (err) {
     console.error("Failed to fetch approved emails from Google Sheet:", err);
     return [];
