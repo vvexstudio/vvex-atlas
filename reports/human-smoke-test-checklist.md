@@ -28,14 +28,14 @@ These tests verify database synchronization, email deliverability, permission ga
 ### 2. 📧 Email Deliverability Check
 *Ensure onboarding emails land in the primary inbox rather than the spam folder.*
 
-- [ ] **Step 1:** Open the master Google Sheet and click the **`Personnel`** tab.
-- [ ] **Step 2:** Add a new test row with a Gmail address you own.
-- [ ] **Step 3:** *(Optional)* Add a second test row with an Outlook/Hotmail address you own.
-- [ ] **Step 4:** Set the **`active`** column to `TRUE` (checked) for your test row(s).
-- [ ] **Step 5:** Check the **`Send Invite`** checkbox in your test row(s).
-- [ ] **Step 6:** Wait for the Apps Script trigger to fire (or click **Run** on the `syncAllToFirebase` function manually inside Apps Script).
-- [ ] **Step 7:** Open your test email inbox(es).
-- [ ] **Step 8:** Confirm the email arrived in the **Primary Inbox** (not Spam/Junk).
+- [x] **Step 1:** Open the master Google Sheet and click the **`Personnel`** tab.
+- [x] **Step 2:** Add a new test row with a Gmail address you own.
+- [x] **Step 3:** *(Optional)* Add a second test row with an Outlook/Hotmail address you own.
+- [x] **Step 4:** Set the **`active`** column to `TRUE` (checked) for your test row(s).
+- [x] **Step 5:** Check the **`Send Invite`** checkbox in your test row(s).
+- [x] **Step 6:** Wait for the Apps Script trigger to fire (or click **Run** on the `syncAllToFirebase` function manually inside Apps Script).
+- [x] **Step 7:** Open your test email inbox(es).
+- [x] **Step 8:** Confirm the email arrived in the **Primary Inbox** (not Spam/Junk).
 - [ ] **Step 9:** Verify the email body matches the branded template in [onboarding.html](file:///Users/user/dev/portal-dev/scripts/email-templates/onboarding.html) and contains correct links.
 
 ---
