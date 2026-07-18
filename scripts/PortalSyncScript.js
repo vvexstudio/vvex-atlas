@@ -39,7 +39,7 @@ function syncAllToFirebase() {
   writeToFirebase("crew-data/events", ros);
   writeToFirebase("crew-data/departments", departments);
   writeToFirebase("crew-data/personnel", personnel);
-  
+
   // 3a. Write sync heartbeat
   writeToFirebase("crew-data/metadata/heartbeat", {
     last_sync: new Date().toISOString(),
@@ -56,14 +56,14 @@ function syncAllToFirebase() {
   personnel.forEach(person => {
     const emailKey = Object.keys(person).find(k => k.toLowerCase().includes("email"));
     const email = emailKey ? String(person[emailKey]).trim() : "";
-    
+
     if (email) {
       const escapedEmail = email.toLowerCase().replace(/\./g, ",");
-      
+
       // Find role key
       const roleKey = Object.keys(person).find(k => k.toLowerCase().includes("role"));
       const role = roleKey ? String(person[roleKey]).trim() : "";
-      
+
       // Find department key
       const deptKey = Object.keys(person).find(k => k.toLowerCase().includes("dept") || k.toLowerCase().includes("department"));
       const departmentsList = deptKey ? String(person[deptKey]).trim() : "";
@@ -71,7 +71,7 @@ function syncAllToFirebase() {
       // Find active status (defaulting to true if column is missing or blank)
       const activeKey = Object.keys(person).find(k => k.toLowerCase().includes("active"));
       const active = activeKey ? (person[activeKey] !== false && String(person[activeKey]).toUpperCase() !== "FALSE") : true;
-      
+
       authDirectory[escapedEmail] = {
         role: role || "guest",
         departments: parseCsvList(departmentsList),
@@ -129,7 +129,9 @@ function processOnboardingInvites(startRow) {
     const row = values[i];
     const email = row[emailColIdx - 1];
     const sendInvite = row[sendInviteColIdx - 1];
+    const role = (roleColIdx > 0 && row[roleColIdx - 1]) ? String(row[roleColIdx - 1]).trim().toLowerCase() : "";
     const departmentsList = (deptColIdx > 0 && row[deptColIdx - 1]) ? String(row[deptColIdx - 1]).trim() : "";
+    const displayedDepartments = role === "admin" ? "All Departments" : (departmentsList || "General");
     const currentStatus = String(row[inviteStatusColIdx - 1] || "");
 
     // Execution time limit check (4.5 minutes)
@@ -245,14 +247,14 @@ function processOnboardingInvites(startRow) {
             const template = HtmlService.createHtmlOutputFromFile("email-templates/onboarding").getContent();
             htmlBody = template
               .replace("{{name}}", email.split("@")[0])
-              .replace("{{departments}}", departmentsList || "General")
+              .replace("{{departments}}", displayedDepartments)
               .replace("{{calendar_links}}", calendarLinksHtml)
               .replace("{{app_url}}", CONFIG.APP_URL);
           } catch (templateErr) {
             Logger.log("Could not load onboarding HTML template from file: " + templateErr + ". Using embedded fallback template.");
             htmlBody = getEmbeddedEmailTemplate(
               email.split("@")[0],
-              departmentsList || "General",
+              displayedDepartments,
               calendarLinksHtml,
               CONFIG.APP_URL
             );
