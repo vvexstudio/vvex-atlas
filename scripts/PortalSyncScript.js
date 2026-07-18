@@ -84,6 +84,13 @@ function syncAllToFirebase() {
   writeToFirebase("auth-directory", authDirectory);
 
   Logger.log("Firebase sync completed successfully.");
+
+  // 5. Automatically process onboarding and offboarding invites
+  try {
+    processOnboardingInvites();
+  } catch (onboardingErr) {
+    Logger.log("Error during automatic onboarding/offboarding phase: " + onboardingErr);
+  }
 }
 
 /**
