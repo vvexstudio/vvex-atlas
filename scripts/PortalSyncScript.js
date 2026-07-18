@@ -7,6 +7,7 @@
 
 const CONFIG = {
   FIREBASE_DB_URL: PropertiesService.getScriptProperties().getProperty("FIREBASE_DB_URL") || "",
+  APP_URL: PropertiesService.getScriptProperties().getProperty("APP_URL") || "http://localhost:3000",
   SPREADSHEET_ID: "",
 };
 
@@ -128,7 +129,7 @@ function processOnboardingInvites(startRow) {
     const row = values[i];
     const email = row[emailColIdx - 1];
     const sendInvite = row[sendInviteColIdx - 1];
-    const departmentsList = row[deptColIdx - 1];
+    const departmentsList = (deptColIdx > 0 && row[deptColIdx - 1]) ? String(row[deptColIdx - 1]).trim() : "";
     const currentStatus = String(row[inviteStatusColIdx - 1] || "");
 
     // Execution time limit check (4.5 minutes)
@@ -229,28 +230,31 @@ function processOnboardingInvites(startRow) {
         if (currentStatus.indexOf(step4Pattern) === -1) {
           let htmlBody = "";
           // Build calendar subscription buttons
-          const calendarLinksHtml = depts.map(dept => {
+          let calendarLinksHtml = depts.map(dept => {
             const groupEmail = dept.toLowerCase().replace(/\s+/g, "-") + "@yourdomain.com";
             const cid = encodeURIComponent(groupEmail);
             const link = "https://calendar.google.com/calendar/render?cid=" + cid;
             return `<p style="margin: 4px 0;"><a href="${link}" style="color: #bc5c2d; text-decoration: underline; font-weight: bold;">Subscribe to ${dept} Calendar</a></p>`;
           }).join("");
+          if (!calendarLinksHtml) {
+            calendarLinksHtml = "<p style='color: #63584c; font-style: italic;'>No department calendars assigned.</p>";
+          }
 
           try {
             // Load responsive HTML template pushed via clasp
             const template = HtmlService.createHtmlOutputFromFile("email-templates/onboarding").getContent();
             htmlBody = template
               .replace("{{name}}", email.split("@")[0])
-              .replace("{{departments}}", departmentsList)
+              .replace("{{departments}}", departmentsList || "General")
               .replace("{{calendar_links}}", calendarLinksHtml)
-              .replace("{{app_url}}", CONFIG.APP_URL || "https://your-domain.vercel.app");
+              .replace("{{app_url}}", CONFIG.APP_URL);
           } catch (templateErr) {
             Logger.log("Could not load onboarding HTML template from file: " + templateErr + ". Using embedded fallback template.");
             htmlBody = getEmbeddedEmailTemplate(
               email.split("@")[0],
-              departmentsList,
+              departmentsList || "General",
               calendarLinksHtml,
-              CONFIG.APP_URL || "https://your-domain.vercel.app"
+              CONFIG.APP_URL
             );
           }
 
@@ -560,7 +564,7 @@ function getEmbeddedEmailTemplate(name, departments, calendarLinks, appUrl) {
               </table>
 
               <!-- Calendar Subscriptions Box -->
-              <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 700; text-transform: uppercase; color: #63584c;">📅 Google Calendar Subscriptions</h3>
+              <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 700; text-transform: uppercase; color: #63584c;">&#x1F4C5; Google Calendar Subscriptions</h3>
               <p style="margin: 0 0 16px 0; font-size: 14px; line-height: 1.5; color: #50473d;">
                 You have been granted access to your department schedules on Google Calendar. Click below to add them to your calendar viewer:
               </p>
