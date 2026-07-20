@@ -3,6 +3,7 @@ import { ref, onValue } from "firebase/database";
 import { clientDb } from "@/lib/firebase-client";
 import { Venue, FestivalEvent, Department } from "@/types/festival";
 import { saveOfflineSnapshot, loadOfflineSnapshot } from "@/lib/offline-cache";
+import { parseSpreadsheetData } from "@/lib/event-mapper";
 
 interface InitialData {
   venues: Venue[];
@@ -81,19 +82,21 @@ export const useEventData = (role: string | null, initialData: InitialData) => {
           const data = snapshot.val();
           console.log(`Realtime update received for path: /${nodePath}`);
           
-          const newVenues = data.venues || [];
-          const newEvents = data.events || [];
-          const newPersonnel = data.personnel || [];
-          const newDepartments = data.departments || [];
+          const locationsData = data.venues || [];
+          const rosData = data.events || [];
+          const personnelData = data.personnel || [];
+          const departmentsData = data.departments || [];
 
-          setVenues(newVenues);
-          setEvents(newEvents);
-          setPersonnel(newPersonnel);
-          setDepartments(newDepartments);
+          const mapped = parseSpreadsheetData(locationsData, rosData, personnelData, departmentsData);
+
+          setVenues(mapped.venues);
+          setEvents(mapped.events);
+          setPersonnel(mapped.personnel);
+          setDepartments(mapped.departments);
           setSourceLabel(`Firebase RTD Live (${role.toUpperCase()})`);
           
           // Cache snapshot locally for offline fallback
-          saveOfflineSnapshot(newVenues, newEvents, newPersonnel, newDepartments);
+          saveOfflineSnapshot(mapped.venues, mapped.events, mapped.personnel, mapped.departments);
           setLastSynced(new Date().toISOString());
         }
       },

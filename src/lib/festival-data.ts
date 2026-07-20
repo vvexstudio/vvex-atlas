@@ -12,6 +12,7 @@ import {
   parseSheetDataWithColors,
 } from "./google-sheets-api";
 import { adminDb } from "./firebase-admin";
+import { parseSpreadsheetData } from "./event-mapper";
 
 export type LocationMatchDebug = {
   totalRows: number;
@@ -319,109 +320,6 @@ function createFallbackVenue(locationName: string, usedIds: Set<string>): Venue 
   };
 }
 
-function createVenueFromNewSheetRow(row: any): Venue {
-  const cleanRow: Record<string, any> = {};
-  for (const [k, v] of Object.entries(row)) {
-    cleanRow[k.trim()] = v;
-  }
-  const name = asString(cleanRow["Location"]);
-  const lat = Number(cleanRow["Lat"]);
-  const lng = Number(cleanRow["Long"]);
-  const hasLocation = Number.isFinite(lat) && Number.isFinite(lng);
-
-  return {
-    id: slugify(name),
-    name,
-    label: "Location",
-    mapLabel: name,
-    shortDescription: asString(cleanRow["Description"]) || "Imported location",
-    description: asString(cleanRow["Description"]) || `Location: ${name}`,
-    x: 0,
-    y: 0,
-    lat: hasLocation ? lat : undefined,
-    lng: hasLocation ? lng : undefined,
-    hasLocation,
-    thumbnailUrl: DEFAULT_THUMBNAIL,
-    accent: hasLocation ? DEFAULT_ACCENT : "#6b7280",
-  };
-}
-
-function parseDateString(val: unknown): Date | null {
-  if (val instanceof Date && !Number.isNaN(val.getTime())) return val;
-  if (typeof val === "number" && Number.isFinite(val)) {
-    const parsed = XLSX.SSF.parse_date_code(val);
-    if (!parsed) return null;
-    return new Date(parsed.y, parsed.m - 1, parsed.d);
-  }
-  const raw = asString(val);
-  if (!raw) return null;
-
-  const cleaned = raw.replace(/^(Sun|Mon|Tue|Wed|Thu|Fri|Sat),\s*/i, "").trim();
-  if (!cleaned) return null;
-
-  const dateWithYear = new Date(`${cleaned}, 2026`);
-  if (!Number.isNaN(dateWithYear.getTime())) {
-    return dateWithYear;
-  }
-
-  const dateFallback = new Date(raw);
-  if (!Number.isNaN(dateFallback.getTime())) {
-    return dateFallback;
-  }
-
-  return null;
-}
-
-function createEventFromSheetRow(row: any, venuesById: Map<string, Venue>, index: number): FestivalEvent {
-  const cleanRow: Record<string, any> = {};
-  for (const [k, v] of Object.entries(row)) {
-    cleanRow[k.trim()] = v;
-  }
-
-  const action = asString(cleanRow["Action"]);
-  const description = asString(cleanRow["Description"]);
-  const locationName = asString(cleanRow["SOLARIS ROS Location"] || cleanRow["Location"]) || "TBD";
-  
-  const title = description.split(/\n|\/\//)[0].trim() || action || "Scheduled Event";
-
-  const dateObj = parseDateString(cleanRow["Start Day"]);
-  const dateStr = dateObj ? (isoDate(dateObj) || "") : asString(cleanRow["Start Day"]);
-
-  const startMinutes = excelTimeToMinutes(cleanRow["Start"]);
-  const startStr = startMinutes !== null ? formatMinutes(startMinutes) : asString(cleanRow["Start"]) || "TBD";
-
-  const endMinutes = excelTimeToMinutes(cleanRow["End Time"]);
-  const endStr = endMinutes !== null ? formatMinutes(endMinutes) : asString(cleanRow["End Time"]) || "TBD";
-
-  const venueId = slugify(locationName);
-  const venue = venuesById.get(venueId);
-
-  const projectTypes = parseEventTypes(`${action} ${description}`);
-
-  return {
-    id: cleanRow["event_id"] || `remote-${slugify(`${dateStr || "date"}-${title}-${index}`)}`,
-    venueId,
-    title,
-    host: asString(cleanRow["Lead Point Person"]) || asString(cleanRow["Department"]) || "",
-    description,
-    day: getFestivalDay(dateObj),
-    startTime: startStr,
-    endTime: endStr,
-    type: (cleanRow["event_type"] || projectTypes[0] || "community") as any,
-    projectTypes: projectTypes.length > 1 ? projectTypes : undefined,
-    thumbnailUrl: DEFAULT_THUMBNAIL,
-    lat: venue?.lat,
-    lng: venue?.lng,
-    hasLocation: !!venue?.hasLocation,
-    source: "schedule",
-    scheduleDate: dateStr,
-    scheduleCategory: action || undefined,
-    action,
-    department: asString(cleanRow["Department"]),
-    leadPointPerson: asString(cleanRow["Lead Point Person"]),
-    locationName,
-  };
-}
 
 export async function getFestivalData(role: string = "guest"): Promise<FestivalDataResult> {
   const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "19Xs3TScHhS369n_A8VvUGxszoxncx1p32T8iwNHSKTU";
@@ -447,18 +345,24 @@ export async function getFestivalData(role: string = "guest"): Promise<FestivalD
           colorsObj = JSON.parse(cachedColorsContent);
         } catch (err) {}
 
-        const eventsList = data.events || [];
+        const locationsData = data.venues || [];
+        const rosData = data.events || [];
+        const personnelData = data.personnel || [];
+        const departmentsData = data.departments || [];
+
+        const mapped = parseSpreadsheetData(locationsData, rosData, personnelData, departmentsData);
+
         return {
-          venues: data.venues || [],
-          events: eventsList,
-          personnel: data.personnel || [],
-          departments: data.departments || [],
+          venues: mapped.venues,
+          events: mapped.events,
+          personnel: mapped.personnel,
+          departments: mapped.departments,
           colors: colorsObj,
           sourceLabel: `Firebase RTD (${role.toUpperCase()} View)`,
           debug: {
-            totalRows: eventsList.length,
-            confirmedRows: eventsList.length,
-            matchedRows: eventsList.filter((e: any) => e.hasLocation || e.lat !== undefined).length,
+            totalRows: mapped.events.length,
+            confirmedRows: mapped.events.length,
+            matchedRows: mapped.events.filter((e: any) => e.hasLocation || e.lat !== undefined).length,
             unmatchedLocations: [],
           }
         };
@@ -664,71 +568,7 @@ export async function getFestivalData(role: string = "guest"): Promise<FestivalD
       sourceLabel = `Google Sheet ${spreadsheetId.substring(0, 8)}... (Public CSV)`;
     }
 
-    const validRows = rosData.filter((row) => {
-      const cleanRow: Record<string, any> = {};
-      for (const [k, v] of Object.entries(row)) {
-        cleanRow[k.trim()] = v;
-      }
-      return cleanRow["Action"] || cleanRow["Description"] || cleanRow["SOLARIS ROS Location"] || cleanRow["Location"];
-    });
-
-    const venues = locationsData
-      .map(createVenueFromNewSheetRow)
-      .filter((v) => v.name && v.name !== "All Locations");
-
-    const venuesById = new Map(venues.map((venue) => [venue.id, venue]));
-
-    validRows.forEach((row) => {
-      const cleanRow: Record<string, any> = {};
-      for (const [k, v] of Object.entries(row)) {
-        cleanRow[k.trim()] = v;
-      }
-      const locName = asString(cleanRow["SOLARIS ROS Location"] || cleanRow["Location"]);
-      if (locName) {
-        const id = slugify(locName);
-        if (!venuesById.has(id)) {
-          const fallbackVenue: Venue = {
-            id,
-            name: locName,
-            label: "Location",
-            mapLabel: locName,
-            shortDescription: "Dynamic from ROS by TIME",
-            description: `Location referenced in schedule: ${locName}`,
-            x: 0,
-            y: 0,
-            hasLocation: false,
-            thumbnailUrl: DEFAULT_THUMBNAIL,
-            accent: "#6b7280",
-          };
-          venues.push(fallbackVenue);
-          venuesById.set(id, fallbackVenue);
-        }
-      }
-    });
-
-    const events = validRows.map((row, idx) => createEventFromSheetRow(row, venuesById, idx));
-
-    events.sort((a, b) => {
-      const dateDelta = (a.scheduleDate || "").localeCompare(b.scheduleDate || "");
-      if (dateDelta !== 0) return dateDelta;
-      return (a.startTime || "").localeCompare(b.startTime || "");
-    });
-
-    const personnel = personnelData.map((row) => {
-      const cleanRow: Record<string, any> = {};
-      for (const [k, v] of Object.entries(row)) {
-        cleanRow[k.trim()] = v;
-      }
-      return cleanRow;
-    }).filter(p => p.Name);
-
-    const departments: Department[] = departmentsData.map((row) => {
-      const cleanRow: Record<string, any> = {};
-      for (const [k, v] of Object.entries(row)) {
-        cleanRow[k.trim()] = v;
-      }
-      return cleanRow as Department;
-    }).filter((d): d is Department => Boolean(d.Department));
+    const { venues, events, personnel, departments } = parseSpreadsheetData(locationsData, rosData, personnelData, departmentsData);
 
     return {
       venues,

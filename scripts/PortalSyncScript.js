@@ -62,19 +62,30 @@ function syncAllToFirebase() {
 
       // Find role key
       const roleKey = Object.keys(person).find(k => k.toLowerCase().includes("role"));
-      const role = roleKey ? String(person[roleKey]).trim() : "";
+      const roleVal = roleKey ? String(person[roleKey]).trim() : "";
 
-      // Find department key
-      const deptKey = Object.keys(person).find(k => k.toLowerCase().includes("dept") || k.toLowerCase().includes("department"));
-      const departmentsList = deptKey ? String(person[deptKey]).trim() : "";
+      let role = "guest";
+      let depts = [];
+
+      const lowerRoleVal = roleVal.toLowerCase();
+      if (lowerRoleVal === "admin") {
+        role = "admin";
+        depts = ["All Departments"];
+      } else if (lowerRoleVal === "public" || !roleVal) {
+        role = "guest";
+        depts = ["Public"];
+      } else {
+        role = "crew";
+        depts = parseCsvList(roleVal);
+      }
 
       // Find active status (defaulting to true if column is missing or blank)
       const activeKey = Object.keys(person).find(k => k.toLowerCase().includes("active"));
       const active = activeKey ? (person[activeKey] !== false && String(person[activeKey]).toUpperCase() !== "FALSE") : true;
 
       authDirectory[escapedEmail] = {
-        role: role || "guest",
-        departments: parseCsvList(departmentsList),
+        role: role,
+        departments: depts,
         active: active
       };
     }
@@ -90,6 +101,13 @@ function syncAllToFirebase() {
     processOnboardingInvites();
   } catch (onboardingErr) {
     Logger.log("Error during automatic onboarding/offboarding phase: " + onboardingErr);
+  }
+
+  // 6. Automatically sync events from ROS sheet to Google Calendars
+  try {
+    syncRosEventsToGoogleCalendars(ss);
+  } catch (calSyncErr) {
+    Logger.log("Error during Google Calendar event sync phase: " + calSyncErr);
   }
 }
 
@@ -110,12 +128,14 @@ function processOnboardingInvites(startRow) {
   const sheet = ss.getSheetByName("Personnel");
   if (!sheet) return;
 
-  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(h => String(h).trim().toLowerCase().replace(/\s+/g, "_"));
+  // Build department to calendar mapping from Departments tab
+  const deptCalMap = getDepartmentCalendarMap(ss);
+
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(normalizeHeader);
   const emailColIdx = headers.findIndex(h => h.includes("email")) + 1;
   const sendInviteColIdx = headers.findIndex(h => h.includes("send_invite") || h.includes("send_invitation")) + 1;
   const inviteStatusColIdx = headers.findIndex(h => h.includes("invite_status") || h.includes("invitation_status")) + 1;
   const roleColIdx = headers.findIndex(h => h.includes("role")) + 1;
-  const deptColIdx = headers.findIndex(h => h.includes("dept") || h.includes("department")) + 1;
   const activeColIdx = headers.findIndex(h => h.includes("active")) + 1;
 
   if (!emailColIdx || !sendInviteColIdx || !inviteStatusColIdx) {
@@ -136,9 +156,24 @@ function processOnboardingInvites(startRow) {
     const row = values[i];
     const email = row[emailColIdx - 1];
     const sendInvite = row[sendInviteColIdx - 1];
-    const role = (roleColIdx > 0 && row[roleColIdx - 1]) ? String(row[roleColIdx - 1]).trim().toLowerCase() : "";
-    const departmentsList = (deptColIdx > 0 && row[deptColIdx - 1]) ? String(row[deptColIdx - 1]).trim() : "";
-    const displayedDepartments = role === "admin" ? "All Departments" : (departmentsList || "General");
+    const roleVal = (roleColIdx > 0 && row[roleColIdx - 1]) ? String(row[roleColIdx - 1]).trim() : "";
+    
+    let role = "guest";
+    let depts = [];
+
+    const lowerRoleVal = roleVal.toLowerCase();
+    if (lowerRoleVal === "admin") {
+      role = "admin";
+      depts = ["All Departments"];
+    } else if (lowerRoleVal === "public" || !roleVal) {
+      role = "guest";
+      depts = ["Public"];
+    } else {
+      role = "crew";
+      depts = parseCsvList(roleVal);
+    }
+
+    const displayedDepartments = role === "admin" ? "All Departments" : (depts.join(", ") || "General");
     const currentStatus = String(row[inviteStatusColIdx - 1] || "");
 
     // Execution time limit check (4.5 minutes)
@@ -154,10 +189,10 @@ function processOnboardingInvites(startRow) {
     if (sendInvite === true && email) {
       Logger.log("Processing invite for: " + email);
       try {
-        const depts = parseCsvList(departmentsList);
+        const domain = getWorkspaceDomain();
 
         depts.forEach(dept => {
-          const groupEmail = dept.toLowerCase().replace(/\s+/g, "-") + "@yourdomain.com";
+          const groupEmail = dept.toLowerCase().replace(/\s+/g, "-") + "@" + domain;
 
           // STEP 1: Workspace Group (Idempotent)
           let group = null;
@@ -177,9 +212,12 @@ function processOnboardingInvites(startRow) {
           }
 
           // STEP 2: Calendar ACL (Idempotent)
-          const calendarId = "primary"; // placeholder
+          const calendarId = deptCalMap[dept.toLowerCase()] || "";
           const step2Pattern = "cal:" + groupEmail + ":ok";
-          if (currentStatus.indexOf(step2Pattern) === -1) {
+          if (!calendarId) {
+            Logger.log("No google_calendar_id found in Departments sheet for department: " + dept + ". Skipping calendar ACL setup.");
+            updateInviteProgress(sheet, rowNum, inviteStatusColIdx, step2Pattern);
+          } else if (currentStatus.indexOf(step2Pattern) === -1) {
             let aclExists = false;
             try {
               const aclList = executeWithRetry(() => Calendar.Acl.list(calendarId));
@@ -240,11 +278,12 @@ function processOnboardingInvites(startRow) {
           let htmlBody = "";
           // Build calendar subscription buttons
           let calendarLinksHtml = depts.map(dept => {
-            const groupEmail = dept.toLowerCase().replace(/\s+/g, "-") + "@yourdomain.com";
-            const cid = encodeURIComponent(groupEmail);
+            const calId = deptCalMap[dept.toLowerCase()];
+            if (!calId) return "";
+            const cid = encodeURIComponent(calId);
             const link = "https://calendar.google.com/calendar/render?cid=" + cid;
             return `<p style="margin: 4px 0;"><a href="${link}" style="color: #bc5c2d; text-decoration: underline; font-weight: bold;">Subscribe to ${dept} Calendar</a></p>`;
-          }).join("");
+          }).filter(Boolean).join("");
           if (!calendarLinksHtml) {
             calendarLinksHtml = "<p style='color: #63584c; font-style: italic;'>No department calendars assigned.</p>";
           }
@@ -317,10 +356,16 @@ function readSheetToJson(sheet) {
   const values = range.getValues();
   if (values.length < 2) return [];
 
-  const headers = values[0].map(h => String(h).trim().toLowerCase().replace(/\s+/g, "_"));
+  // Detect and skip a banner row if it's mostly empty (<= 2 non-empty cells)
+  let headerRowIdx = 0;
+  if (sheet.getName() === "ROS by TIME" || (values[0].filter(val => String(val).trim() !== "").length <= 2 && values.length > 2)) {
+    headerRowIdx = 1;
+  }
+
+  const headers = values[headerRowIdx].map(normalizeHeader);
   const rows = [];
 
-  for (let i = 1; i < values.length; i++) {
+  for (let i = headerRowIdx + 1; i < values.length; i++) {
     const row = values[i];
     const obj = {};
     headers.forEach((header, index) => {
@@ -329,6 +374,19 @@ function readSheetToJson(sheet) {
     rows.push(obj);
   }
   return rows;
+}
+
+/**
+ * Safely normalizes header keys for Firebase compatibility, replacing illegal characters
+ * like $ # [ ] / . and spaces with underscores.
+ */
+function normalizeHeader(h) {
+  return String(h)
+    .trim()
+    .toLowerCase()
+    .replace(/[\/\s.#$\[\]]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
 }
 
 function getFirebaseAccessToken() {
@@ -480,11 +538,11 @@ function processOffboardingRemovals() {
   const sheet = ss.getSheetByName("Personnel");
   if (!sheet) return;
 
-  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(h => String(h).trim().toLowerCase().replace(/\s+/g, "_"));
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(normalizeHeader);
   const emailColIdx = headers.indexOf("email") + 1;
   const inviteStatusColIdx = headers.indexOf("invite_status") + 1;
   const activeColIdx = headers.indexOf("active") + 1;
-  const deptColIdx = headers.indexOf("department") + 1;
+  const roleColIdx = headers.indexOf("role") + 1;
 
   if (!emailColIdx || !activeColIdx || !inviteStatusColIdx) {
     Logger.log("Required offboarding columns (email, active, invite_status) not found.");
@@ -502,17 +560,27 @@ function processOffboardingRemovals() {
     const row = values[i];
     const email = row[emailColIdx - 1];
     const active = row[activeColIdx - 1];
-    const departmentsList = row[deptColIdx - 1];
+    const roleVal = (roleColIdx > 0 && row[roleColIdx - 1]) ? String(row[roleColIdx - 1]).trim() : "";
     const status = String(row[inviteStatusColIdx - 1] || "");
 
     // Run offboarding if marked active=false and not yet flagged as offboarded
     if (active === false && email && status.indexOf("Offboarded") === -1) {
       Logger.log("Processing offboarding for: " + email);
       try {
-        const depts = parseCsvList(departmentsList);
+        let depts = [];
+        const lowerRoleVal = roleVal.toLowerCase();
+        if (lowerRoleVal === "admin") {
+          depts = ["All Departments"];
+        } else if (lowerRoleVal === "public" || !roleVal) {
+          depts = ["Public"];
+        } else {
+          depts = parseCsvList(roleVal);
+        }
+
+        const domain = getWorkspaceDomain();
 
         depts.forEach(dept => {
-          const groupEmail = dept.toLowerCase().replace(/\s+/g, "-") + "@yourdomain.com";
+          const groupEmail = dept.toLowerCase().replace(/\s+/g, "-") + "@" + domain;
           try {
             executeWithRetry(() => AdminDirectory.Members.remove(groupEmail, email));
             Logger.log("Removed " + email + " from group: " + groupEmail);
@@ -609,5 +677,181 @@ function getEmbeddedEmailTemplate(name, departments, calendarLinks, appUrl) {
   </table>
 </body>
 </html>`;
+}
+
+/**
+ * Dynamically resolves the Google Workspace domain of the executing user.
+ */
+function getWorkspaceDomain() {
+  const email = Session.getEffectiveUser().getEmail() || "";
+  const parts = email.split("@");
+  return parts.length > 1 ? parts[1] : "vvexstudio.com";
+}
+
+/**
+ * Synchronizes events from the 'ROS by TIME' (or 'ROS') sheet into their respective Department Google Calendars.
+ */
+function syncRosEventsToGoogleCalendars(ss) {
+  ss = ss || SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID || SpreadsheetApp.getActiveSpreadsheet().getId());
+  
+  // 1. Build map of department name -> google_calendar_id from Departments tab
+  const deptCalMap = getDepartmentCalendarMap(ss);
+
+  const calendarKeys = Object.keys(deptCalMap);
+  if (calendarKeys.length === 0) {
+    Logger.log("No valid Google Calendar IDs found.");
+    return;
+  }
+
+  // 2. Read ROS events
+  const rosSheet = ss.getSheetByName("ROS by TIME") || ss.getSheetByName("ROS");
+  if (!rosSheet) return;
+  const rosEvents = readSheetToJson(rosSheet);
+
+  Logger.log("Starting Google Calendar event sync for " + rosEvents.length + " ROS rows across " + calendarKeys.length + " department calendars.");
+
+  let syncedCount = 0;
+  let skippedCount = 0;
+
+  rosEvents.forEach(row => {
+    const action = String(row["action"] || "").trim();
+    const description = String(row["description"] || "").trim();
+    const title = description.split(/\n|\/\//)[0].trim() || action || "Scheduled Event";
+    if (!title || title === "Scheduled Event") return;
+
+    const startDateVal = row["start_day"] || row["start_date"] || row["date"];
+    const startTimeVal = row["start"];
+    const endTimeVal = row["end_time"] || row["end"];
+
+    const startTime = parseRosDateTime(startDateVal, startTimeVal);
+    if (!startTime) return;
+
+    let endTime = parseRosDateTime(startDateVal, endTimeVal);
+    if (!endTime || isNaN(endTime.getTime())) {
+      endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hr default
+    } else if (endTime <= startTime) {
+      endTime.setDate(endTime.getDate() + 1);
+    }
+
+    const locationName = String(row["solaris_ros_location"] || row["location"] || "").trim();
+    const leadDept = String(row["lead_dept"] || row["department"] || row["lead_department"] || "").trim();
+    const support1 = String(row["support_dept_1"] || "").trim();
+    const support2 = String(row["support_dept_2"] || "").trim();
+
+    const deptsRaw = [leadDept, support1, support2].filter(Boolean).join(", ");
+    let depts = parseCsvList(deptsRaw);
+
+    if (depts.some(d => d.toLowerCase() === "all" || d.toLowerCase() === "all departments")) {
+      depts = calendarKeys;
+    }
+
+    depts.forEach(dept => {
+      const calId = deptCalMap[dept.toLowerCase()];
+      if (!calId) return;
+
+      try {
+        const cal = CalendarApp.getCalendarById(calId);
+        if (!cal) {
+          Logger.log("Could not access Google Calendar ID: " + calId);
+          return;
+        }
+
+        // Check if event already exists in window to prevent duplication
+        const existingEvents = cal.getEvents(new Date(startTime.getTime() - 60000), new Date(endTime.getTime() + 60000));
+        const duplicate = existingEvents.find(e => e.getTitle() === title);
+
+        if (!duplicate) {
+          cal.createEvent(title, startTime, endTime, {
+            location: locationName,
+            description: description ? (action ? action + "\n\n" + description : description) : action
+          });
+          syncedCount++;
+        } else {
+          skippedCount++;
+        }
+      } catch (err) {
+        Logger.log("Failed to sync event '" + title + "' to calendar " + calId + ": " + err);
+      }
+    });
+  });
+
+  Logger.log("Google Calendar sync complete. Synced new: " + syncedCount + ", skipped existing: " + skippedCount);
+}
+
+/**
+ * Helper to parse ROS start/end dates and times into JavaScript Date objects.
+ */
+function parseRosDateTime(dateVal, timeVal) {
+  if (!dateVal && (timeVal === undefined || timeVal === null || timeVal === "")) return null;
+  let year = 2026, month = 6, day = 19; // Default fallback: Montalcino 2026
+
+  if (dateVal instanceof Date && !isNaN(dateVal.getTime())) {
+    year = dateVal.getFullYear();
+    month = dateVal.getMonth();
+    day = dateVal.getDate();
+  } else if (typeof dateVal === "number" && dateVal > 0) {
+    const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+    const d = new Date(excelEpoch.getTime() + dateVal * 86400000);
+    year = d.getFullYear();
+    month = d.getMonth();
+    day = d.getDate();
+  } else if (typeof dateVal === "string" && dateVal.trim()) {
+    const cleaned = dateVal.trim().replace(/^(Sun|Mon|Tue|Wed|Thu|Fri|Sat),\s*/i, "");
+    const parsed = new Date(cleaned.includes("20") ? cleaned : cleaned + ", 2026");
+    if (!isNaN(parsed.getTime())) {
+      year = parsed.getFullYear();
+      month = parsed.getMonth();
+      day = parsed.getDate();
+    }
+  }
+
+  let hours = 0;
+  let minutes = 0;
+
+  if (typeof timeVal === "number" && Number.isFinite(timeVal)) {
+    const normalized = ((timeVal % 1) + 1) % 1;
+    const totalMinutes = Math.round(normalized * 24 * 60);
+    hours = Math.floor(totalMinutes / 60);
+    minutes = totalMinutes % 60;
+  } else if (typeof timeVal === "string" && timeVal.trim()) {
+    const compact = timeVal.trim().toLowerCase();
+    const match = compact.match(/^(\d{1,2})(?::(\d{2}))?\s*([ap]m|m)?$/);
+    if (match) {
+      hours = Number(match[1]);
+      minutes = Number(match[2] ?? "0");
+      const suffix = match[3];
+      if (suffix === "pm" && hours < 12) hours += 12;
+      if ((suffix === "am" || suffix === "m") && hours === 12) hours = 0;
+    }
+  }
+
+  return new Date(year, month, day, hours, minutes, 0, 0);
+}
+
+/**
+ * Reads the 'Departments' sheet and returns a map of department_name (lowercase) -> google_calendar_id.
+ * STRICT: Reads directly from the sheet and NEVER auto-creates new calendars.
+ */
+function getDepartmentCalendarMap(ss) {
+  ss = ss || SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID || SpreadsheetApp.getActiveSpreadsheet().getId());
+  const deptSheet = ss.getSheetByName("Departments");
+  const deptCalMap = {};
+  if (!deptSheet) return deptCalMap;
+
+  const deptData = readSheetToJson(deptSheet);
+  deptData.forEach(row => {
+    const nameKey = Object.keys(row).find(k => k.toLowerCase() === "department" || k.toLowerCase() === "name" || k.toLowerCase() === "dept" || k.toLowerCase() === "dept_id");
+    const calKey = Object.keys(row).find(k => k.toLowerCase() === "google_calendar_id" || k.toLowerCase() === "calendar_id");
+
+    if (nameKey && calKey && row[nameKey] && row[calKey]) {
+      const deptName = String(row[nameKey]).trim().toLowerCase();
+      const calId = String(row[calKey]).trim();
+      if (deptName && calId && !calId.includes("PRIMARY_OR_DEPT")) {
+        deptCalMap[deptName] = calId;
+      }
+    }
+  });
+
+  return deptCalMap;
 }
 
