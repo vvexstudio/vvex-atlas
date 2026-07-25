@@ -153,6 +153,7 @@ function processOnboardingInvites(startRow) {
   const calendarKeys = Object.keys(deptCalMap);
 
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(normalizeHeader);
+  const nameColIdx = headers.findIndex(h => h === "name" || h.includes("name")) + 1;
   const emailColIdx = headers.findIndex(h => h.includes("email")) + 1;
   const sendInviteColIdx = headers.findIndex(h => h.includes("send_invite") || h.includes("send_invitation")) + 1;
   const inviteStatusColIdx = headers.findIndex(h => h.includes("invite_status") || h.includes("invitation_status")) + 1;
@@ -177,6 +178,7 @@ function processOnboardingInvites(startRow) {
     const row = values[i];
     const email = row[emailColIdx - 1];
     const sendInvite = row[sendInviteColIdx - 1];
+    const userName = (nameColIdx > 0 && row[nameColIdx - 1]) ? String(row[nameColIdx - 1]).trim() : email.split("@")[0];
     const roleVal = (roleColIdx > 0 && row[roleColIdx - 1]) ? String(row[roleColIdx - 1]).trim() : "";
     
     let role = "guest";
@@ -312,30 +314,25 @@ function processOnboardingInvites(startRow) {
           let htmlBody = "";
           let calendarSectionHtml = "";
           if (isAdmin) {
-            // Build calendar subscription buttons for admins (hidden under details tag to prevent clutter)
+            // Build calendar subscription buttons for admins (compact inline list to prevent clutter)
             let calendarLinksHtml = calendarKeys.filter(d => d.toLowerCase() !== "all" && d.toLowerCase() !== "all departments" && d.toLowerCase() !== "public").map(dept => {
               const calId = deptCalMap[dept.toLowerCase()];
               if (!calId) return "";
               const cid = encodeURIComponent(calId);
               const link = "https://calendar.google.com/calendar/render?cid=" + cid;
-              return `<p style="margin: 4px 0;"><a href="${link}" style="color: #bc5c2d; text-decoration: underline; font-weight: bold;">Subscribe to ${dept} Calendar</a></p>`;
-            }).filter(Boolean).join("");
+              return `<a href="${link}" style="color: #bc5c2d; text-decoration: underline; font-weight: bold; margin-right: 12px; display: inline-block;">${dept}</a>`;
+            }).filter(Boolean).join(" • ");
 
             calendarSectionHtml = `
               <p style="margin: 0 0 16px 0; font-size: 14px; line-height: 1.5; color: #50473d;">
                 As an Admin / All Departments member, you have automatically been granted access to all department schedules via the <strong>all-departments</strong> group.
               </p>
               <p style="margin: 0 0 16px 0; font-size: 14px; line-height: 1.5; color: #50473d;">
-                <strong>Note:</strong> Google Calendar does not automatically add shared calendars to your sidebar. Click below to expand and add them to your calendar viewer:
+                <strong>Note:</strong> Google Calendar does not automatically add shared calendars to your sidebar. You can view all events on the Map Web App, or click below to add specific department calendars to your Google Calendar viewer:
               </p>
-              <details style="margin: 0 0 32px 0; background-color: rgba(30, 26, 22, 0.03); border: 1px solid rgba(56, 38, 17, 0.1); border-radius: 6px; padding: 12px 16px; cursor: pointer;">
-                <summary style="font-weight: 700; color: #bc5c2d; font-size: 14px; outline: none; user-select: none;">
-                  Show All Department Calendar Subscription Links
-                </summary>
-                <div style="margin-top: 12px; line-height: 1.6; font-size: 14px;">
-                  ${calendarLinksHtml}
-                </div>
-              </details>
+              <p style="margin: 0 0 32px 0; line-height: 1.8; font-size: 14px; background-color: rgba(30, 26, 22, 0.03); border: 1px solid rgba(56, 38, 17, 0.1); border-radius: 6px; padding: 12px 16px;">
+                ${calendarLinksHtml}
+              </p>
             `;
           } else {
             let calendarLinksHtml = deptsToProcess.map(dept => {
@@ -370,14 +367,14 @@ function processOnboardingInvites(startRow) {
               templateString = HtmlService.createHtmlOutputFromFile("onboarding").getContent();
             }
             htmlBody = templateString
-              .replace("{{name}}", email.split("@")[0])
+              .replace("{{name}}", userName)
               .replace("{{departments}}", displayedDepartments)
               .replace("{{calendar_section}}", calendarSectionHtml)
               .replace("{{app_url}}", CONFIG.APP_URL);
           } catch (templateErr) {
             Logger.log("Could not load onboarding HTML template from file: " + templateErr + ". Using embedded fallback template.");
             htmlBody = getEmbeddedEmailTemplate(
-              email.split("@")[0],
+              userName,
               displayedDepartments,
               calendarSectionHtml,
               CONFIG.APP_URL
