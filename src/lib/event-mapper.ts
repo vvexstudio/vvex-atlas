@@ -281,7 +281,7 @@ export function parseSpreadsheetData(
       cleanRow[k.trim()] = v;
     }
     return cleanRow as Department;
-  }).filter((d): d is Department => Boolean(d.Department || d.department));
+  }).filter((d): d is Department => Boolean(d.Department || (d as any).department));
 
   return { venues, events, personnel, departments };
 }
