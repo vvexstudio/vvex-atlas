@@ -37,6 +37,7 @@ These tests verify database synchronization, email deliverability, permission ga
 - [x] **Step 7:** Open your test email inbox(es).
 - [x] **Step 8:** Confirm the email arrived in the **Primary Inbox** (not Spam/Junk).
 - [ ] **Step 9:** Verify the email body matches the branded template in [onboarding.html](file:///Users/user/dev/portal-dev/scripts/email-templates/onboarding.html) and contains correct links.
+- [ ] **Step 10 (Admin Details Tag):** Onboard a test user marked as Admin (or with "All Departments"). Verify the received onboarding email does not show raw individual calendar links, but instead displays a collapsed dropdown: *"Show All Department Calendar Subscription Links"*. Expand it and verify the links are correct.
 
 ---
 
@@ -90,6 +91,18 @@ These tests verify database synchronization, email deliverability, permission ga
 - [ ] **Step 4:** Restart your local development server (`npm run dev`) or trigger a staging redeployment.
 - [ ] **Step 5:** Load the main Map View.
 - [ ] **Step 6:** Confirm that the custom `Test Pin` remains visible on the map.
+
+---
+
+### 7. 🩹 Apps Script Self-Healing & Group Ampersands
+*Verify that the sync script handles inaccessible calendars and special character groups correctly.*
+
+- [ ] **Step 1 (Calendar Self-Healing):** In the **Departments** sheet, find any department row and temporarily corrupt its `google_calendar_id` (e.g., append `_deleted` to the end of the ID).
+- [ ] **Step 2:** Run the Google Apps Script sync manually.
+- [ ] **Step 3:** Verify the execution logs show `Inaccessible calendar ID...` followed by `Creating missing/inaccessible calendar...`.
+- [ ] **Step 4:** Confirm in the spreadsheet that the corrupted ID has been replaced with a brand new, valid calendar ID.
+- [ ] **Step 5 (Ampersand Preservation):** In your **Personnel** sheet, add a test user with role/departments including `"F&B"`. Set `Send Invite` to `TRUE` and run the script.
+- [ ] **Step 6:** Confirm in the Google Workspace Admin Console that the user was added to `f&b@yourdomain.com` (not `f-b@yourdomain.com`) and that no duplicate `f-b` group was created.
 
 ---
 
