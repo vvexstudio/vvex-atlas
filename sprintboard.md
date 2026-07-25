@@ -147,7 +147,7 @@ Goal: keep the way the client already works (the `ROS by TIME` columns are the b
 - [x] Verification suite with Vitest unit tests, clean lint checks, and successful Next.js production compiles.
 
 ### M4 — Proposal + handoff
-- [ ] Finalize the full written proposal with PLUS features pitched and pricing tiers.
+- [x] Finalize the full written proposal with PLUS features pitched and pricing tiers.
 - [ ] Two rounds of revision buffer (per proposal scope) + minor RFE handling.
 
 ---
@@ -196,6 +196,7 @@ Tracked here so we know what to stand up vs. what the client owns. Env var names
 ## 10. Session Log
 > Append newest at top. Format: `YYYY-MM-DD — who — what changed / decided / discovered`.
 
+- **2026-07-25 — agent — Optimized Admin onboarding to only add users to the 'all-departments' group. Tucked calendar subscription links inside a collapsed HTML details panel in onboarding emails. Enabled automatic self-healing for deleted/inaccessible Google Calendars in Google Sheets. Resolved template loading error by trying multiple path fallbacks. Finalized full written proposal in proposal.md and updated smoke test checklist.**
 - **2026-07-25 — agent — Enabled Google Groups Settings API advanced service in appsscript.json and integrated allowExternalMembers programmatically in PortalSyncScript.js to configure newly created/existing groups to accept external crew members (@gmail.com). Added dynamic calendar & group provisioning (self-healing) at the start of sync, resolved TBD date-times as all-day events with [TBD] appended to titles, nested All Departments/Admin group subscriptions, and hardened processOffboardingRemovals to completely offboard Admins/All Departments users from all groups.**
 - **2026-07-24 — agent — Fixed event synchronization duplicates and timezone shift issues in PortalSyncScript.js. Introduced calendar ID deduplication per event to avoid duplicate entries when multiple departments map to the same Google Calendar ID, resolved time object checking to correctly parse scheduled times instead of defaulting to midnight (preventing all-day shifts), and excluded Sunrise and Sunset events from calendar synchronization.**
 - **2026-07-19 — agent — Removed auto-creation of Google Calendars in Apps Script: replaced getOrProvisionDepartmentCalendars with strict getDepartmentCalendarMap that strictly reads existing google_calendar_ids from the Departments tab.**
