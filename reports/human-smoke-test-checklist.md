@@ -36,8 +36,11 @@ These tests verify database synchronization, email deliverability, permission ga
 - [x] **Step 6:** Wait for the Apps Script trigger to fire (or click **Run** on the `syncAllToFirebase` function manually inside Apps Script).
 - [x] **Step 7:** Open your test email inbox(es).
 - [x] **Step 8:** Confirm the email arrived in the **Primary Inbox** (not Spam/Junk).
-- [ ] **Step 9:** Verify the email body matches the branded template in [onboarding.html](file:///Users/user/dev/portal-dev/scripts/email-templates/onboarding.html) and contains correct links.
-- [ ] **Step 10 (Admin Details Tag):** Onboard a test user marked as Admin (or with "All Departments"). Verify the received onboarding email does not show raw individual calendar links, but instead displays a collapsed dropdown: *"Show All Department Calendar Subscription Links"*. Expand it and verify the links are correct.
+- [x] **Step 9:** Verify the email body matches the branded template in [onboarding.html](file:///Users/user/dev/portal-dev/scripts/email-templates/onboarding.html) and contains correct links.
+- [x] **Step 10 (Admin Compact Links Check):** Onboard a test user marked as Admin (or with "All Departments"). Verify the received onboarding email does not show a long vertical list of individual calendar links, but instead displays a compact, bullet-separated inline list of calendars (e.g., *ATPF • Electricity • F&B*) enclosed in a grey border box.
+- [x] **Step 11 (Ampersand Email Check):** Onboard a test user with department list including `"F&B"`. Set `Send Invite` to `TRUE` and run the script.
+- [x] **Step 12:** Verify the received onboarding email displays `"F&B"` under departments and contains a subscription link for the `"F&B"` calendar.
+- [x] **Step 13 (Ampersand Group Verification):** Confirm in the Google Workspace Admin Console that the user was added to `f&b@yourdomain.com` (not `f-b@yourdomain.com`) and that no duplicate `f-b` group was created.
 
 ---
 
@@ -94,15 +97,13 @@ These tests verify database synchronization, email deliverability, permission ga
 
 ---
 
-### 7. 🩹 Apps Script Self-Healing & Group Ampersands
-*Verify that the sync script handles inaccessible calendars and special character groups correctly.*
+### 7. 🩹 Apps Script Calendar Self-Healing
+*Verify that the sync script automatically recreates deleted or invalid department Google Calendars.*
 
-- [ ] **Step 1 (Calendar Self-Healing):** In the **Departments** sheet, find any department row and temporarily corrupt its `google_calendar_id` (e.g., append `_deleted` to the end of the ID).
+- [ ] **Step 1:** In the **Departments** sheet, find any department row and temporarily corrupt its `google_calendar_id` (e.g., append `_deleted` to the end of the ID).
 - [ ] **Step 2:** Run the Google Apps Script sync manually.
 - [ ] **Step 3:** Verify the execution logs show `Inaccessible calendar ID...` followed by `Creating missing/inaccessible calendar...`.
 - [ ] **Step 4:** Confirm in the spreadsheet that the corrupted ID has been replaced with a brand new, valid calendar ID.
-- [ ] **Step 5 (Ampersand Preservation):** In your **Personnel** sheet, add a test user with role/departments including `"F&B"`. Set `Send Invite` to `TRUE` and run the script.
-- [ ] **Step 6:** Confirm in the Google Workspace Admin Console that the user was added to `f&b@yourdomain.com` (not `f-b@yourdomain.com`) and that no duplicate `f-b` group was created.
 
 ---
 
