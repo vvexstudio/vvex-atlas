@@ -260,19 +260,21 @@ export function EventApp({
   });
 
   const colors = initialColors || {};
-  // Helper for tag coloring with dynamic sheets support and static fallback
+  // Tag coloring: the designed, theme-aware palette in sheet-colors.json
+  // wins; runtime Google-Sheet swatches only cover keys the palette does
+  // not know about (they are single light-polarity pairs).
   const getColorStyle = (category: "Location" | "Action" | "Department" | "Personnel", value: string | undefined) => {
     if (!value) return {};
     const trimmed = value.trim();
-    
-    // Try dynamic colors from Google Sheet first
-    let colorsMatch = colors?.[category]?.[trimmed];
-    
-    // Fall back to static sheet-colors.json configuration
-    if (!colorsMatch) {
-      colorsMatch = (sheetColors as Record<string, Record<string, { bg: string; fg: string }>>)[category]?.[trimmed];
-    }
-    
+
+    const designed = (sheetColors as Record<
+      string,
+      Record<string, { light: { bg: string; fg: string }; dark: { bg: string; fg: string } }>
+    >)[category]?.[trimmed];
+    const colorsMatch = designed
+      ? designed[isDarkMode ? "dark" : "light"]
+      : colors?.[category]?.[trimmed];
+
     if (colorsMatch) {
       return {
         backgroundColor: colorsMatch.bg,

@@ -1,170 +1,410 @@
 {
   "Location": {
     "Solaris": {
-      "bg": "#ffc8aa",
-      "fg": "#753800"
+      "light": {
+        "bg": "#f0ded0",
+        "fg": "#7e4116"
+      },
+      "dark": {
+        "bg": "#432d1e",
+        "fg": "#e1c0a8"
+      }
     },
     "LLL": {
-      "bg": "#d4edbc",
-      "fg": "#11734b"
+      "light": {
+        "bg": "#d4edd4",
+        "fg": "#256f25"
+      },
+      "dark": {
+        "bg": "#233e23",
+        "fg": "#addcad"
+      }
     },
     "Reno": {
-      "bg": "#bfe1f6",
-      "fg": "#0a53a8"
+      "light": {
+        "bg": "#d3e3ee",
+        "fg": "#215173"
+      },
+      "dark": {
+        "bg": "#203340",
+        "fg": "#aac9df"
+      }
     },
     "Storage": {
-      "bg": "#ffe5a0",
-      "fg": "#473821"
+      "light": {
+        "bg": "#f0e8d1",
+        "fg": "#76601e"
+      },
+      "dark": {
+        "bg": "#433a1e",
+        "fg": "#e1d2a8"
+      }
     },
     "Playa": {
-      "bg": "#ffcfc9",
-      "fg": "#b10202"
+      "light": {
+        "bg": "#f0d3d0",
+        "fg": "#7a221a"
+      },
+      "dark": {
+        "bg": "#43211e",
+        "fg": "#e1ada8"
+      }
     },
     "All Locations": {
-      "bg": "#c6dbe1",
-      "fg": "#215a6c"
+      "light": {
+        "bg": "#d7e7ea",
+        "fg": "#2c5e68"
+      },
+      "dark": {
+        "bg": "#283639",
+        "fg": "#b3d0d6"
+      }
     },
     "Le Salon": {
-      "bg": "#b10202",
-      "fg": "#ffcfc9"
+      "light": {
+        "bg": "#eed3dc",
+        "fg": "#73213c"
+      },
+      "dark": {
+        "bg": "#40202b",
+        "fg": "#dfaabc"
+      }
     }
   },
   "Department": {
-    "Structural": {
-      "bg": "#b6f0b8",
-      "fg": "#1c5027"
-    },
-    "SolarPunks": {
-      "bg": "#a2aabf",
-      "fg": "#282f40"
-    },
-    "Set Design": {
-      "bg": "#ffeafb",
-      "fg": "#28122c"
-    },
-    "Rigging": {
-      "bg": "#ecefff",
-      "fg": "#001940"
-    },
-    "Med / Sec": {
-      "bg": "#c1a0c2",
-      "fg": "#3f2742"
-    },
-    "Hospitality": {
-      "bg": "#90aae2",
-      "fg": "#0f2e5f"
-    },
-    "Heavy Equipment (WonderBros)": {
-      "bg": "#573d5a",
-      "fg": "#fffaff"
-    },
-    "Fly Fleet": {
-      "bg": "#2a4577",
-      "fg": "#fdfaff"
-    },
-    "F&B": {
-      "bg": "#dae1f8",
-      "fg": "#3e4658"
+    "ATPF": {
+      "light": {
+        "bg": "#f6d8c4",
+        "fg": "#8a3d12"
+      },
+      "dark": {
+        "bg": "#3e2415",
+        "fg": "#efb488"
+      }
     },
     "Electricity": {
-      "bg": "#fad6fb",
-      "fg": "#573d5a"
+      "light": {
+        "bg": "#f7d9a3",
+        "fg": "#7c4a08"
+      },
+      "dark": {
+        "bg": "#3c2f12",
+        "fg": "#eccb85"
+      }
     },
-    "ATPF": {
-      "bg": "#d7e1ff",
-      "fg": "#2a4577"
+    "SolarPunks": {
+      "light": {
+        "bg": "#d5e9d9",
+        "fg": "#22573a"
+      },
+      "dark": {
+        "bg": "#21372a",
+        "fg": "#a8d8b8"
+      }
+    },
+    "Structural": {
+      "light": {
+        "bg": "#e4ddd1",
+        "fg": "#4d4437"
+      },
+      "dark": {
+        "bg": "#332e26",
+        "fg": "#cfc4b2"
+      }
+    },
+    "Set Design": {
+      "light": {
+        "bg": "#ecdaec",
+        "fg": "#5d2f60"
+      },
+      "dark": {
+        "bg": "#392339",
+        "fg": "#dcb3de"
+      }
+    },
+    "Rigging": {
+      "light": {
+        "bg": "#d7e2ee",
+        "fg": "#2e4a68"
+      },
+      "dark": {
+        "bg": "#24313f",
+        "fg": "#accbe8"
+      }
+    },
+    "Med / Sec": {
+      "light": {
+        "bg": "#f4d7cf",
+        "fg": "#8c2f21"
+      },
+      "dark": {
+        "bg": "#40221c",
+        "fg": "#eeaa9c"
+      }
+    },
+    "Hospitality": {
+      "light": {
+        "bg": "#f3dade",
+        "fg": "#83384c"
+      },
+      "dark": {
+        "bg": "#3d242b",
+        "fg": "#e7aebc"
+      }
+    },
+    "Heavy Equipment (WonderBros)": {
+      "light": {
+        "bg": "#ead9bd",
+        "fg": "#634a1a"
+      },
+      "dark": {
+        "bg": "#38301c",
+        "fg": "#d6bd8a"
+      }
+    },
+    "Fly Fleet": {
+      "light": {
+        "bg": "#dcdcf0",
+        "fg": "#3d3d7a"
+      },
+      "dark": {
+        "bg": "#292940",
+        "fg": "#bdbde8"
+      }
+    },
+    "F&B": {
+      "light": {
+        "bg": "#e6e8c6",
+        "fg": "#565a1b"
+      },
+      "dark": {
+        "bg": "#333614",
+        "fg": "#d5da93"
+      }
     }
   },
   "Personnel": {
     "Will": {
-      "bg": "#d0f7ff",
-      "fg": "#001e23"
+      "light": {
+        "bg": "#d3e7ee",
+        "fg": "#215e73"
+      },
+      "dark": {
+        "bg": "#203840",
+        "fg": "#aad2df"
+      }
     },
     "Vale": {
-      "bg": "#c5ffc6",
-      "fg": "#002007"
+      "light": {
+        "bg": "#d4edda",
+        "fg": "#256f37"
+      },
+      "dark": {
+        "bg": "#233e2a",
+        "fg": "#addcb9"
+      }
     },
     "Sarah": {
-      "bg": "#85b2ba",
-      "fg": "#00353c"
+      "light": {
+        "bg": "#d4ede9",
+        "fg": "#256f65"
+      },
+      "dark": {
+        "bg": "#233e3a",
+        "fg": "#addcd6"
+      }
     },
     "Paris": {
-      "bg": "#80b784",
-      "fg": "#003813"
+      "light": {
+        "bg": "#ddebd6",
+        "fg": "#3f6b29"
+      },
+      "dark": {
+        "bg": "#2d3c25",
+        "fg": "#bed9b0"
+      }
     },
     "Lauren": {
-      "bg": "#1e4c53",
-      "fg": "#f5fdff"
+      "light": {
+        "bg": "#dbd6eb",
+        "fg": "#39296b"
+      },
+      "dark": {
+        "bg": "#2b253c",
+        "fg": "#bab0d9"
+      }
     },
     "Lara": {
-      "bg": "#1c5027",
-      "fg": "#f5fff0"
+      "light": {
+        "bg": "#ededd4",
+        "fg": "#6f6f25"
+      },
+      "dark": {
+        "bg": "#3e3e23",
+        "fg": "#dcdcad"
+      }
     },
     "Gregg": {
-      "bg": "#d3e7d0",
-      "fg": "#394a39"
+      "light": {
+        "bg": "#eadfd7",
+        "fg": "#68452c"
+      },
+      "dark": {
+        "bg": "#392f28",
+        "fg": "#d6c1b3"
+      }
     },
     "Ben": {
-      "bg": "#bce9f2",
-      "fg": "#1e4c53"
+      "light": {
+        "bg": "#d4deed",
+        "fg": "#25446f"
+      },
+      "dark": {
+        "bg": "#232e3e",
+        "fg": "#adc0dc"
+      }
     }
   },
   "Action": {
     "Set up": {
-      "bg": "#edd4f5",
-      "fg": "#6b21a8"
+      "light": {
+        "bg": "#e2d4ed",
+        "fg": "#50256f"
+      },
+      "dark": {
+        "bg": "#33233e",
+        "fg": "#c8addc"
+      }
     },
     "Transportation": {
-      "bg": "#dbeafe",
-      "fg": "#1e40af"
+      "light": {
+        "bg": "#d3dcee",
+        "fg": "#213c73"
+      },
+      "dark": {
+        "bg": "#202b40",
+        "fg": "#aabcdf"
+      }
     },
     "Strike": {
-      "bg": "#fee2e2",
-      "fg": "#991b1b"
+      "light": {
+        "bg": "#f0d0d0",
+        "fg": "#7a1a1a"
+      },
+      "dark": {
+        "bg": "#431e1e",
+        "fg": "#e1a8a8"
+      }
     },
     "F&B": {
-      "bg": "#dae1f8",
-      "fg": "#3e4658"
+      "light": {
+        "bg": "#e7edd4",
+        "fg": "#5c6f25"
+      },
+      "dark": {
+        "bg": "#373e23",
+        "fg": "#d0dcad"
+      }
     },
     "Guest Experience": {
-      "bg": "#d1fae5",
-      "fg": "#065f46"
+      "light": {
+        "bg": "#d4edde",
+        "fg": "#256f44"
+      },
+      "dark": {
+        "bg": "#233e2e",
+        "fg": "#addcc0"
+      }
     },
     "Sound & Light Check": {
-      "bg": "#fef3c7",
-      "fg": "#92400e"
+      "light": {
+        "bg": "#f0e7d0",
+        "fg": "#7a5d1a"
+      },
+      "dark": {
+        "bg": "#43381e",
+        "fg": "#e1d0a8"
+      }
     },
     "Prep work": {
-      "bg": "#f3f4f6",
-      "fg": "#374151"
+      "light": {
+        "bg": "#e3e1dd",
+        "fg": "#594f3b"
+      },
+      "dark": {
+        "bg": "#2f3031",
+        "fg": "#cac6be"
+      }
     },
     "Vendor Delivery": {
-      "bg": "#ffedd5",
-      "fg": "#9a3412"
+      "light": {
+        "bg": "#f0dfd0",
+        "fg": "#7a471a"
+      },
+      "dark": {
+        "bg": "#432f1e",
+        "fg": "#e1c2a8"
+      }
     },
     "Sunrise / Sunset": {
-      "bg": "#ffe4e6",
-      "fg": "#9f1239"
+      "light": {
+        "bg": "#eed3d7",
+        "fg": "#73212f"
+      },
+      "dark": {
+        "bg": "#402026",
+        "fg": "#dfaab3"
+      }
     },
     "Water Pump / Fill": {
-      "bg": "#ccfbf1",
-      "fg": "#115e59"
+      "light": {
+        "bg": "#d4ede8",
+        "fg": "#256f60"
+      },
+      "dark": {
+        "bg": "#233e39",
+        "fg": "#addcd2"
+      }
     },
     "Clean & Moop": {
-      "bg": "#f0fdf4",
-      "fg": "#166534"
+      "light": {
+        "bg": "#d6ebd9",
+        "fg": "#296b34"
+      },
+      "dark": {
+        "bg": "#253c29",
+        "fg": "#b0d9b7"
+      }
     },
     "Special Event": {
-      "bg": "#ede9fe",
-      "fg": "#5b21b6"
+      "light": {
+        "bg": "#ddd4ed",
+        "fg": "#40256f"
+      },
+      "dark": {
+        "bg": "#2d233e",
+        "fg": "#beaddc"
+      }
     },
     "Incident / Medical Response": {
-      "bg": "#fee2e2",
-      "fg": "#b91c1c"
+      "light": {
+        "bg": "#f0d0d2",
+        "fg": "#7e161a"
+      },
+      "dark": {
+        "bg": "#431e1f",
+        "fg": "#e1a8aa"
+      }
     },
     "Playa Operations": {
-      "bg": "#e2e8f0",
-      "fg": "#334155"
+      "light": {
+        "bg": "#dbe0e6",
+        "fg": "#354a5f"
+      },
+      "dark": {
+        "bg": "#2e3033",
+        "fg": "#bac4cf"
+      }
     }
   }
 }

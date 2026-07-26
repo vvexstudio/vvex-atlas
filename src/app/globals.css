@@ -1735,12 +1735,12 @@ a {
 }
 
 
-/* Ensure text inside color-coded event cards inherits the high-contrast foreground color */
+/* Text inside color-coded event cards inherits the data-palette foreground */
 .calendar-event-card .event-card-title,
 .calendar-event-card .event-card-time,
 .calendar-event-card .event-card-meta,
 .calendar-event-card .event-card-meta span {
-  color: inherit !important;
+  color: inherit;
 }
 
 /* Event Card Positioning */
