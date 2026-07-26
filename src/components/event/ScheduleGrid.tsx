@@ -1,5 +1,6 @@
 import React from "react";
 import { FestivalEvent } from "@/types/festival";
+import { Icon } from "@/components/ui/icons";
 
 interface DateGroup {
   date: string;
@@ -99,7 +100,7 @@ export const ScheduleGrid: React.FC<ScheduleGridProps> = ({
   if (groupedEventsByDate.length === 0) {
     return (
       <div className="empty-schedule-state">
-        <span className="empty-icon">🔍</span>
+        <span className="empty-icon"><Icon name="search" size={28} /></span>
         <h3>No items match your filters</h3>
         <p>Try resetting filters or typing another search query.</p>
       </div>
@@ -142,7 +143,7 @@ export const ScheduleGrid: React.FC<ScheduleGridProps> = ({
                           <div className="grid-countdown-tag">{countdown}</div>
                         )}
                       </td>
-                      <td className="loc-cell font-semibold">
+                      <td className="loc-cell">
                         {event.locationName ? (
                           <span className="loc-tag" style={getColorStyle("Location", event.locationName)}>
                             {event.locationName}
@@ -169,7 +170,7 @@ export const ScheduleGrid: React.FC<ScheduleGridProps> = ({
                           "-"
                         )}
                       </td>
-                      <td className="lead-cell font-semibold">
+                      <td className="lead-cell">
                         {event.leadPointPerson ? (
                           <span className="lead-tag" style={getColorStyle("Personnel", event.leadPointPerson)}>
                             {event.leadPointPerson}

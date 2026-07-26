@@ -1,5 +1,6 @@
 import React from "react";
 import { FestivalEvent, Venue } from "@/types/festival";
+import { Icon } from "@/components/ui/icons";
 
 interface EventModalProps {
   modalEvent: FestivalEvent | null;
@@ -47,26 +48,22 @@ export const EventModal: React.FC<EventModalProps> = ({
                 title={isEventStarred ? "Remove from My Schedule" : "Add to My Schedule"}
               >
                 {isEventStarred ? (
-                  <svg className="modal-star-icon filled" viewBox="0 0 24 24" width="22" height="22">
-                    <path fill="#facc15" stroke="#eab308" strokeWidth="1.5" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                  </svg>
+                  <Icon name="star" size={18} filled />
                 ) : (
-                  <svg className="modal-star-icon outlined" viewBox="0 0 24 24" width="22" height="22">
-                    <path fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                  </svg>
+                  <Icon name="star" size={18} />
                 )}
               </button>
             )}
-            <button type="button" className="close-modal-btn" onClick={onClose}>×</button>
+            <button type="button" className="close-modal-btn" onClick={onClose} aria-label="Close"><Icon name="x" /></button>
           </div>
         </header>
         <div className="portal-modal-body">
-          <h2 className="modal-title font-bold text-xl mb-2">{modalEvent.title}</h2>
+          <h2 className="modal-title">{modalEvent.title}</h2>
           
           <div className="modal-info-row">
-            <span className="modal-time-range font-bold">⏰ {modalEvent.startTime} – {modalEvent.endTime}</span>
+            <span className="modal-time-range"><Icon name="clock" size={14} /> {modalEvent.startTime} – {modalEvent.endTime}</span>
             {modalEvent.scheduleDate && (
-              <span className="modal-date-tag">📅 {modalEvent.scheduleDate}</span>
+              <span className="modal-date-tag"><Icon name="calendar" size={14} /> {modalEvent.scheduleDate}</span>
             )}
           </div>
           
@@ -74,7 +71,7 @@ export const EventModal: React.FC<EventModalProps> = ({
             {modalEvent.locationName && (
               <div className="modal-detail-item">
                 <span className="detail-label">Location</span>
-                <span className="loc-tag font-semibold" style={getColorStyle("Location", modalEvent.locationName)}>
+                <span className="loc-tag" style={getColorStyle("Location", modalEvent.locationName)}>
                   {modalEvent.locationName}
                 </span>
               </div>
@@ -82,7 +79,7 @@ export const EventModal: React.FC<EventModalProps> = ({
             {modalEvent.department && (
               <div className="modal-detail-item">
                 <span className="detail-label">Department</span>
-                <span className="dept-tag font-semibold" style={getColorStyle("Department", modalEvent.department)}>
+                <span className="dept-tag" style={getColorStyle("Department", modalEvent.department)}>
                   {modalEvent.department}
                 </span>
               </div>
@@ -122,7 +119,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                   onClose();
                 }}
               >
-                🗺️ Show on Map
+                <Icon name="map" size={14} /> Show on Map
               </button>
             )}
           </div>

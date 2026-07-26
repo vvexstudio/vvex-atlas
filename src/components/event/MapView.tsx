@@ -1,7 +1,7 @@
-import React, { useMemo, useState, useEffect } from "react";
-import { APIProvider, Map, AdvancedMarker, AdvancedMarkerAnchorPoint, InfoWindow, useMap } from "@vis.gl/react-google-maps";
+import React, { useMemo, useState, useEffect, useRef } from "react";
+import { APIProvider, Map, AdvancedMarker, AdvancedMarkerAnchorPoint, ColorScheme, InfoWindow, useMap } from "@vis.gl/react-google-maps";
 import { Venue, FestivalEvent } from "@/types/festival";
-import mapStyles from "@/data/map-styles.json";
+import { Icon, type IconName } from "@/components/ui/icons";
 
 interface MapViewProps {
   venues: Venue[];
@@ -14,17 +14,18 @@ interface MapViewProps {
   events?: FestivalEvent[];
   getColorStyle?: (category: "Location" | "Action" | "Department" | "Personnel", value: string | undefined) => React.CSSProperties;
   activeCategories?: string[];
+  isDarkMode?: boolean;
 }
 
-const getCategoryIcon = (category: string): string => {
+const getCategoryIcon = (category: string): IconName => {
   const clean = (category || "").toLowerCase().trim();
-  if (clean.includes("hotel") || clean.includes("lodging") || clean.includes("housing")) return "🏨";
-  if (clean.includes("forest") || clean.includes("wood") || clean.includes("nature")) return "🌲";
-  if (clean.includes("transport") || clean.includes("shuttle") || clean.includes("bus")) return "🚌";
-  if (clean.includes("crew") || clean.includes("ops") || clean.includes("office")) return "⚙️";
-  if (clean.includes("venue") || clean.includes("stage") || clean.includes("bar")) return "🎪";
-  if (clean.includes("service") || clean.includes("toilet") || clean.includes("water") || clean.includes("medical")) return "🛠️";
-  return "📍";
+  if (clean.includes("hotel") || clean.includes("lodging") || clean.includes("housing")) return "hotel";
+  if (clean.includes("forest") || clean.includes("wood") || clean.includes("nature")) return "trees";
+  if (clean.includes("transport") || clean.includes("shuttle") || clean.includes("bus")) return "bus";
+  if (clean.includes("crew") || clean.includes("ops") || clean.includes("office")) return "settings";
+  if (clean.includes("venue") || clean.includes("stage") || clean.includes("bar")) return "tent";
+  if (clean.includes("service") || clean.includes("toilet") || clean.includes("water") || clean.includes("medical")) return "wrench";
+  return "mapPin";
 };
 
 // MapContent wrapper to have access to useMap hook
@@ -38,6 +39,7 @@ const MapContent: React.FC<{
   setMainTab?: (tab: "schedule" | "calendar" | "map" | "now-next") => void;
   events?: FestivalEvent[];
   getColorStyle?: (category: "Location" | "Action" | "Department" | "Personnel", value: string | undefined) => React.CSSProperties;
+  isDarkMode?: boolean;
 }> = ({
   visibleMappableVenues,
   mapCenterCoords,
@@ -48,9 +50,13 @@ const MapContent: React.FC<{
   setMainTab,
   events = [],
   getColorStyle,
+  isDarkMode = true,
 }) => {
   const map = useMap();
   const [activeVenue, setActiveVenue] = useState<Venue | null>(null);
+  // colorScheme is fixed at map init, so theme changes remount the <Map>;
+  // the last camera position is kept in a ref to survive the remount.
+  const cameraRef = useRef<{ center: { lat: number; lng: number }; zoom: number } | null>(null);
 
   // Sync programmatically focused venue (e.g. from event modal)
   useEffect(() => {
@@ -83,12 +89,16 @@ const MapContent: React.FC<{
 
   return (
     <Map
-      defaultCenter={mapCenterCoords}
-      defaultZoom={defaultZoom}
+      key={isDarkMode ? "map-dark" : "map-light"}
+      defaultCenter={cameraRef.current?.center ?? mapCenterCoords}
+      defaultZoom={cameraRef.current?.zoom ?? defaultZoom}
       mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || "2f9f04bb8e9c458045b99a65"}
+      colorScheme={isDarkMode ? ColorScheme.DARK : ColorScheme.LIGHT}
       disableDefaultUI={false}
       style={{ width: "100%", height: "100%" }}
-      styles={mapStyles}
+      onCameraChanged={(ev) => {
+        cameraRef.current = { center: ev.detail.center, zoom: ev.detail.zoom };
+      }}
     >
       {visibleMappableVenues.map((venue) => {
         const icon = getCategoryIcon(venue.permanence || "");
@@ -101,7 +111,7 @@ const MapContent: React.FC<{
             onClick={() => setActiveVenue(venue)}
           >
             <div className="custom-map-marker" style={{ borderColor: style.color || "var(--accent)" }}>
-              <span className="marker-dot-icon">{icon}</span>
+              <span className="marker-dot-icon"><Icon name={icon} size={12} /></span>
               <span className="marker-label">{venue.name}</span>
             </div>
           </AdvancedMarker>
@@ -116,8 +126,8 @@ const MapContent: React.FC<{
           <div className="map-infowindow">
             <h3 className="infowindow-title">{activeVenue.name}</h3>
             {activeVenue.address && (
-              <div style={{ fontSize: "0.8rem", color: "#6366f1", fontWeight: 600, marginBottom: "0.35rem" }}>
-                📍 {activeVenue.address}
+              <div className="infowindow-address">
+                <Icon name="mapPin" size={12} /> {activeVenue.address}
               </div>
             )}
             {activeVenue.permanence && (
@@ -135,7 +145,7 @@ const MapContent: React.FC<{
                 rel="noopener noreferrer"
                 className="infowindow-btn directions-btn"
               >
-                🚗 Get Directions
+                <Icon name="car" size={12} /> Get Directions
               </a>
               {setSelectedLocations && setMainTab && (
                 <button
@@ -146,7 +156,7 @@ const MapContent: React.FC<{
                     setMainTab("schedule");
                   }}
                 >
-                  📋 Filter Events Here
+                  <Icon name="clipboard" size={12} /> Filter Events Here
                 </button>
               )}
             </div>
@@ -160,7 +170,7 @@ const MapContent: React.FC<{
                 <ul className="infowindow-event-list">
                   {locationEvents.slice(0, 5).map((e) => (
                     <li key={e.id}>
-                      <span className="ev-time">⏰ {e.startTime}</span>
+                      <span className="ev-time"><Icon name="clock" size={11} /> {e.startTime}</span>
                       <span className="ev-title">{e.title}</span>
                     </li>
                   ))}
@@ -188,6 +198,7 @@ export const MapView: React.FC<MapViewProps> = ({
   events = [],
   getColorStyle,
   activeCategories,
+  isDarkMode = true,
 }) => {
   // Filter venues based on coordinates existence and legend category visibility toggles
   const visibleMappableVenues = useMemo(() => {
@@ -226,13 +237,13 @@ export const MapView: React.FC<MapViewProps> = ({
   if (mapAuthError) {
     return (
       <div className="map-placeholder-container" style={{ padding: "2rem" }}>
-        <div className="map-placeholder-card" style={{ maxWidth: "550px", borderLeft: "4px solid #ef4444" }}>
-          <div className="map-placeholder-icon">⚠️</div>
-          <h2 style={{ color: "#b91c1c", fontSize: "1.15rem" }}>Google Maps API Key Error (ApiProjectMapError)</h2>
-          <p style={{ fontSize: "0.85rem", color: "#374151", textAlign: "left", lineHeight: 1.5 }}>
+        <div className="map-placeholder-card" style={{ maxWidth: "550px", borderLeft: "4px solid var(--danger)" }}>
+          <div className="map-placeholder-icon"><Icon name="warning" size={40} /></div>
+          <h2 style={{ color: "var(--danger)", fontSize: "1.15rem" }}>Google Maps API Key Error (ApiProjectMapError)</h2>
+          <p style={{ fontSize: "0.85rem", color: "var(--ink)", textAlign: "left", lineHeight: 1.5 }}>
             The Google Maps JavaScript API returned an <strong>ApiProjectMapError</strong> authentication failure.
           </p>
-          <div style={{ textAlign: "left", fontSize: "0.8rem", color: "#4b5563", background: "#fef2f2", padding: "0.75rem", borderRadius: "6px", margin: "1rem 0" }}>
+          <div style={{ textAlign: "left", fontSize: "0.8rem", color: "var(--muted)", background: "var(--danger-soft)", padding: "0.75rem", borderRadius: "var(--radius-sm)", margin: "1rem 0" }}>
             <strong>How to resolve this in Google Cloud Console:</strong>
             <ol style={{ margin: "0.5rem 0 0 0", paddingLeft: "1.2rem" }}>
               <li>Ensure <strong>Maps JavaScript API</strong> is enabled on your GCP project.</li>
@@ -259,6 +270,7 @@ export const MapView: React.FC<MapViewProps> = ({
             setMainTab={setMainTab}
             events={events}
             getColorStyle={getColorStyle}
+            isDarkMode={isDarkMode}
           />
         </APIProvider>
       ) : (
@@ -266,7 +278,7 @@ export const MapView: React.FC<MapViewProps> = ({
         <div className="map-placeholder-container">
           <div className="map-placeholder-grid" />
           <div className="map-placeholder-card">
-            <div className="map-placeholder-icon">🗺️</div>
+            <div className="map-placeholder-icon"><Icon name="map" size={40} /></div>
             <h2>Interactive Map Scaffolded</h2>
             <p>
               The interactive map interface is pre-configured and ready. Geographical coordinates (Lat/Long) are currently pending in the Google Sheet database.

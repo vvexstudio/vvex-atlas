@@ -150,8 +150,16 @@ a {
 
 .legacy-banner-title {
   display: flex;
-  align-items: center;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
   min-width: 0;
+}
+
+.banner-source-label {
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--muted);
 }
 
 .legacy-banner-heading {
@@ -172,14 +180,21 @@ a {
 .legacy-theme-switch {
   display: inline-flex;
   align-items: center;
-  padding: 6px 10px;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   border: 1px solid var(--line);
   border-radius: var(--radius-full);
   background: var(--surface);
   color: var(--ink);
-  font-size: var(--text-sm);
-  font-weight: 700;
-  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.legacy-theme-switch:hover {
+  border-color: var(--accent);
+  color: var(--accent-strong);
 }
 
 .user-profile-section {

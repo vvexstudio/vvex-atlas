@@ -4,7 +4,7 @@ interface CalendarChipProps {
   variant: "header" | "status-tag";
   style?: React.CSSProperties;
   label?: string;
-  icon?: string;
+  icon?: React.ReactNode;
   status?: string;
   onClick?: () => void;
   title?: string;

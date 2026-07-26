@@ -1,5 +1,6 @@
 import React from "react";
 import { FestivalEvent } from "@/types/festival";
+import { Icon } from "@/components/ui/icons";
 
 interface DateGroup {
   date: string;
@@ -96,7 +97,7 @@ export const RunningSchedule: React.FC<RunningScheduleProps> = ({
               return (
                 <div key={event.id} className="sidebar-event-card" onClick={() => onEventClick ? onEventClick(event) : setModalEvent(event)} style={{ cursor: "pointer" }}>
                   <div className="event-time-badge">
-                    <span>⏰ {event.startTime} – {event.endTime}</span>
+                    <span><Icon name="clock" size={12} /> {event.startTime} – {event.endTime}</span>
                     {countdown && (
                       <span className="card-countdown-tag">{countdown}</span>
                     )}
@@ -106,12 +107,12 @@ export const RunningSchedule: React.FC<RunningScheduleProps> = ({
                   <div className="event-card-details">
                     {event.locationName && (
                       <span className="card-detail-badge loc-tag-sm" style={getColorStyle("Location", event.locationName)}>
-                        📍 {event.locationName}
+                        <Icon name="mapPin" size={12} /> {event.locationName}
                       </span>
                     )}
                     {event.action && (
                       <span className="card-detail-badge action-tag-sm" style={getColorStyle("Action", event.action)}>
-                        ⚡ {event.action}
+                        <Icon name="zap" size={12} /> {event.action}
                       </span>
                     )}
                   </div>
@@ -120,12 +121,12 @@ export const RunningSchedule: React.FC<RunningScheduleProps> = ({
                     <div className="event-card-badges">
                       {event.leadPointPerson && (
                         <span className="card-badge lead-badge" style={getColorStyle("Personnel", event.leadPointPerson)}>
-                          👤 {event.leadPointPerson}
+                          <Icon name="user" size={12} /> {event.leadPointPerson}
                         </span>
                       )}
                       {event.department && (
                         <span className="card-badge dept-badge" style={getColorStyle("Department", event.department)}>
-                          🏢 {event.department}
+                          <Icon name="building" size={12} /> {event.department}
                         </span>
                       )}
                     </div>

@@ -1,4 +1,5 @@
 import React from "react";
+import { Icon } from "@/components/ui/icons";
 
 interface FilterBarProps {
   searchQuery: string;
@@ -227,8 +228,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         <div className="active-filters-row">
           {searchQuery && (
             <span className="filter-chip search-chip">
-              🔍 &quot;{searchQuery}&quot;
-              <button type="button" className="clear-chip-btn" onClick={() => setSearchQuery("")} aria-label="Clear search">×</button>
+              <Icon name="search" size={12} /> &quot;{searchQuery}&quot;
+              <button type="button" className="clear-chip-btn" onClick={() => setSearchQuery("")} aria-label="Clear search"><Icon name="x" size={12} /></button>
             </span>
           )}
           {selectedDay && (() => {
@@ -236,45 +237,45 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             const label = found ? `${found.weekday}, ${found.shortDate}` : selectedDay;
             return (
               <span className="filter-chip day-chip">
-                🗓️ Day: {label}
-                <button type="button" className="clear-chip-btn" onClick={() => setSelectedDay(null)} aria-label="Clear day filter">×</button>
+                <Icon name="calendar" size={12} /> Day: {label}
+                <button type="button" className="clear-chip-btn" onClick={() => setSelectedDay(null)} aria-label="Clear day filter"><Icon name="x" size={12} /></button>
               </span>
             );
           })()}
           {selectedLocations.map((loc) => (
             <span key={`loc-${loc}`} className="filter-chip" style={getColorStyle("Location", loc)}>
-              📍 {loc}
-              <button type="button" className="clear-chip-btn" onClick={() => setSelectedLocations(selectedLocations.filter((l) => l !== loc))} aria-label="Clear location filter">×</button>
+              <Icon name="mapPin" size={12} /> {loc}
+              <button type="button" className="clear-chip-btn" onClick={() => setSelectedLocations(selectedLocations.filter((l) => l !== loc))} aria-label="Clear location filter"><Icon name="x" size={12} /></button>
             </span>
           ))}
           {selectedActions.map((act) => (
             <span key={`act-${act}`} className="filter-chip" style={getColorStyle("Action", act)}>
-              ⚡ {act}
-              <button type="button" className="clear-chip-btn" onClick={() => setSelectedActions(selectedActions.filter((a) => a !== act))} aria-label="Clear action filter">×</button>
+              <Icon name="zap" size={12} /> {act}
+              <button type="button" className="clear-chip-btn" onClick={() => setSelectedActions(selectedActions.filter((a) => a !== act))} aria-label="Clear action filter"><Icon name="x" size={12} /></button>
             </span>
           ))}
           {selectedDepartments.map((dept) => (
             <span key={`dept-${dept}`} className="filter-chip" style={getColorStyle("Department", dept)}>
-              🏢 {dept}
-              <button type="button" className="clear-chip-btn" onClick={() => setSelectedDepartments(selectedDepartments.filter((d) => d !== dept))} aria-label="Clear department filter">×</button>
+              <Icon name="building" size={12} /> {dept}
+              <button type="button" className="clear-chip-btn" onClick={() => setSelectedDepartments(selectedDepartments.filter((d) => d !== dept))} aria-label="Clear department filter"><Icon name="x" size={12} /></button>
             </span>
           ))}
           {selectedLeads.map((lead) => (
             <span key={`lead-${lead}`} className="filter-chip" style={getColorStyle("Personnel", lead)}>
-              👤 {lead}
-              <button type="button" className="clear-chip-btn" onClick={() => setSelectedLeads(selectedLeads.filter((l) => l !== lead))} aria-label="Clear lead filter">×</button>
+              <Icon name="user" size={12} /> {lead}
+              <button type="button" className="clear-chip-btn" onClick={() => setSelectedLeads(selectedLeads.filter((l) => l !== lead))} aria-label="Clear lead filter"><Icon name="x" size={12} /></button>
             </span>
           ))}
           {startTimeFilter && (
             <span className="filter-chip time-chip">
-              ⏰ Start &ge; {formatFilterDateTime(startTimeFilter)}
-              <button type="button" className="clear-chip-btn" onClick={() => setStartTimeFilter("")} aria-label="Clear start time filter">×</button>
+              <Icon name="clock" size={12} /> Start &ge; {formatFilterDateTime(startTimeFilter)}
+              <button type="button" className="clear-chip-btn" onClick={() => setStartTimeFilter("")} aria-label="Clear start time filter"><Icon name="x" size={12} /></button>
             </span>
           )}
           {endTimeFilter && (
             <span className="filter-chip time-chip">
-              ⏰ End &le; {formatFilterDateTime(endTimeFilter)}
-              <button type="button" className="clear-chip-btn" onClick={() => setEndTimeFilter("")} aria-label="Clear end time filter">×</button>
+              <Icon name="clock" size={12} /> End &le; {formatFilterDateTime(endTimeFilter)}
+              <button type="button" className="clear-chip-btn" onClick={() => setEndTimeFilter("")} aria-label="Clear end time filter"><Icon name="x" size={12} /></button>
             </span>
           )}
 

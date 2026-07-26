@@ -1,4 +1,6 @@
 import React, { useEffect } from "react";
+import { Icon } from "@/components/ui/icons";
+import { CloseButton } from "@/components/ui/CloseButton";
 
 export interface ToastMessage {
   id: string;
@@ -32,7 +34,7 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       onRemove(toast.id);
-    }, 60000); // Autoclose after 60s
+    }, 8000); // Autoclose after 8s
     return () => clearTimeout(timer);
   }, [toast.id, onRemove]);
 
@@ -41,7 +43,7 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
       <div className="toast-content">
         <div className="toast-title-row">
           <span className="toast-icon">
-            {toast.type === "warning" ? "⚠️" : toast.type === "success" ? "✅" : "📢"}
+            {toast.type === "warning" ? <Icon name="warning" size={16} /> : toast.type === "success" ? <Icon name="checkCircle" size={16} /> : <Icon name="megaphone" size={16} />}
           </span>
           <span className="toast-toast-title">{toast.title}</span>
         </div>
@@ -50,9 +52,7 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
           {toast.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
         </span>
       </div>
-      <button type="button" className="toast-close-btn" onClick={() => onRemove(toast.id)}>
-        ✕
-      </button>
+      <CloseButton className="toast-close-btn" onClick={() => onRemove(toast.id)} />
     </div>
   );
 };

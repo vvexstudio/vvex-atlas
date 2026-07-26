@@ -1,4 +1,5 @@
 import React from "react";
+import { Icon } from "@/components/ui/icons";
 
 interface LegendProps {
   categories: string[];
@@ -15,7 +16,7 @@ export const Legend: React.FC<LegendProps> = ({
 }) => {
   return (
     <div className="map-legend-card">
-      <h3 className="legend-title font-semibold text-sm mb-2">📍 Map Pins Legend</h3>
+      <h3 className="legend-title"><Icon name="mapPin" size={14} /> Map Pins Legend</h3>
       <div className="legend-categories">
         {categories.map((cat) => {
           const isActive = activeCategories.includes(cat);
@@ -32,7 +33,7 @@ export const Legend: React.FC<LegendProps> = ({
                 style={{ backgroundColor: style.backgroundColor || "var(--accent)" }}
               ></span>
               <span className="legend-label">{cat}</span>
-              <span className="legend-toggle-status">{isActive ? "👁️" : "❌"}</span>
+              <span className="legend-toggle-status">{isActive ? <Icon name="eye" size={12} /> : <Icon name="eyeOff" size={12} />}</span>
             </button>
           );
         })}

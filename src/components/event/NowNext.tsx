@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { FestivalEvent } from "@/types/festival";
+import { Icon } from "@/components/ui/icons";
 
 interface NowNextProps {
   events: FestivalEvent[];
@@ -157,7 +158,7 @@ export const NowNext: React.FC<NowNextProps> = ({
       <div className="now-next-header">
         <div className="now-next-time-panel">
           <div className="now-next-clock-row">
-            <span className="clock-icon">🕒</span>
+            <span className="clock-icon"><Icon name="clock" size={14} /></span>
             <span className="now-next-time">
               {currentTime.toLocaleTimeString("en-US", {
                 hour: "2-digit",
@@ -189,7 +190,7 @@ export const NowNext: React.FC<NowNextProps> = ({
           <div className="now-next-card-list">
             {nowEvents.length === 0 ? (
               <div className="now-next-empty-state">
-                <span className="empty-emoji">☕</span>
+                <span className="empty-emoji"><Icon name="coffee" size={28} /></span>
                 <p>Nothing scheduled at this exact moment.</p>
               </div>
             ) : (
@@ -203,7 +204,7 @@ export const NowNext: React.FC<NowNextProps> = ({
                   >
                     <div className="card-top-row">
                       <span className="countdown-badge started-badge">
-                        🟢 Active ({formatCountdown(end, "end")})
+                        <span className="status-dot" /> Active ({formatCountdown(end, "end")})
                       </span>
                       <span className="event-time">
                         {event.startTime} - {event.endTime}
@@ -215,12 +216,12 @@ export const NowNext: React.FC<NowNextProps> = ({
                     <div className="card-tags">
                       {event.locationName && (
                         <span className="tag loc-tag-sm" style={getColorStyle("Location", event.locationName)}>
-                          📍 {event.locationName}
+                          <Icon name="mapPin" size={12} /> {event.locationName}
                         </span>
                       )}
                       {event.department && (
                         <span className="tag dept-badge" style={getColorStyle("Department", event.department)}>
-                          🏢 {event.department}
+                          <Icon name="building" size={12} /> {event.department}
                         </span>
                       )}
                     </div>
@@ -256,7 +257,7 @@ export const NowNext: React.FC<NowNextProps> = ({
           <div className="now-next-card-list">
             {nextEvents.length === 0 ? (
               <div className="now-next-empty-state">
-                <span className="empty-emoji">💤</span>
+                <span className="empty-emoji"><Icon name="moon" size={28} /></span>
                 <p>No upcoming scheduled events found.</p>
               </div>
             ) : (
@@ -268,7 +269,7 @@ export const NowNext: React.FC<NowNextProps> = ({
                 >
                   <div className="card-top-row">
                     <span className="countdown-badge next-badge">
-                      ⏳ {formatCountdown(start, "start")}
+                      <Icon name="hourglass" size={12} /> {formatCountdown(start, "start")}
                     </span>
                     <span className="event-time">
                       {event.startTime} - {event.endTime}
@@ -280,12 +281,12 @@ export const NowNext: React.FC<NowNextProps> = ({
                   <div className="card-tags">
                     {event.locationName && (
                       <span className="tag loc-tag-sm" style={getColorStyle("Location", event.locationName)}>
-                        📍 {event.locationName}
+                        <Icon name="mapPin" size={12} /> {event.locationName}
                       </span>
                     )}
                     {event.department && (
                       <span className="tag dept-badge" style={getColorStyle("Department", event.department)}>
-                        🏢 {event.department}
+                        <Icon name="building" size={12} /> {event.department}
                       </span>
                     )}
                   </div>
@@ -302,7 +303,7 @@ export const NowNext: React.FC<NowNextProps> = ({
         {/* 3. All-Day & Unscheduled / TBD Column */}
         <div className="now-next-column tbd-col">
           <div className="column-title-row">
-            <span className="col-indicator-dot" style={{ backgroundColor: "#8b5cf6" }}></span>
+            <span className="col-indicator-dot" style={{ backgroundColor: "var(--accent)" }}></span>
             <h2>All-Day & Flexible / TBD</h2>
             <span className="col-count">{tbdOrAllDayEvents.length}</span>
           </div>
@@ -310,7 +311,7 @@ export const NowNext: React.FC<NowNextProps> = ({
           <div className="now-next-card-list">
             {tbdOrAllDayEvents.length === 0 ? (
               <div className="now-next-empty-state">
-                <span className="empty-emoji">✨</span>
+                <span className="empty-emoji"><Icon name="sparkles" size={28} /></span>
                 <p>No unscheduled or all-day events.</p>
               </div>
             ) : (
@@ -318,12 +319,12 @@ export const NowNext: React.FC<NowNextProps> = ({
                 <div
                   key={`tbd-${event.id}`}
                   className="now-next-card clickable"
-                  style={{ borderLeft: "3px solid #8b5cf6" }}
+                  style={{ borderLeft: "3px solid var(--accent)" }}
                   onClick={() => setModalEvent(event)}
                 >
                   <div className="card-top-row">
-                    <span className="countdown-badge" style={{ backgroundColor: "#f3e8ff", color: "#6b21a8" }}>
-                      📋 All-Day / Unscheduled
+                    <span className="countdown-badge chip chip-accent">
+                      <Icon name="clipboard" size={12} /> All-Day / Unscheduled
                     </span>
                     <span className="event-time">
                       {event.startTime || "TBD"}
@@ -335,12 +336,12 @@ export const NowNext: React.FC<NowNextProps> = ({
                   <div className="card-tags">
                     {event.locationName && (
                       <span className="tag loc-tag-sm" style={getColorStyle("Location", event.locationName)}>
-                        📍 {event.locationName}
+                        <Icon name="mapPin" size={12} /> {event.locationName}
                       </span>
                     )}
                     {event.department && (
                       <span className="tag dept-badge" style={getColorStyle("Department", event.department)}>
-                        🏢 {event.department}
+                        <Icon name="building" size={12} /> {event.department}
                       </span>
                     )}
                   </div>

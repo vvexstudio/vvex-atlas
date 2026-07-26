@@ -10,6 +10,7 @@ import { MapView } from "./MapView";
 import { ScheduleGrid } from "./ScheduleGrid";
 import { RunningSchedule } from "./RunningSchedule";
 import { CalendarView } from "./CalendarView";
+import { Icon } from "@/components/ui/icons";
 import { useAuthProfile } from "@/hooks/useAuthProfile";
 import { useEventData } from "@/hooks/useEventData";
 import { useFilters } from "@/hooks/useFilters";
@@ -637,29 +638,19 @@ export function EventApp({
     <main className="legacy-app">
       {isOffline && (
         <div className="offline-banner">
-          <span className="offline-icon">⚠️</span>
+          <span className="offline-icon"><Icon name="warning" size={14} /></span>
           <span>Offline Mode. Displaying cached data (last synced: {lastSynced ? new Date(lastSynced).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Never"}).</span>
         </div>
       )}
       {/* Header Banner */}
       <header className="legacy-banner">
-        <div className="legacy-banner-title" style={{ display: "flex", alignItems: "baseline", gap: "10px", flexWrap: "wrap" }}>
+        <div className="legacy-banner-title">
           <h1 className="legacy-banner-heading">The Portal</h1>
-          <span style={{ 
-            fontSize: "0.72rem", 
-            padding: "0.15rem 0.5rem", 
-            borderRadius: "4px", 
-            backgroundColor: "rgba(168, 85, 247, 0.15)", 
-            color: "#c084fc",
-            fontWeight: 600,
-            border: "1px solid rgba(168, 85, 247, 0.3)"
-          }}>
+          <span className="chip chip-accent eyebrow eyebrow-accent">
             PDT • Black Rock City
           </span>
           {sourceLabel && (
-            <span style={{ fontSize: "0.75rem", color: "#94a3b8", fontWeight: "normal" }}>
-              ({sourceLabel})
-            </span>
+            <span className="banner-source-label">({sourceLabel})</span>
           )}
         </div>
         <div className="legacy-banner-actions">
@@ -670,7 +661,7 @@ export function EventApp({
                   src={userSession.picture}
                   alt={userSession.name || userSession.email}
                   referrerPolicy="no-referrer"
-                  style={{ width: "30px", height: "30px", borderRadius: "50%", border: "1.5px solid #a855f7" }}
+                  style={{ width: "30px", height: "30px", borderRadius: "50%", border: "1.5px solid var(--accent)" }}
                 />
               ) : (
                 <div
@@ -678,68 +669,38 @@ export function EventApp({
                     width: "30px",
                     height: "30px",
                     borderRadius: "50%",
-                    backgroundColor: "#6366f1",
-                    color: "white",
+                    backgroundColor: "var(--accent)",
+                    color: "var(--accent-ink)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     fontWeight: "bold",
                     fontSize: "0.8rem",
-                    border: "1.5px solid #a855f7",
+                    border: "1.5px solid var(--line)",
                   }}
                 >
                   {(userSession.name || userSession.email)[0].toUpperCase()}
                 </div>
               )}
               <div className="user-profile-info">
-                <span style={{ fontSize: "0.8rem", fontWeight: 600, color: isDarkMode ? "#f3f4f6" : "#1f2937", lineHeight: "1.2" }}>
+                <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--ink)", lineHeight: "1.2" }}>
                   {userSession.name || userSession.email.split("@")[0]}
                 </span>
-                <span style={{ fontSize: "0.65rem", color: isDarkMode ? "#9ca3af" : "#6b7280" }}>
+                <span style={{ fontSize: "0.65rem", color: "var(--muted)" }}>
                   {userSession.email}
                 </span>
               </div>
               {role === "admin" && (
                 <Link
                   href="/admin"
-                  style={{
-                    padding: "0.25rem 0.6rem",
-                    backgroundColor: "var(--accent-soft)",
-                    border: "1px solid var(--line)",
-                    color: "var(--accent)",
-                    borderRadius: "5px",
-                    fontSize: "0.7rem",
-                    fontWeight: 600,
-                    textDecoration: "none",
-                    marginRight: "0.5rem",
-                    display: "inline-flex",
-                    alignItems: "center"
-                  }}
+                  className="btn btn-ghost btn-sm"
+                  style={{ marginRight: "0.5rem" }}
                 >
-                  ⚙️ Admin Panel
+                  <Icon name="settings" size={12} /> Admin Panel
                 </Link>
               )}
-              <a
-                href="/api/auth/logout"
-                style={{
-                  padding: "0.25rem 0.6rem",
-                  backgroundColor: "rgba(239, 68, 68, 0.1)",
-                  border: "1px solid rgba(239, 68, 68, 0.3)",
-                  color: "#f87171",
-                  borderRadius: "5px",
-                  fontSize: "0.7rem",
-                  fontWeight: 600,
-                  textDecoration: "none",
-                  transition: "background-color 0.2s",
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = "rgba(239, 68, 68, 0.2)";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = "rgba(239, 68, 68, 0.1)";
-                }}
-              >
-                Logout
+              <a href="/api/auth/logout" className="btn btn-danger btn-sm">
+                <Icon name="logout" size={12} /> Logout
               </a>
             </div>
           )}
@@ -748,9 +709,8 @@ export function EventApp({
             className="legacy-theme-switch"
             onClick={() => setIsDarkMode(!isDarkMode)}
             aria-label="Toggle dark theme"
-            style={{ width: "32px", height: "32px", padding: "0", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", fontSize: "1rem" }}
           >
-            {isDarkMode ? "☀️" : "🌙"}
+            <Icon name={isDarkMode ? "sun" : "moon"} size={16} />
           </button>
         </div>
       </header>
@@ -766,7 +726,7 @@ export function EventApp({
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             title={isSidebarOpen ? "Hide filters & running schedule" : "Show filters & running schedule"}
           >
-            {isSidebarOpen ? "➡️" : "⬅️"}
+            <Icon name={isSidebarOpen ? "chevronRight" : "chevronLeft"} size={14} />
           </button>
           {/* Main Tab Switcher */}
           <div className="main-tabs-header">
@@ -776,37 +736,38 @@ export function EventApp({
                 className={`main-tab-btn ${mainTab === "schedule" ? "active" : ""}`}
                 onClick={() => setMainTab("schedule")}
               >
-                📋 Schedule List
+                <Icon name="clipboard" size={14} /> Schedule List
               </button>
               <button
                 type="button"
                 className={`main-tab-btn ${mainTab === "calendar" ? "active" : ""}`}
                 onClick={() => setMainTab("calendar")}
               >
-                📅 Calendar Grid
+                <Icon name="calendar" size={14} /> Calendar Grid
               </button>
               <button
                 type="button"
                 className={`main-tab-btn map-tab-btn ${mainTab === "map" ? "active" : ""}`}
                 onClick={() => setMainTab("map")}
               >
-                🗺️ Map View {visibleMappableVenues.length === 0 ? "(Scaffolded)" : ""}
+                <Icon name="map" size={14} /> Map View {visibleMappableVenues.length === 0 ? "(Scaffolded)" : ""}
               </button>
               <button
                 type="button"
                 className={`main-tab-btn ${mainTab === "now-next" ? "active" : ""}`}
                 onClick={() => setMainTab("now-next")}
               >
-                ⚡ Now &amp; Next
+                <Icon name="zap" size={14} /> Now &amp; Next
               </button>
               <button
                 type="button"
                 className={`main-tab-btn starred-tab-btn ${isMyScheduleOnly ? "active" : ""}`}
                 onClick={() => setIsMyScheduleOnly(!isMyScheduleOnly)}
                 title={isMyScheduleOnly ? "Showing Starred Only" : "Show Starred"}
-                style={{ minWidth: "40px", padding: "0", fontSize: "1.1rem" }}
+                aria-label={isMyScheduleOnly ? "Showing starred only" : "Show starred"}
+                style={{ minWidth: "40px", padding: "0" }}
               >
-                ⭐
+                <Icon name="star" size={16} filled={isMyScheduleOnly} />
               </button>
             </div>
             
@@ -859,21 +820,8 @@ export function EventApp({
                     onClick={() => setHideEmptyHours(!hideEmptyHours)}
                     className={`calendar-toggle-btn ${hideEmptyHours ? "active" : ""}`}
                     aria-pressed={hideEmptyHours}
-                    style={{ padding: "4px 8px", fontSize: "0.75rem", borderRadius: "6px" }}
                   >
-                    {hideEmptyHours ? (
-                      <svg className="control-icon-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }}>
-                        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-                        <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
-                        <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
-                        <line x1="2" y1="2" x2="22" y2="22" />
-                      </svg>
-                    ) : (
-                      <svg className="control-icon-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }}>
-                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                    )}
+                    <Icon name={hideEmptyHours ? "eyeOff" : "eye"} size={12} />
                     <span>Hide Empty Hours</span>
                   </button>
                 </>
@@ -967,8 +915,8 @@ export function EventApp({
               onClick={() => setIsMobileFiltersOpen(!isMobileFiltersOpen)}
               title={isMobileFiltersOpen ? "Hide filters" : "Show filters"}
             >
-              <span>🔍 Filters & Search</span>
-              <span>{isMobileFiltersOpen ? "🔼 Collapse" : "🔽 Expand"}</span>
+              <span><Icon name="search" size={14} /> Filters & Search</span>
+              <span><Icon name={isMobileFiltersOpen ? "chevronUp" : "chevronDown"} size={14} /> {isMobileFiltersOpen ? "Collapse" : "Expand"}</span>
             </button>
 
             <div className={`legacy-mobile-filter-body ${isMobileFiltersOpen ? "is-open" : ""}`}>
@@ -985,8 +933,8 @@ export function EventApp({
               onClick={() => setIsMobileScheduleOpen(!isMobileScheduleOpen)}
               title={isMobileScheduleOpen ? "Hide schedule list" : "Show schedule list"}
             >
-              <span>📋 Running Schedule</span>
-              <span>{isMobileScheduleOpen ? "🔼 Collapse" : "🔽 Expand"}</span>
+              <span><Icon name="clipboard" size={14} /> Running Schedule</span>
+              <span><Icon name={isMobileScheduleOpen ? "chevronUp" : "chevronDown"} size={14} /> {isMobileScheduleOpen ? "Collapse" : "Expand"}</span>
             </button>
 
             <div className={`legacy-mobile-schedule-body ${isMobileScheduleOpen ? "is-open" : ""}`}>
@@ -1010,7 +958,7 @@ export function EventApp({
             setIsMobileScheduleOpen(false);
           }}
         >
-          🔍 Filters &amp; Search {activeFiltersCount > 0 && <span className="mobile-badge">{activeFiltersCount}</span>}
+          <Icon name="search" size={14} /> Filters &amp; Search {activeFiltersCount > 0 && <span className="mobile-badge">{activeFiltersCount}</span>}
         </button>
         {mainTab === "calendar" && (
           <button
@@ -1018,7 +966,7 @@ export function EventApp({
             className={`mobile-bar-btn hide-empty-btn ${hideEmptyHours ? "active" : ""}`}
             onClick={() => setHideEmptyHours(!hideEmptyHours)}
           >
-            {hideEmptyHours ? "👁️ Hide Empty Hours" : "👁️ Show All Hours"}
+            <Icon name={hideEmptyHours ? "eyeOff" : "eye"} size={14} /> {hideEmptyHours ? "Hide Empty Hours" : "Show All Hours"}
           </button>
         )}
         <button
@@ -1029,7 +977,7 @@ export function EventApp({
             setIsMobileFiltersOpen(false);
           }}
         >
-          📋 Running Schedule
+          <Icon name="clipboard" size={14} /> Running Schedule
         </button>
       </div>
 
@@ -1038,9 +986,9 @@ export function EventApp({
         <div className="mobile-drawer-overlay" onClick={() => setIsMobileFiltersOpen(false)}>
           <div className="mobile-drawer-content" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-drawer-header">
-              <h3>🔍 Filters &amp; Search</h3>
-              <button type="button" className="mobile-drawer-close" onClick={() => setIsMobileFiltersOpen(false)}>
-                ✕
+              <h3><Icon name="search" size={14} /> Filters &amp; Search</h3>
+              <button type="button" className="mobile-drawer-close" aria-label="Close" onClick={() => setIsMobileFiltersOpen(false)}>
+                <Icon name="x" size={16} />
               </button>
             </div>
             <div className="mobile-drawer-body">
@@ -1055,9 +1003,9 @@ export function EventApp({
         <div className="mobile-drawer-overlay" onClick={() => setIsMobileScheduleOpen(false)}>
           <div className="mobile-drawer-content" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-drawer-header">
-              <h3>📋 Running Schedule ({filteredAndSortedEvents.length})</h3>
-              <button type="button" className="mobile-drawer-close" onClick={() => setIsMobileScheduleOpen(false)}>
-                ✕
+              <h3><Icon name="clipboard" size={14} /> Running Schedule ({filteredAndSortedEvents.length})</h3>
+              <button type="button" className="mobile-drawer-close" aria-label="Close" onClick={() => setIsMobileScheduleOpen(false)}>
+                <Icon name="x" size={16} />
               </button>
             </div>
             <div className="mobile-drawer-body">
