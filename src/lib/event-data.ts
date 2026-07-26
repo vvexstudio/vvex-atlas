@@ -149,7 +149,7 @@ export async function getFestivalDataFromSheets(role: string = "public"): Promis
 
   if (hasServiceAccount) {
     try {
-      const fullSpreadsheet = await getSpreadsheetWithFormatting(spreadsheetId);
+      const fullSpreadsheet = await getSpreadsheetWithFormatting(spreadsheetId, [tabLocations, tabPersonnel, tabDepartments, tabRos]);
       if (fullSpreadsheet && fullSpreadsheet.sheets) {
         const findSheet = (name: string) =>
           fullSpreadsheet.sheets.find((s: any) => s.properties?.title?.trim().toLowerCase() === name.trim().toLowerCase());
@@ -159,12 +159,12 @@ export async function getFestivalDataFromSheets(role: string = "public"): Promis
         const depSheet = findSheet(tabDepartments);
         const rosSheet = findSheet(tabRos);
 
-        if (locSheet) locationsData = parseSheetDataWithColors(locSheet).data;
-        if (perSheet) personnelData = parseSheetDataWithColors(perSheet).data;
-        if (depSheet) departmentsData = parseSheetDataWithColors(depSheet).data;
+        if (locSheet) locationsData = parseSheetDataWithColors(fullSpreadsheet, tabLocations).data;
+        if (perSheet) personnelData = parseSheetDataWithColors(fullSpreadsheet, tabPersonnel).data;
+        if (depSheet) departmentsData = parseSheetDataWithColors(fullSpreadsheet, tabDepartments).data;
 
         if (rosSheet) {
-          const parsedRos = parseSheetDataWithColors(rosSheet);
+          const parsedRos = parseSheetDataWithColors(fullSpreadsheet, tabRos);
           rosData = parsedRos.data;
           const rows = rosSheet.data?.[0]?.rowData || [];
           if (rows.length > 1) {

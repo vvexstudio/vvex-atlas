@@ -33,7 +33,11 @@ export function validateFestivalData(
     if (v.mapLabel) venueMap.set(v.mapLabel.toLowerCase().trim(), v);
   });
 
-  const deptNames = new Set(departments.map((d) => d.name.toLowerCase().trim()));
+  const deptNames = new Set(
+    departments
+      .map((d: any) => (d.Department || d.name || String(d)).toLowerCase().trim())
+      .filter(Boolean)
+  );
   const seenEventKeys = new Set<string>();
 
   events.forEach((event, idx) => {
