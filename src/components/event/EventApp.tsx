@@ -884,6 +884,7 @@ export function EventApp({
                   events={events}
                   getColorStyle={getColorStyle}
                   activeCategories={activeCategories.length > 0 ? activeCategories : categoriesList}
+                  isDarkMode={isDarkMode}
                 />
                 {categoriesList.length > 0 && (
                   <Legend
