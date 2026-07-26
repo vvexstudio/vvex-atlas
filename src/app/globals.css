@@ -1,39 +1,105 @@
+/* ============================================================
+   DESIGN TOKENS
+   Light: "Desert Letterpress" — sand, ink, burnt orange.
+   Dark:  "Playa Noir" — warm charcoal, dust amber.
+   Every color, radius, shadow, spacing, and type size in this
+   file must come from these tokens.
+   ============================================================ */
+
 :root {
-  --background: #efe5d0;
-  --panel: rgba(245, 237, 220, 0.92);
-  --panel-strong: rgba(255, 248, 236, 0.98);
+  --bg: #efe5d0;
+  --surface: #f7efdd;
+  --surface-raised: #fffdf3;
   --ink: #1e1a16;
   --muted: #63584c;
   --line: rgba(56, 38, 17, 0.18);
-  --accent: #bc5c2d;
-  --accent-soft: rgba(188, 92, 45, 0.16);
-  --music: #166534; /* dark green */
-  --performance: #86efac; /* light green */
-  --installation: #1e3a8a; /* dark blue */
-  --exhibition: #9333ea; /* violet */
-  --object: #7dd3fc; /* light blue */
-  --experience: #a855f7; /* purple */
-  --dj: #fef08a; /* yellow */
-  --venue: #8b5cf6; /* violet */
-  --food: #d8b4fe; /* lavender */
-  --lecture: #af6a00;
-  --community: #22726f;
-  --shadow: 0 24px 80px rgba(62, 35, 12, 0.14);
 
-  /* Spacing and typography tokens (WP-11 B1) */
-  --font-main: "Avenir Next", "Gill Sans Nova", "Trebuchet MS", sans-serif;
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  --accent: #bc5c2d;
+  --accent-strong: #9c4a20;
+  --accent-ink: #fffdf3;
+  --accent-soft: rgba(188, 92, 45, 0.14);
+
+  --success: #4a7c46;
+  --success-soft: #dfe9d3;
+  --warn: #9a6a1b;
+  --warn-soft: #f3e4c0;
+  --danger: #a63d2a;
+  --danger-soft: #f2d9cf;
+  --info: #3f6b7d;
+  --info-soft: #d9e6ea;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-full: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(62, 35, 12, 0.1);
+  --shadow-md: 0 6px 18px rgba(62, 35, 12, 0.12);
+  --shadow-lg: 0 24px 80px rgba(62, 35, 12, 0.16);
+
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 12px;
   --space-lg: 16px;
   --space-xl: 24px;
+  --space-2xl: 32px;
+
+  /* Type scale: 11 / 13 / 15 / 17 / 20 / 26 / 34 */
+  --text-xs: 0.6875rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-md: 1.0625rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.625rem;
+  --text-2xl: 2.125rem;
+
+  /* --font-display / --font-sans / --font-mono are set by next/font
+     in src/app/layout.tsx; these are build-time-injected fallbacks. */
+  --font-fallback-sans: system-ui, -apple-system, sans-serif;
+  --font-fallback-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
   --gradient-color-1: rgba(255, 245, 222, 0.8);
   --gradient-color-2: rgba(168, 126, 63, 0.18);
   --gradient-start: #f5ead2;
   --gradient-end: #e3d3b6;
+
+  /* Migration aliases — remove once no consumers remain */
+  --background: var(--bg);
+  --panel: var(--surface);
+  --panel-strong: var(--surface-raised);
+  --shadow: var(--shadow-lg);
+}
+
+body.portal-dark {
+  --bg: #16130f;
+  --surface: #201b15;
+  --surface-raised: #2a241c;
+  --ink: #ede4d4;
+  --muted: #a89a86;
+  --line: rgba(237, 228, 212, 0.14);
+
+  --accent: #d98e4a;
+  --accent-strong: #e5a465;
+  --accent-ink: #1e1a16;
+  --accent-soft: rgba(217, 142, 74, 0.16);
+
+  --success: #8fbf85;
+  --success-soft: rgba(143, 191, 133, 0.16);
+  --warn: #d9b45c;
+  --warn-soft: rgba(217, 180, 92, 0.16);
+  --danger: #e08a72;
+  --danger-soft: rgba(224, 138, 114, 0.16);
+  --info: #8fb6c4;
+  --info-soft: rgba(143, 182, 196, 0.16);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 32px 80px rgba(0, 0, 0, 0.55);
+
+  --gradient-color-1: rgba(42, 36, 28, 0.8);
+  --gradient-color-2: rgba(217, 142, 74, 0.06);
+  --gradient-start: #1b1712;
+  --gradient-end: #16130f;
 }
 
 html,
@@ -49,7 +115,7 @@ body {
     radial-gradient(circle at top left, var(--gradient-color-1), transparent 28%),
     radial-gradient(circle at bottom right, var(--gradient-color-2), transparent 24%),
     linear-gradient(180deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
-  font-family: var(--font-main);
+  font-family: var(--font-sans, var(--font-fallback-sans));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -69,14 +135,9 @@ a {
   height: 100vh;
   min-height: 100vh;
   padding: 0;
-  background: #fffdf3;
-  color: #141414;
-  font-family:
-    "Avenir Next",
-    "Gill Sans Nova",
-    "Trebuchet MS",
-    sans-serif;
-  font-size: 15px;
+  background: var(--surface-raised);
+  color: var(--ink);
+  font-size: var(--text-base);
   letter-spacing: 0.015em;
   display: flex;
   flex-direction: column;
@@ -5719,4 +5780,189 @@ tr.highlight-active td:first-child {
 
 tr.highlight-active td:last-child {
   border-right: 2px solid #facc15 !important;
+}
+
+/* ============================================================
+   PRIMITIVES — shared UI components (src/components/ui/)
+   Buttons, chips, cards, icon buttons, eyebrows, status dots.
+   ============================================================ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: var(--text-xs);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-strong);
+}
+
+.btn-secondary {
+  background: var(--surface-raised);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.btn-danger {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--danger-soft);
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.icon-btn:hover {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.close-btn:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.chip-neutral {
+  background: var(--surface);
+  color: var(--muted);
+  border-color: var(--line);
+}
+
+.chip-accent {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.chip-success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.chip-warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.chip-danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.chip-info {
+  background: var(--info-soft);
+  color: var(--info);
+}
+
+.card {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.card-raised {
+  box-shadow: var(--shadow-md);
+}
+
+.eyebrow {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.eyebrow-accent {
+  color: var(--accent-strong);
+}
+
+.mono {
+  font-family: var(--font-mono, var(--font-fallback-mono));
+  font-variant-numeric: tabular-nums;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--success);
+}
+
+.spin {
+  animation: icon-spin 1s linear infinite;
+}
+
+@keyframes icon-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

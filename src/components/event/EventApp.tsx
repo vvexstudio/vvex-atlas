@@ -402,9 +402,9 @@ export function EventApp({
   // Sync dark mode class on document body
   useEffect(() => {
     if (typeof document === "undefined") return;
-    document.body.classList.toggle("legacy-theme-dark", isDarkMode);
+    document.body.classList.toggle("portal-dark", isDarkMode);
     return () => {
-      document.body.classList.remove("legacy-theme-dark");
+      document.body.classList.remove("portal-dark");
     };
   }, [isDarkMode]);
 
@@ -634,7 +634,7 @@ export function EventApp({
   };
 
   return (
-    <main className={`legacy-app ${isDarkMode ? "dark-theme" : ""}`}>
+    <main className="legacy-app">
       {isOffline && (
         <div className="offline-banner">
           <span className="offline-icon">⚠️</span>
