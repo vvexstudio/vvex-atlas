@@ -209,3 +209,53 @@ These tests verify client-side interactivity, map-linkage, starred agendas, offl
 - [ ] **Step 3:** Edit an event's start time or location.
 - [ ] **Step 4:** Return to the web app window.
 - [ ] **Step 5:** Confirm a toast notification slides in at the bottom-right of the screen summarizing the change (e.g., *"Lunch updated: Location: HQ (was Forest)"*).
+
+---
+
+## 🛠️ Sprint 4: Productization & Commercial Readiness
+
+These manual verification steps validate tokenized calendar subscriptions, vendor magic links, schema linting, and data provider failovers.
+
+### 1. 📅 Tokenized `.ics` Feed Subscriptions
+*Verify role and department calendar feeds import into Apple/Google Calendar with PDT timezone integrity.*
+
+- [ ] **Step 1:** Open your browser and navigate to `/api/ics?token=demo-token` (or add a department parameter e.g., `/api/ics?token=demo-token&dept=lighting`).
+- [ ] **Step 2:** Confirm a `.ics` file named `the-portal-schedule.ics` downloads.
+- [ ] **Step 3:** Open the downloaded `.ics` file or import the URL into Apple Calendar, Google Calendar, or Outlook.
+- [ ] **Step 4:** Confirm the events import cleanly and that event start/end times evaluate in PDT (`America/Los_Angeles`).
+- [ ] **Step 5 (Token Revocation Test):** In Firebase Console under `/crew-data/tokens/demo-token`, set `revoked` to `true` (or use a revoked token). Request `/api/ics?token=demo-token` again.
+- [ ] **Step 6:** Confirm the API returns a `410 Gone` HTTP status with `"Calendar subscription token has been revoked."`.
+
+---
+
+### 2. 🔗 Vendor Magic Links
+*Verify frictionless, read-only mobile schedule access for external contractors without requiring user authentication.*
+
+- [ ] **Step 1:** Open a mobile browser or set DevTools to mobile viewport (e.g. 390px iPhone).
+- [ ] **Step 2:** Navigate to `/vendor?token=Lighting` (or `/vendor?token=Audio`).
+- [ ] **Step 3:** Confirm the page renders a streamlined, read-only schedule view titled **The Portal — Vendor View**.
+- [ ] **Step 4:** Confirm that NO Google login or password prompt is requested.
+- [ ] **Step 5:** Confirm that only shifts matching that vendor/department are listed.
+- [ ] **Step 6:** Click the **📅 Subscribe to Calendar (.ics)** button at the top of the vendor view and confirm it downloads their vendor-scoped `.ics` feed.
+
+---
+
+### 3. 🔍 Data-Health Schema Linter Report
+*Verify the automated schema linter catches data quality issues and displays them on the admin panel.*
+
+- [ ] **Step 1:** Log into the web app as Admin and navigate to [/admin/health](file:///Users/vincentnaples/Documents/github/portal-dev/src/app/admin/health/page.tsx).
+- [ ] **Step 2:** Confirm a new card titled **🔍 Schema Validation & Quality Report** appears.
+- [ ] **Step 3:** Verify summary badges display counts for **Errors**, **Warnings**, and **Info** issues.
+- [ ] **Step 4 (Validation Error Test):** In the Google Sheet, temporarily add an event with an unmapped location name (e.g., `NonExistentStage`).
+- [ ] **Step 5:** Trigger a sync (or run Apps Script) and refresh [/admin/health](file:///Users/vincentnaples/Documents/github/portal-dev/src/app/admin/health/page.tsx).
+- [ ] **Step 6:** Confirm the Linter Report flags an **[LOCATION]** error stating `Location "NonExistentStage" referenced by ... does not match any known venue`.
+
+---
+
+### 4. 🗄️ DataProvider Seam & Gateway Health
+*Verify active data gateway provider reporting.*
+
+- [ ] **Step 1:** Open [/admin/health](file:///Users/vincentnaples/Documents/github/portal-dev/src/app/admin/health/page.tsx).
+- [ ] **Step 2:** Inspect the **Active Data Gateway** card.
+- [ ] **Step 3:** Confirm it correctly identifies the active provider backend (`Firebase RTDB (/crew-data)`, `Google Sheet (OAuth)`, or `Public CSV`).
+

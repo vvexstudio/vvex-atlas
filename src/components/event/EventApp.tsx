@@ -643,19 +643,8 @@ export function EventApp({
       )}
       {/* Header Banner */}
       <header className="legacy-banner">
-        <div className="legacy-banner-title" style={{ display: "flex", alignItems: "baseline", gap: "10px", flexWrap: "wrap" }}>
+        <div className="legacy-banner-title" style={{ display: "flex", alignItems: "baseline", gap: "10px" }}>
           <h1 className="legacy-banner-heading">The Portal</h1>
-          <span style={{ 
-            fontSize: "0.72rem", 
-            padding: "0.15rem 0.5rem", 
-            borderRadius: "4px", 
-            backgroundColor: "rgba(168, 85, 247, 0.15)", 
-            color: "#c084fc",
-            fontWeight: 600,
-            border: "1px solid rgba(168, 85, 247, 0.3)"
-          }}>
-            PDT • Black Rock City
-          </span>
           {sourceLabel && (
             <span style={{ fontSize: "0.75rem", color: "#94a3b8", fontWeight: "normal" }}>
               ({sourceLabel})
