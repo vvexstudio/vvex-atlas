@@ -438,6 +438,7 @@ function readSheetToJson(sheet) {
   if (!sheet) return [];
   const range = sheet.getDataRange();
   const values = range.getValues();
+  const displayValues = range.getDisplayValues();
   if (values.length < 2) return [];
 
   // Detect and skip a banner row if it's mostly empty (<= 2 non-empty cells)
@@ -451,9 +452,17 @@ function readSheetToJson(sheet) {
 
   for (let i = headerRowIdx + 1; i < values.length; i++) {
     const row = values[i];
+    const displayRow = displayValues ? displayValues[i] : null;
     const obj = {};
     headers.forEach((header, index) => {
-      if (header) obj[header] = row[index];
+      if (header) {
+        let val = row[index];
+        if (val instanceof Date) {
+          // Use formatted cell display string for Date objects to avoid ISO UTC +8h timezone shifts
+          val = displayRow && displayRow[index] !== undefined && displayRow[index] !== "" ? displayRow[index] : val.toString();
+        }
+        obj[header] = val;
+      }
     });
     rows.push(obj);
   }
