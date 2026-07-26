@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from "react";
 import type { FestivalEvent } from "@/types/festival";
+import { Icon } from "@/components/ui/icons";
 
 interface VendorData {
   vendorName: string;
@@ -52,7 +53,7 @@ export default function VendorSchedulePage({
 
   if (isLoading) {
     return (
-      <div style={{ padding: "3rem 1.5rem", textAlign: "center", color: "#6b7280", fontFamily: "sans-serif" }}>
+      <div style={{ padding: "3rem 1.5rem", textAlign: "center", color: "var(--muted)" }}>
         Loading vendor schedule...
       </div>
     );
@@ -60,7 +61,17 @@ export default function VendorSchedulePage({
 
   if (error) {
     return (
-      <div style={{ padding: "2rem", maxWidth: "500px", margin: "3rem auto", backgroundColor: "#fee2e2", border: "1px solid #fca5a5", borderRadius: "8px", color: "#b91c1c", fontFamily: "sans-serif" }}>
+      <div
+        style={{
+          padding: "2rem",
+          maxWidth: "500px",
+          margin: "3rem auto",
+          backgroundColor: "var(--danger-soft)",
+          border: "1px solid var(--danger)",
+          borderRadius: "var(--radius-md)",
+          color: "var(--danger)",
+        }}
+      >
         <strong>Access Error:</strong> {error}
       </div>
     );
@@ -69,66 +80,70 @@ export default function VendorSchedulePage({
   if (!data) return null;
 
   return (
-    <div style={{ maxWidth: "650px", margin: "0 auto", padding: "1.5rem 1rem", fontFamily: "system-ui, -apple-system, sans-serif", color: "#111827" }}>
+    <div style={{ maxWidth: "650px", margin: "0 auto", padding: "1.5rem 1rem", color: "var(--ink)" }}>
       {/* Header Banner */}
-      <header style={{ background: "#18181b", color: "#f4f4f5", padding: "1.25rem", borderRadius: "10px", marginBottom: "1.5rem" }}>
+      <header
+        style={{
+          background: "var(--ink)",
+          color: "var(--bg)",
+          padding: "1.25rem",
+          borderRadius: "var(--radius-lg)",
+          marginBottom: "1.5rem",
+        }}
+      >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <h1 style={{ fontSize: "1.25rem", margin: 0, fontWeight: 700 }}>The Portal — Vendor View</h1>
-          <span style={{ fontSize: "0.75rem", background: "#3f3f46", padding: "0.2rem 0.5rem", borderRadius: "4px" }}>
-            {data.timezone}
-          </span>
+          <h1 style={{ fontSize: "var(--text-xl)", margin: 0, fontWeight: 700, fontFamily: "var(--font-display)" }}>
+            The Portal — Vendor View
+          </h1>
+          <span className="chip chip-neutral">{data.timezone}</span>
         </div>
-        <p style={{ margin: "0.5rem 0 0 0", fontSize: "0.875rem", color: "#a1a1aa" }}>
+        <p style={{ margin: "0.5rem 0 0 0", fontSize: "var(--text-sm)", color: "var(--bg)", opacity: 0.75 }}>
           Assigned Shifts for <strong>{data.vendorName}</strong> ({data.eventCount} events)
         </p>
         <div style={{ marginTop: "1rem" }}>
-          <a
-            href={`/api/ics?token=${encodeURIComponent(token || "")}`}
-            style={{
-              display: "inline-block",
-              fontSize: "0.8rem",
-              padding: "0.4rem 0.8rem",
-              backgroundColor: "#8b5cf6",
-              color: "white",
-              borderRadius: "6px",
-              textDecoration: "none",
-              fontWeight: 600,
-            }}
-          >
-            📅 Subscribe to Calendar (.ics)
+          <a className="btn btn-primary btn-sm" href={`/api/ics?token=${encodeURIComponent(token || "")}`}>
+            <Icon name="calendar" size={14} /> Subscribe to Calendar (.ics)
           </a>
         </div>
       </header>
 
       {/* Schedule List */}
       {data.events.length === 0 ? (
-        <div style={{ padding: "2rem", textAlign: "center", background: "#f4f4f5", borderRadius: "8px", color: "#71717a" }}>
+        <div
+          style={{
+            padding: "2rem",
+            textAlign: "center",
+            background: "var(--surface)",
+            borderRadius: "var(--radius-md)",
+            color: "var(--muted)",
+          }}
+        >
           No scheduled shifts found for vendor token.
         </div>
       ) : (
         <div style={{ display: "grid", gap: "1rem" }}>
           {data.events.map((event) => (
-            <div
-              key={event.id}
-              style={{
-                background: "white",
-                padding: "1rem 1.25rem",
-                borderRadius: "8px",
-                border: "1px solid #e4e4e7",
-                boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-              }}
-            >
+            <div key={event.id} className="card" style={{ padding: "1rem 1.25rem" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "0.4rem" }}>
-                <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 600 }}>{event.title}</h3>
-                <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#6366f1", background: "#eef2ff", padding: "0.15rem 0.4rem", borderRadius: "4px" }}>
+                <h3 style={{ margin: 0, fontSize: "var(--text-md)", fontWeight: 600 }}>{event.title}</h3>
+                <span className="chip chip-accent mono">
                   {event.startTime}{event.endTime ? ` - ${event.endTime}` : ""}
                 </span>
               </div>
-              <div style={{ fontSize: "0.85rem", color: "#52525b", marginBottom: "0.25rem" }}>
-                📍 <strong>Location:</strong> {event.locationName || "Black Rock City"}
+              <div
+                style={{
+                  fontSize: "var(--text-sm)",
+                  color: "var(--muted)",
+                  marginBottom: "0.25rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.35rem",
+                }}
+              >
+                <Icon name="mapPin" size={12} /> <strong>Location:</strong> {event.locationName || "Black Rock City"}
               </div>
               {event.description && (
-                <p style={{ margin: "0.5rem 0 0 0", fontSize: "0.8rem", color: "#71717a", lineHeight: 1.4 }}>
+                <p style={{ margin: "0.5rem 0 0 0", fontSize: "var(--text-sm)", color: "var(--muted)", lineHeight: 1.4 }}>
                   {event.description}
                 </p>
               )}
