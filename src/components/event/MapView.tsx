@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { APIProvider, Map, AdvancedMarker, AdvancedMarkerAnchorPoint, ColorScheme, InfoWindow, useMap } from "@vis.gl/react-google-maps";
 import { Venue, FestivalEvent } from "@/types/festival";
 import { Icon, type IconName } from "@/components/ui/icons";
@@ -55,8 +55,8 @@ const MapContent: React.FC<{
   const map = useMap();
   const [activeVenue, setActiveVenue] = useState<Venue | null>(null);
   // colorScheme is fixed at map init, so theme changes remount the <Map>;
-  // the last camera position is kept in a ref to survive the remount.
-  const cameraRef = useRef<{ center: { lat: number; lng: number }; zoom: number } | null>(null);
+  // the last settled camera position is kept so it survives the remount.
+  const [savedCamera, setSavedCamera] = useState<{ center: { lat: number; lng: number }; zoom: number } | null>(null);
 
   // Sync programmatically focused venue (e.g. from event modal)
   useEffect(() => {
@@ -90,14 +90,18 @@ const MapContent: React.FC<{
   return (
     <Map
       key={isDarkMode ? "map-dark" : "map-light"}
-      defaultCenter={cameraRef.current?.center ?? mapCenterCoords}
-      defaultZoom={cameraRef.current?.zoom ?? defaultZoom}
+      defaultCenter={savedCamera?.center ?? mapCenterCoords}
+      defaultZoom={savedCamera?.zoom ?? defaultZoom}
       mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || "2f9f04bb8e9c458045b99a65"}
       colorScheme={isDarkMode ? ColorScheme.DARK : ColorScheme.LIGHT}
       disableDefaultUI={false}
       style={{ width: "100%", height: "100%" }}
-      onCameraChanged={(ev) => {
-        cameraRef.current = { center: ev.detail.center, zoom: ev.detail.zoom };
+      onIdle={(ev) => {
+        const center = ev.map.getCenter()?.toJSON();
+        const zoom = ev.map.getZoom();
+        if (center && typeof zoom === "number") {
+          setSavedCamera({ center, zoom });
+        }
       }}
     >
       {visibleMappableVenues.map((venue) => {

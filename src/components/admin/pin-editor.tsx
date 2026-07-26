@@ -6,7 +6,6 @@ import { APIProvider, Map, AdvancedMarker, MapMouseEvent } from "@vis.gl/react-g
 import { AdminEntry, ServiceType } from "@/types/admin-entry";
 import { EventType, FestivalDay } from "@/types/festival";
 import { PredefinedLocation } from "@/lib/predefined-locations";
-import mapStyles from "@/data/map-styles.json";
 
 type PinEditorProps = {
   initialData?: AdminEntry;
@@ -511,7 +510,6 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
               mapTypeControl={true}
               onClick={handleMapClick}
               gestureHandling="greedy"
-              styles={mapStyles}
               style={{ width: "100%", height: "100%" }}
             >
               {!isServicesBatchMode && location && (
