@@ -713,10 +713,6 @@ body.portal-dark .banner-brand-mark {
   font-family: var(--font-mono, var(--font-fallback-mono));
   font-size: var(--text-sm);
 }
-.font-semibold {
-  font-weight: 600;
-}
-
 /* Action tag / category tag */
 .action-tag {
   display: inline-block;
@@ -1215,15 +1211,6 @@ body.portal-dark .banner-brand-mark {
   color: var(--accent-ink);
   border-color: var(--accent-strong);
   box-shadow: 0 1px 3px rgba(188, 92, 45, 0.2);
-}
-
-.calendar-toggle-btn.active .control-icon-svg {
-  color: var(--accent-ink);
-}
-
-.control-icon-svg {
-  color: var(--muted);
-  transition: color 0.2s ease;
 }
 
 .scale-value {
@@ -2564,6 +2551,15 @@ body.portal-dark .banner-brand-mark {
   font-size: var(--text-base);
   font-weight: 700;
   margin: 0;
+}
+.infowindow-address {
+  font-size: var(--text-sm);
+  color: var(--accent-strong);
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 .infowindow-category-badge {
   font-size: var(--text-xs);
