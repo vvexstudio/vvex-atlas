@@ -114,7 +114,7 @@ export const ScheduleGrid: React.FC<ScheduleGridProps> = ({
             {dateGroup.dateLabel}
           </div>
           <div className="main-schedule-table-wrap">
-            <table className="main-schedule-table" style={{ minWidth: `${scheduleWidthScale}px` }}>
+            <table className="main-schedule-table" style={{ width: `${scheduleWidthScale}px`, minWidth: `${scheduleWidthScale}px` }}>
               <thead>
                 <tr>
                   <th style={{ width: "90px" }}>Time</th>

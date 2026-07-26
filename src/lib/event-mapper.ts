@@ -10,6 +10,18 @@ function asString(value: unknown): string {
   return "";
 }
 
+function getRowValue(row: any, keys: string[]): any {
+  if (!row || typeof row !== "object") return undefined;
+  const cleanKeys = keys.map(k => k.toLowerCase().replace(/[^a-z0-9]/g, ""));
+  for (const [k, v] of Object.entries(row)) {
+    const cleanK = k.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (cleanKeys.includes(cleanK)) {
+      return v;
+    }
+  }
+  return undefined;
+}
+
 function normalizeText(value: string): string {
   return value
     .toLowerCase()
@@ -24,25 +36,59 @@ function slugify(value: string): string {
 }
 
 function excelTimeToMinutes(value: unknown): number | null {
+  if (value === null || value === undefined) return null;
+
+  // 1. If it's already a number, treat as Excel time fraction
   if (typeof value === "number" && Number.isFinite(value)) {
     const normalized = ((value % 1) + 1) % 1;
     return Math.round(normalized * 24 * 60);
   }
 
   const raw = asString(value);
-  if (!raw || raw === "????") return null;
-  const compact = raw.replace(/\s+/g, "").toLowerCase();
-  const match = compact.match(/^(\d{1,2})(?::(\d{2}))?([ap]m|m)?$/);
-  if (!match) return null;
+  if (!raw || raw === "????" || raw.toLowerCase() === "tbd") return null;
 
-  let hours = Number(match[1]);
-  const minutes = Number(match[2] ?? "0");
-  const suffix = match[3];
-  if (!Number.isFinite(hours) || !Number.isFinite(minutes) || minutes > 59) return null;
-  if (suffix === "pm" && hours < 12) hours += 12;
-  if ((suffix === "am" || suffix === "m") && hours === 12) hours = 0;
-  if (hours > 23) return null;
-  return hours * 60 + minutes;
+  // 2. Check if it's an ISO / date-time string containing 'T' (e.g. "1899-12-30T08:00:00.000Z")
+  const tMatch = raw.match(/T(\d{1,2}):(\d{2})(?::(\d{2}))?/i);
+  if (tMatch) {
+    const hours = Number(tMatch[1]);
+    const minutes = Number(tMatch[2]);
+    if (hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) {
+      return hours * 60 + minutes;
+    }
+  }
+
+  // 3. Check if it is a standard time string like "HH:MM:SS" or "HH:MM"
+  const timeMatch = raw.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([ap]m)?$/i);
+  if (timeMatch) {
+    let hours = Number(timeMatch[1]);
+    const minutes = Number(timeMatch[2]);
+    const ampm = timeMatch[4];
+    if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes < 60) {
+      if (ampm) {
+        const lowerAmpm = ampm.toLowerCase();
+        if (lowerAmpm === "pm" && hours < 12) hours += 12;
+        if (lowerAmpm === "am" && hours === 12) hours = 0;
+      }
+      return hours * 60 + minutes;
+    }
+  }
+
+  // 4. Check if it is a simple hour with meridian (e.g. "8am", "12pm", "8 pm")
+  const compact = raw.replace(/\s+/g, "").toLowerCase();
+  const simpleMatch = compact.match(/^(\d{1,2})([ap]m|m)?$/);
+  if (simpleMatch) {
+    let hours = Number(simpleMatch[1]);
+    const suffix = simpleMatch[2];
+    if (hours >= 0 && hours <= 23) {
+      if (suffix) {
+        if (suffix === "pm" && hours < 12) hours += 12;
+        if ((suffix === "am" || suffix === "m") && hours === 12) hours = 0;
+      }
+      return hours * 60;
+    }
+  }
+
+  return null;
 }
 
 function formatMinutes(minutes: number | null): string {
@@ -114,22 +160,19 @@ export function createVenueFromNewSheetRow(row: any): Venue {
   if (row && typeof row === "object" && "id" in row && "name" in row && "hasLocation" in row) {
     return row as Venue;
   }
-  const cleanRow: Record<string, any> = {};
-  for (const [k, v] of Object.entries(row)) {
-    cleanRow[k.trim()] = v;
-  }
-  const name = asString(cleanRow["Location"]);
-  const lat = Number(cleanRow["Lat"]);
-  const lng = Number(cleanRow["Long"]);
+  const name = asString(getRowValue(row, ["Location", "name", "location_id"]));
+  const lat = Number(getRowValue(row, ["Lat", "Latitude"]));
+  const lng = Number(getRowValue(row, ["Long", "Lng", "Longitude"]));
   const hasLocation = Number.isFinite(lat) && Number.isFinite(lng);
+  const description = asString(getRowValue(row, ["Description", "notes", "notes_internal"]));
 
   return {
     id: slugify(name),
     name,
     label: "Location",
     mapLabel: name,
-    shortDescription: asString(cleanRow["Description"]) || "Imported location",
-    description: asString(cleanRow["Description"]) || `Location: ${name}`,
+    shortDescription: description || "Imported location",
+    description: description || `Location: ${name}`,
     x: 0,
     y: 0,
     lat: hasLocation ? lat : undefined,
@@ -144,41 +187,45 @@ export function createEventFromSheetRow(row: any, venuesById: Map<string, Venue>
   if (row && typeof row === "object" && "id" in row && "title" in row && "startTime" in row) {
     return row as FestivalEvent;
   }
-  const cleanRow: Record<string, any> = {};
-  for (const [k, v] of Object.entries(row)) {
-    cleanRow[k.trim()] = v;
-  }
 
-  const action = asString(cleanRow["Action"]);
-  const description = asString(cleanRow["Description"]);
-  const locationName = asString(cleanRow["SOLARIS ROS Location"] || cleanRow["Location"]) || "TBD";
+  const action = asString(getRowValue(row, ["Action", "action"]));
+  const description = asString(getRowValue(row, ["Description", "description"]));
+  const locationName = asString(getRowValue(row, ["SOLARIS ROS Location", "Location", "location_name", "location"])) || "TBD";
   
   const title = description.split(/\n|\/\//)[0].trim() || action || "Scheduled Event";
 
-  const dateObj = parseDateString(cleanRow["Start Day"]);
-  const dateStr = dateObj ? (isoDate(dateObj) || "") : asString(cleanRow["Start Day"]);
+  const dateVal = getRowValue(row, ["Start Day", "start_day", "date", "start_date"]);
+  const dateObj = parseDateString(dateVal);
+  const dateStr = dateObj ? (isoDate(dateObj) || "") : asString(dateVal);
 
-  const startMinutes = excelTimeToMinutes(cleanRow["Start"]);
-  const startStr = startMinutes !== null ? formatMinutes(startMinutes) : asString(cleanRow["Start"]) || "TBD";
+  const startVal = getRowValue(row, ["Start", "start", "start_time"]);
+  const startMinutes = excelTimeToMinutes(startVal);
+  const startStr = startMinutes !== null ? formatMinutes(startMinutes) : asString(startVal) || "TBD";
 
-  const endMinutes = excelTimeToMinutes(cleanRow["End Time"]);
-  const endStr = endMinutes !== null ? formatMinutes(endMinutes) : asString(cleanRow["End Time"]) || "TBD";
+  const endVal = getRowValue(row, ["End Time", "end_time", "end"]);
+  const endMinutes = excelTimeToMinutes(endVal);
+  const endStr = endMinutes !== null ? formatMinutes(endMinutes) : asString(endVal) || "TBD";
 
   const venueId = slugify(locationName);
   const venue = venuesById.get(venueId);
 
   const projectTypes = parseEventTypes(`${action} ${description}`);
 
+  const leadDept = asString(getRowValue(row, ["Department", "department", "lead_dept", "lead_department"]));
+  const leadPerson = asString(getRowValue(row, ["Lead Point Person", "lead_point_person", "lead"]));
+  const eventId = asString(getRowValue(row, ["event_id", "id"]));
+  const eventType = asString(getRowValue(row, ["event_type", "type"]));
+
   return {
-    id: cleanRow["event_id"] || `remote-${slugify(`${dateStr || "date"}-${title}-${index}`)}`,
+    id: eventId || `remote-${slugify(`${dateStr || "date"}-${title}-${index}`)}`,
     venueId,
     title,
-    host: asString(cleanRow["Lead Point Person"]) || asString(cleanRow["Department"]) || "",
+    host: leadPerson || leadDept || "",
     description,
     day: getFestivalDay(dateObj),
     startTime: startStr,
     endTime: endStr,
-    type: (cleanRow["event_type"] || projectTypes[0] || "community") as any,
+    type: (eventType || projectTypes[0] || "community") as any,
     projectTypes: projectTypes.length > 1 ? projectTypes : undefined,
     thumbnailUrl: DEFAULT_THUMBNAIL,
     lat: venue?.lat,
@@ -188,8 +235,8 @@ export function createEventFromSheetRow(row: any, venuesById: Map<string, Venue>
     scheduleDate: dateStr,
     scheduleCategory: action || undefined,
     action,
-    department: asString(cleanRow["Department"]),
-    leadPointPerson: asString(cleanRow["Lead Point Person"]),
+    department: leadDept,
+    leadPointPerson: leadPerson,
     locationName,
   };
 }
@@ -209,11 +256,10 @@ export function parseSpreadsheetData(
     if (row && typeof row === "object" && "id" in row && "title" in row && "startTime" in row) {
       return true;
     }
-    const cleanRow: Record<string, any> = {};
-    for (const [k, v] of Object.entries(row)) {
-      cleanRow[k.trim()] = v;
-    }
-    return cleanRow["Action"] || cleanRow["Description"] || cleanRow["SOLARIS ROS Location"] || cleanRow["Location"];
+    const act = getRowValue(row, ["Action", "action"]);
+    const desc = getRowValue(row, ["Description", "description"]);
+    const loc = getRowValue(row, ["SOLARIS ROS Location", "Location", "location_name", "location"]);
+    return act || desc || loc;
   });
 
   const venues = locationsData
@@ -226,11 +272,7 @@ export function parseSpreadsheetData(
     if (row && typeof row === "object" && "id" in row && "title" in row && "startTime" in row) {
       return;
     }
-    const cleanRow: Record<string, any> = {};
-    for (const [k, v] of Object.entries(row)) {
-      cleanRow[k.trim()] = v;
-    }
-    const locName = asString(cleanRow["SOLARIS ROS Location"] || cleanRow["Location"]);
+    const locName = asString(getRowValue(row, ["SOLARIS ROS Location", "Location", "location_name", "location"]));
     if (locName) {
       const id = slugify(locName);
       if (!venuesById.has(id)) {
@@ -269,6 +311,10 @@ export function parseSpreadsheetData(
     for (const [k, v] of Object.entries(row)) {
       cleanRow[k.trim()] = v;
     }
+    const pName = getRowValue(row, ["Name", "name"]);
+    const pEmail = getRowValue(row, ["Email", "email"]);
+    if (pName) cleanRow["name"] = pName;
+    if (pEmail) cleanRow["email"] = pEmail;
     return cleanRow;
   }).filter(p => p.Name || p.name);
 
@@ -280,6 +326,12 @@ export function parseSpreadsheetData(
     for (const [k, v] of Object.entries(row)) {
       cleanRow[k.trim()] = v;
     }
+    const dDept = getRowValue(row, ["Department", "department", "dept", "dept_id"]);
+    const dCal = getRowValue(row, ["google_calendar_id", "googleCalendarId", "calendar_id", "calendarId"]);
+    const dColor = getRowValue(row, ["Color", "color"]);
+    if (dDept) cleanRow["department"] = dDept;
+    if (dCal) cleanRow["google_calendar_id"] = dCal;
+    if (dColor) cleanRow["color"] = dColor;
     return cleanRow as Department;
   }).filter((d): d is Department => Boolean(d.Department || (d as any).department));
 

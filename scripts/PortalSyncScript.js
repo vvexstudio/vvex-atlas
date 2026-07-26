@@ -230,7 +230,6 @@ function processOnboardingInvites(startRow) {
           if (currentStatus.indexOf(step1Pattern) === -1) {
             try {
               group = executeWithRetry(() => AdminDirectory.Groups.get(groupEmail));
-              allowExternalMembers(groupEmail);
             } catch (e) {
               try {
                 group = executeWithRetry(() => AdminDirectory.Groups.insert({
@@ -302,6 +301,7 @@ function processOnboardingInvites(startRow) {
                 }, groupEmail));
               } catch (memberErr) {
                 Logger.log("Could not add user to group: " + memberErr);
+                throw new Error("Failed to add " + email + " to Google Group " + groupEmail + ": " + memberErr.message);
               }
             }
             updateInviteProgress(sheet, rowNum, inviteStatusColIdx, step3Pattern);
@@ -1016,7 +1016,6 @@ function provisionMissingCalendarsAndGroups(ss) {
     try {
       AdminDirectory.Groups.get(groupEmail);
       groupExists = true;
-      allowExternalMembers(groupEmail);
     } catch (e) {
       try {
         Logger.log("Creating missing Google Group: " + groupEmail);
