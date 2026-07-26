@@ -171,6 +171,7 @@ export function createVenueFromNewSheetRow(row: any): Venue {
   const name = asString(getRowValue(row, ["Location", "name", "location_id"]));
   const lat = Number(getRowValue(row, ["Lat", "Latitude"]));
   const lng = Number(getRowValue(row, ["Long", "Lng", "Longitude"]));
+  const address = asString(getRowValue(row, ["Address", "Street Address", "Location Address", "location_address"]));
   const hasLocation = Number.isFinite(lat) && Number.isFinite(lng);
   const description = asString(getRowValue(row, ["Description", "notes", "notes_internal"]));
 
@@ -181,6 +182,7 @@ export function createVenueFromNewSheetRow(row: any): Venue {
     mapLabel: name,
     shortDescription: description || "Imported location",
     description: description || `Location: ${name}`,
+    address: address || undefined,
     x: 0,
     y: 0,
     lat: hasLocation ? lat : undefined,

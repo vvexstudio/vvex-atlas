@@ -11,7 +11,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               href="/admin" 
               style={{ color: "#4b5563", textDecoration: "none", fontWeight: 600, fontSize: "0.95rem" }}
             >
-              📍 Local Pins
+              📍 Locations
+            </Link>
+            <Link 
+              href="/admin/magic-links" 
+              style={{ color: "#4b5563", textDecoration: "none", fontWeight: 600, fontSize: "0.95rem" }}
+            >
+              🔑 Magic Links & Feeds
             </Link>
             <Link 
               href="/admin/health" 

@@ -115,6 +115,11 @@ const MapContent: React.FC<{
         >
           <div className="map-infowindow">
             <h3 className="infowindow-title">{activeVenue.name}</h3>
+            {activeVenue.address && (
+              <div style={{ fontSize: "0.8rem", color: "#6366f1", fontWeight: 600, marginBottom: "0.35rem" }}>
+                📍 {activeVenue.address}
+              </div>
+            )}
             {activeVenue.permanence && (
               <span className="infowindow-category-badge">{activeVenue.permanence}</span>
             )}
@@ -197,6 +202,19 @@ export const MapView: React.FC<MapViewProps> = ({
     });
   }, [venues, activeCategories]);
 
+  const [mapAuthError, setMapAuthError] = useState(false);
+
+  useEffect(() => {
+    const previousHandler = (window as any).gm_authFailure;
+    (window as any).gm_authFailure = () => {
+      setMapAuthError(true);
+      if (typeof previousHandler === "function") previousHandler();
+    };
+    return () => {
+      (window as any).gm_authFailure = previousHandler;
+    };
+  }, []);
+
   const mapCenterCoords = useMemo(() => {
     const mappable = visibleMappableVenues.find((v) => typeof v.lat === "number" && typeof v.lng === "number");
     if (mappable && mappable.lat && mappable.lng) {
@@ -204,6 +222,28 @@ export const MapView: React.FC<MapViewProps> = ({
     }
     return mapCenter;
   }, [visibleMappableVenues, mapCenter]);
+
+  if (mapAuthError) {
+    return (
+      <div className="map-placeholder-container" style={{ padding: "2rem" }}>
+        <div className="map-placeholder-card" style={{ maxWidth: "550px", borderLeft: "4px solid #ef4444" }}>
+          <div className="map-placeholder-icon">⚠️</div>
+          <h2 style={{ color: "#b91c1c", fontSize: "1.15rem" }}>Google Maps API Key Error (ApiProjectMapError)</h2>
+          <p style={{ fontSize: "0.85rem", color: "#374151", textAlign: "left", lineHeight: 1.5 }}>
+            The Google Maps JavaScript API returned an <strong>ApiProjectMapError</strong> authentication failure.
+          </p>
+          <div style={{ textAlign: "left", fontSize: "0.8rem", color: "#4b5563", background: "#fef2f2", padding: "0.75rem", borderRadius: "6px", margin: "1rem 0" }}>
+            <strong>How to resolve this in Google Cloud Console:</strong>
+            <ol style={{ margin: "0.5rem 0 0 0", paddingLeft: "1.2rem" }}>
+              <li>Ensure <strong>Maps JavaScript API</strong> is enabled on your GCP project.</li>
+              <li>Confirm <strong>Billing</strong> is enabled for the Google Cloud project.</li>
+              <li>Check API Key Application Restrictions to ensure current domain/localhost is authorized.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="main-map-container" style={{ height: "100%", width: "100%" }}>
