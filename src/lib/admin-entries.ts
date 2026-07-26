@@ -160,9 +160,10 @@ export async function readAdminEntries(): Promise<AdminEntry[]> {
       localEntries.forEach((e) => {
         entriesMap[e.id] = e;
       });
-      await adminDb.ref("admin-data/entries").set(entriesMap);
-      await adminDb.ref("crew-data/entries").set(entriesMap);
-      await adminDb.ref("public-data/entries").set(entriesMap);
+      const sanitizedEntriesMap = JSON.parse(JSON.stringify(entriesMap));
+      await adminDb.ref("admin-data/entries").set(sanitizedEntriesMap);
+      await adminDb.ref("crew-data/entries").set(sanitizedEntriesMap);
+      await adminDb.ref("public-data/entries").set(sanitizedEntriesMap);
     } catch (e) {
       console.error("Failed to sync local admin entries to Firebase:", e);
     }
@@ -181,9 +182,10 @@ async function writeAdminEntries(entries: AdminEntry[]): Promise<void> {
       entries.forEach((e) => {
         entriesMap[e.id] = e;
       });
-      await adminDb.ref("admin-data/entries").set(entriesMap);
-      await adminDb.ref("crew-data/entries").set(entriesMap);
-      await adminDb.ref("public-data/entries").set(entriesMap);
+      const sanitizedEntriesMap = JSON.parse(JSON.stringify(entriesMap));
+      await adminDb.ref("admin-data/entries").set(sanitizedEntriesMap);
+      await adminDb.ref("crew-data/entries").set(sanitizedEntriesMap);
+      await adminDb.ref("public-data/entries").set(sanitizedEntriesMap);
     } catch (e) {
       console.error("Failed to write admin entries to Firebase:", e);
     }
