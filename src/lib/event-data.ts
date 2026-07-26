@@ -36,9 +36,13 @@ function mergeAdminEntries(
   const adminVenues: Venue[] = [];
   const adminEvents: FestivalEvent[] = [];
 
+  const sheetVenueIds = new Set(venues.map((v) => v.id.toLowerCase()));
+  const sheetVenueNames = new Set(venues.map((v) => v.name.trim().toLowerCase()));
+
   adminEntries.forEach((entry) => {
+    const isSuperceded = sheetVenueIds.has(entry.id.toLowerCase()) || sheetVenueNames.has(entry.name.trim().toLowerCase());
     const hasLocation = entry.hasLocation && entry.lat !== undefined && entry.lng !== undefined;
-    if (hasLocation) {
+    if (hasLocation && !isSuperceded) {
       adminVenues.push({
         id: entry.id,
         name: entry.name,
@@ -263,5 +267,5 @@ export async function getFestivalDataFromCsv(): Promise<FestivalDataResult> {
 }
 
 export async function getFestivalData(role: string = "public"): Promise<FestivalDataResult> {
-  return getFestivalDataFromSheets(role);
+  return getFestivalDataFromRtdb(role);
 }
