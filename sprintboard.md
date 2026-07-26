@@ -144,6 +144,9 @@ Goal: keep the way the client already works (the `ROS by TIME` columns are the b
 - [x] Realtime update change notifications toasted warning alerts.
 - [x] Calendar current time indicator line overlay with today auto-scrolling.
 - [x] PWA offline caching manifest.json and sw.js service worker.
+- [x] Procedural two-level MD5 hashing & atomic upsert/prune state machine for Google Calendar sync (eliminating event duplicates & purging deleted rows).
+- [x] Firebase RTDB metadata registry persistence for calendar sync state (`crew-data/metadata/calendar-events`).
+- [x] Idempotent onboarding invite sequence preventing duplicate email delivery.
 - [x] Verification suite with Vitest unit tests, clean lint checks, and successful Next.js production compiles.
 
 ### M4 — Proposal + handoff
