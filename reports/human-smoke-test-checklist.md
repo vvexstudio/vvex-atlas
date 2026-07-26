@@ -306,3 +306,26 @@ These manual verification steps validate tokenized calendar subscriptions, vendo
 - [ ] **Step 5:** Confirm all-day or unscheduled shifts (e.g., shifts with `TBD` times or dates) are rendered here with `📋 All-Day / Unscheduled` badges.
 - [ ] **Step 6:** Click any card in the All-Day column and verify the Event Modal opens correctly.
 
+---
+
+## 📋 Master Summary of Open Human Smoke Test Items
+
+Use this consolidated checklist during your final manual testing pass across Sprints 2, 3, and 4:
+
+- [ ] **1. 🏥 Data-Health Heartbeat Alert (`/admin/health`):** Pause Apps Script trigger $\rightarrow$ wait 10m $\rightarrow$ confirm indicator turns red; re-enable $\rightarrow$ turns green.
+- [ ] **2. 🗂️ Multi-Department Filtering:** Set personnel department to `Lighting, Rigging` $\rightarrow$ verify both chips appear and filter correctly.
+- [ ] **3. 💾 RTDB Admin Pins Persistence (`/admin`):** Add a custom pin $\rightarrow$ verify saved under `/admin-data/entries` $\rightarrow$ restart dev server $\rightarrow$ confirm pin persists on map.
+- [ ] **4. 🩹 Apps Script Calendar Self-Healing:** Corrupt `google_calendar_id` in sheet $\rightarrow$ run sync $\rightarrow$ verify log shows creation and sheet updates with new valid calendar ID.
+- [ ] **5. ⚡ Now & Next Dashboard & Fallback:** Verify active events in col 1, next upcoming events in col 2 (even if >2h away, labeled `Upcoming Next (Next Scheduled)`), and all-day/TBD shifts in col 3.
+- [ ] **6. 🗺️ Map Legend & InfoWindow Directions:** Toggle category chips in legend $\rightarrow$ click map pin $\rightarrow$ click **Directions** button $\rightarrow$ confirm Google Maps navigation opens in new tab.
+- [ ] **7. 🔗 Bidirectional Modal Navigation:** Open event modal $\rightarrow$ click **📍 Show on Map** $\rightarrow$ confirm view switches to Map View, centers/zooms (level 16), and opens InfoWindow.
+- [ ] **8. ⭐ Starred Agendas & Realtime Sync:** Star events $\rightarrow$ check `portal_starred_ids` in Local Storage $\rightarrow$ filter by star icon tab $\rightarrow$ test real-time sync across two logged-in browsers.
+- [ ] **9. 📱 PWA Offline & Install Shell:** Test over HTTPS staging URL $\rightarrow$ verify "Install App" prompt $\rightarrow$ set Network to Offline $\rightarrow$ refresh and confirm app shell loads with red Offline banner.
+- [ ] **10. 🔗 URL State Synchronization:** Select day, search text, and category filter $\rightarrow$ copy URL (`?v=timeline&d=2026-08-24&q=lunch`) $\rightarrow$ open in incognito window $\rightarrow$ verify exact state restores.
+- [ ] **11. 🔔 Real-Time Changed-Event Toasts:** Keep web app open $\rightarrow$ edit event in sheet or Firebase $\rightarrow$ confirm toast notification slides in summarizing change.
+- [ ] **12. 📅 Tokenized `.ics` Feed Subscriptions:** Download `/api/ics?token=demo-token` $\rightarrow$ import into Apple/Google Calendar $\rightarrow$ confirm PDT timezone (`America/Los_Angeles`) $\rightarrow$ revoke token $\rightarrow$ confirm HTTP 410.
+- [ ] **13. 🔗 Vendor Magic Links:** Open mobile viewport $\rightarrow$ visit `/vendor?token=Lighting` $\rightarrow$ verify read-only view loads without password prompts, filtered to vendor shifts.
+- [ ] **14. 🔍 Data-Health Schema Linter Report:** Open [/admin/health](file:///Users/vincentnaples/Documents/github/portal-dev/src/app/admin/health/page.tsx) $\rightarrow$ add unmapped location name to sheet $\rightarrow$ sync $\rightarrow$ verify Linter Report flags `[LOCATION]` error.
+- [ ] **15. 🔑 Magic Links & Feeds Admin Page:** Open [/admin/magic-links](file:///Users/vincentnaples/Documents/github/portal-dev/src/app/admin/magic-links/page.tsx) $\rightarrow$ type vendor name $\rightarrow$ test **Copy Link**, **Copy Feed URL**, and **↗ Open Vendor Mobile View**.
+- [ ] **16. 📍 Locations Registry & TSV Exporter / Supersession:** Open [/admin](file:///Users/vincentnaples/Documents/github/portal-dev/src/app/admin/page.tsx) $\rightarrow$ verify street addresses & coordinates $\rightarrow$ click **Copy Pins for Google Sheet** $\rightarrow$ paste into sheet $\rightarrow$ sync $\rightarrow$ verify pin status updates to `✓ In Sheet (Superseded)`.
+
