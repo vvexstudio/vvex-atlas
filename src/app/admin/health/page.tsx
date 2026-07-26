@@ -40,6 +40,8 @@ export default function AdminHealthPage() {
   const [data, setData] = useState<HealthData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [vendorTokenInput, setVendorTokenInput] = useState("Lighting");
+  const [copiedType, setCopiedType] = useState<"magic" | "ics" | null>(null);
 
   useEffect(() => {
     async function fetchHealth() {
@@ -243,6 +245,113 @@ export default function AdminHealthPage() {
               ))}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Grid Row 4: Vendor Magic Links & iCal Feed Link Generator */}
+      <div style={{ background: "white", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 1px 3px 0 rgba(0,0,0,0.1)" }}>
+        <h3 style={{ fontSize: "0.9rem", color: "#6b7280", fontWeight: 600, marginBottom: "0.75rem", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          🔑 Vendor Magic Links & iCal Subscriptions Link Generator
+        </h3>
+        <p style={{ fontSize: "0.85rem", color: "#4b5563", marginTop: 0, marginBottom: "1rem" }}>
+          Issue single-vendor schedule magic links for external crew (no password required) or copy tokenized `.ics` calendar subscription feeds.
+        </p>
+
+        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center", marginBottom: "1.25rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+            <label style={{ fontSize: "0.75rem", fontWeight: 600, color: "#374151" }}>Vendor / Department Token:</label>
+            <input
+              type="text"
+              value={vendorTokenInput}
+              onChange={(e) => setVendorTokenInput(e.target.value)}
+              placeholder="e.g. Lighting, Audio, Food"
+              style={{
+                padding: "0.45rem 0.75rem",
+                borderRadius: "6px",
+                border: "1px solid #d1d5db",
+                fontSize: "0.85rem",
+                minWidth: "220px"
+              }}
+            />
+          </div>
+
+          <div style={{ display: "flex", gap: "0.5rem", marginTop: "1.25rem" }}>
+            <button
+              onClick={() => {
+                const url = `${window.location.origin}/vendor?token=${encodeURIComponent(vendorTokenInput.trim())}`;
+                navigator.clipboard.writeText(url);
+                setCopiedType("magic");
+                setTimeout(() => setCopiedType(null), 2500);
+              }}
+              style={{
+                backgroundColor: "#6366f1",
+                color: "white",
+                border: "none",
+                padding: "0.5rem 0.9rem",
+                borderRadius: "6px",
+                fontSize: "0.8rem",
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.4rem"
+              }}
+            >
+              📋 {copiedType === "magic" ? "Copied Magic Link!" : "Copy Vendor Magic Link"}
+            </button>
+
+            <button
+              onClick={() => {
+                const url = `${window.location.origin}/api/ics?token=demo-token&dept=${encodeURIComponent(vendorTokenInput.trim())}`;
+                navigator.clipboard.writeText(url);
+                setCopiedType("ics");
+                setTimeout(() => setCopiedType(null), 2500);
+              }}
+              style={{
+                backgroundColor: "#8b5cf6",
+                color: "white",
+                border: "none",
+                padding: "0.5rem 0.9rem",
+                borderRadius: "6px",
+                fontSize: "0.8rem",
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.4rem"
+              }}
+            >
+              📅 {copiedType === "ics" ? "Copied iCal Feed URL!" : "Copy iCal Feed URL"}
+            </button>
+
+            <a
+              href={`/vendor?token=${encodeURIComponent(vendorTokenInput.trim())}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                backgroundColor: "#f3f4f6",
+                color: "#374151",
+                border: "1px solid #d1d5db",
+                padding: "0.5rem 0.9rem",
+                borderRadius: "6px",
+                fontSize: "0.8rem",
+                fontWeight: 600,
+                textDecoration: "none",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.3rem"
+              }}
+            >
+              ↗ Test Link View
+            </a>
+          </div>
+        </div>
+
+        <div style={{ backgroundColor: "#f9fafb", padding: "0.75rem 1rem", borderRadius: "6px", fontSize: "0.8rem", color: "#6b7280" }}>
+          <strong>Generated Magic Link Preview:</strong>{" "}
+          <code style={{ color: "#4f46e5" }}>
+            {typeof window !== "undefined" ? window.location.origin : "https://portal.is"}/vendor?token={encodeURIComponent(vendorTokenInput.trim())}
+          </code>
         </div>
       </div>
 
