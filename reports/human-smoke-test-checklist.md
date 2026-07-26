@@ -259,3 +259,50 @@ These manual verification steps validate tokenized calendar subscriptions, vendo
 - [ ] **Step 2:** Inspect the **Active Data Gateway** card.
 - [ ] **Step 3:** Confirm it correctly identifies the active provider backend (`Firebase RTDB (/crew-data)`, `Google Sheet (OAuth)`, or `Public CSV`).
 
+---
+
+### 5. 🔑 Dedicated Magic Links & Feeds Admin Management Page
+*Verify generator, copy controls, and testing shortcuts on `/admin/magic-links`.*
+
+- [ ] **Step 1:** Log into the web app as Admin and navigate to [/admin/magic-links](file:///Users/vincentnaples/Documents/github/portal-dev/src/app/admin/magic-links/page.tsx) or click **`🔑 Magic Links & Feeds`** in the header.
+- [ ] **Step 2:** Type a vendor token/department name (e.g. `Lighting` or `Audio`).
+- [ ] **Step 3:** Click **📋 Copy Link** for the Vendor Schedule Magic Link, paste into a browser window, and confirm it copies correctly.
+- [ ] **Step 4:** Click **📋 Copy Feed URL** for the iCal Subscription Feed, paste into a browser window, and confirm it downloads the `.ics` file.
+- [ ] **Step 5:** Click **↗ Open Vendor Mobile View** and confirm it opens the vendor view page in a new browser tab.
+
+---
+
+### 6. 📍 Master Locations Registry, Addresses & TSV Export / Supersession
+*Verify location addresses, coordinates, TSV export, and automatic pin supersession on `/admin`.*
+
+- [ ] **Step 1:** Log into the web app as Admin and navigate to [/admin](file:///Users/vincentnaples/Documents/github/portal-dev/src/app/admin/page.tsx) or click **`📍 Locations`** in the header.
+- [ ] **Step 2:** Inspect the **📍 Event Locations Registry** table and confirm real street addresses (e.g. `Reno Arch, 345 N`, `9:20 & I`, `2:00 & K`) and Lat/Lng coordinates load from the Google Sheet.
+- [ ] **Step 3:** Scroll to **📍 Custom Map Pin Overlays** and click **📋 Copy Pins for Google Sheet**.
+- [ ] **Step 4:** Open the Google Sheet **`Locations`** tab, click column A in a new row, and paste (`Cmd+V`). Confirm all columns (`Location`, `Aliases`, `Address`, `Lat`, `Long`, `Description`) paste cleanly into separate columns.
+- [ ] **Step 5:** Run the spreadsheet sync.
+- [ ] **Step 6:** Refresh [/admin](file:///Users/vincentnaples/Documents/github/portal-dev/src/app/admin/page.tsx) and verify the custom pin now displays a green badge: **`✓ In Sheet (Superseded)`**.
+
+---
+
+### 7. 🗺️ Google Maps `ApiProjectMapError` Diagnostic Alert Overlay
+*Verify user-friendly guidance appears if Google Maps API key authentication fails.*
+
+- [ ] **Step 1:** Open the web app on Map View.
+- [ ] **Step 2 (Simulated Auth Failure):** If an invalid API key or restricted referrer is used, verify a clean red diagnostic card appears over the map titled **Google Maps API Key Error (ApiProjectMapError)**.
+- [ ] **Step 3:** Confirm the card provides step-by-step instructions:
+  1. Enable Maps JavaScript API on GCP project.
+  2. Confirm Billing is attached.
+  3. Check API Key Application Restrictions.
+
+---
+
+### 8. ⚡ Now & Next Fallback & All-Day / TBD Column
+*Verify fallback to future events when beyond 2 hours and display of unscheduled/all-day shifts.*
+
+- [ ] **Step 1:** Click **⚡ Now & Next** in the top navigation bar.
+- [ ] **Step 2:** If current time is outside event hours, verify the 2nd column title displays **`Upcoming Next (Next Scheduled)`** (instead of empty `No upcoming events in next 2 hours`).
+- [ ] **Step 3:** Confirm the next scheduled upcoming events are listed chronologically with start countdown badges (e.g. `⏳ starts in 5h 30m`).
+- [ ] **Step 4:** Inspect the 3rd column: **`🗓️ All-Day & Flexible / TBD`**.
+- [ ] **Step 5:** Confirm all-day or unscheduled shifts (e.g., shifts with `TBD` times or dates) are rendered here with `📋 All-Day / Unscheduled` badges.
+- [ ] **Step 6:** Click any card in the All-Day column and verify the Event Modal opens correctly.
+

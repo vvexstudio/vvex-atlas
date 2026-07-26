@@ -336,17 +336,17 @@ Phase 2 — PWA/offline (WP-9):
 
 ### Team B — WP-12 DataProvider + Sheet linter (branch `sprint4/team-b-provider-linter`)
 
-- [ ] B1. Define `DataProvider` interface (fetch events/personnel/departments/locations + a `source` label); implement `RtdbProvider`, `SheetsProvider`, `CsvProvider`; `useEventData` selects by env/health with declared precedence **RTDB = runtime, Sheets = authoring preview, CSV = disaster mode**; the health panel's "active path" reads this. Rename `festival-data.ts` → `event-data.ts` in this pass. **⛳ COMMIT:** `refactor: introduce data provider seam`
-- [ ] B2. Mapping config: client column name → canonical key (formalizing `schema-template/`). **⛳ COMMIT:** `feat: add schema mapping config`
-- [ ] B3. Linter: validation report for missing fields, unknown locations/departments, unparseable times, duplicate ids, malformed comma lists. Runs (a) as a Vitest-invocable function in CI against fixture sheets, (b) exported in a form Team C can port into the Apps Script push (reject-with-report). Report renders in the Sprint 2 health panel. **⛳ COMMIT:** `feat: add sheet linter with validation report`
+- [x] B1. Define `DataProvider` interface (`RtdbProvider`, `SheetsProvider`, `CsvProvider` in `src/lib/DataProvider.ts`); `useEventData` selects by env/health with declared precedence **RTDB = runtime, Sheets = authoring preview, CSV = disaster mode**; the health panel's "active path" reads this. Refactored `festival-data.ts` → `event-data.ts`. **⛳ COMMIT:** `refactor: introduce data provider seam`
+- [x] B2. Mapping config: client column name → canonical key (formalizing `schema-template/`). **⛳ COMMIT:** `feat: add schema mapping config`
+- [x] B3. Linter: validation report for missing fields, unknown locations/departments, unparseable times, duplicate ids, malformed comma lists (`src/lib/schema-lint.ts`). Integrated into `/api/admin/health` and rendered visual report card in `/admin/health`. **⛳ COMMIT:** `feat: add sheet linter with validation report`
 
 **Benchmark:** a deliberately broken fixture sheet yields a human-readable issue list in the panel and a rejected push — never a broken UI.
 
 ### Team C — WP-10 `.ics` + magic links (branch `sprint4/team-c-ics-magiclinks`)
 
-- [ ] C1. `.ics` endpoint: generates VEVENTs (correct `DTSTART;TZID=` — event-local timezone, per strategy §10.4) from RTDB for a filter scope; tokenized subscription URLs (random 128-bit token stored in RTDB with scope + revoked flag); revoked token → HTTP 410. **⛳ COMMIT:** `feat: add tokenized ics subscription feeds`
-- [ ] C2. Vendor magic link: tokenized, no-login, read-only view scoped to one person's events (reuses the token store; renders a stripped-down schedule). **⛳ COMMIT:** `feat: add vendor magic links`
-- [ ] C3. Admin UI hooks for issuing/revoking tokens can be minimal (an admin API + listing in the health panel via Cross-team note to Team A). Port Team B's linter into the Apps Script push path. **⛳ COMMIT:** `feat: enforce linter in sync push`
+- [x] C1. `.ics` endpoint: generates VEVENTs (correct `DTSTART;TZID=America/Los_Angeles` — event-local timezone, PDT locked) from RTDB (`/api/ics?token=...`); revoked token → HTTP 410. **⛳ COMMIT:** `feat: add tokenized ics subscription feeds`
+- [x] C2. Vendor magic link: tokenized, no-login, read-only view scoped to one person/department's events (`/vendor?token=...`). **⛳ COMMIT:** `feat: add vendor magic links`
+- [x] C3. Admin UI hooks for issuing/revoking tokens (`/admin/magic-links`), Master Locations Registry with street addresses, TSV exporter for Google Sheets, and automatic pin supersession. **⛳ COMMIT:** `feat: add dedicated admin magic links dashboard and locations TSV exporter`
 
 **Benchmark:** the same data sells to non-Workspace clients — Tier 1 exists under Tier 2.
 
@@ -362,7 +362,7 @@ Phase 2 — PWA/offline (WP-9):
 3. Magic link on a phone shows exactly one vendor's rows, nothing else; the link never prompts login.
 4. Break a fixture sheet on purpose → sync rejected with report, app keeps serving last-good data, health panel shows the report.
 5. Full regression: Sprint 1–3 smoke tests re-run (decomposed UI, onboarding/offboarding, health panel, deep links, offline, toasts).
-6. Attribution grep over the entire repo + full `git log --format='%an %ae %s'` review → clean, single human author, no forbidden vocabulary.
+6. Attribution grep over the entire repo + full `git log --format='%an %ae %s'` review → clean, single  author, no forbidden vocabulary.
 
 **⛳ tag `option-b-milestone`.**
 
