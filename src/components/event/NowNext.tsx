@@ -36,10 +36,13 @@ const getEventDateTimes = (event: FestivalEvent) => {
     endMins = startMins + 60; // default 1h duration
   }
   
-  const [y, m, d] = event.scheduleDate.split("-").map(Number);
-  const startDate = new Date(y, m - 1, d, Math.floor(startMins / 60), startMins % 60, 0);
+  const parts = event.scheduleDate.split("-").map(Number);
+  if (parts.length < 3 || parts.some(isNaN)) return null;
+  const [y, m, d] = parts;
   
+  const startDate = new Date(y, m - 1, d, Math.floor(startMins / 60), startMins % 60, 0);
   const endDate = new Date(y, m - 1, d, Math.floor(endMins / 60), endMins % 60, 0);
+  
   if (endMins < startMins) {
     endDate.setDate(endDate.getDate() + 1);
   }
@@ -50,39 +53,59 @@ const getEventDateTimes = (event: FestivalEvent) => {
 export const NowNext: React.FC<NowNextProps> = ({
   events,
   currentTime,
-  effectiveDateStr,
   isSimulated,
   setModalEvent,
   getColorStyle,
 }) => {
-  // Filter events into Now and Next (next 2 hours)
-  const { nowEvents, nextEvents } = useMemo(() => {
+  // Filter events into Now, Next (with fallback beyond 2h), and All-Day / Unscheduled TBD
+  const { nowEvents, nextEvents, tbdOrAllDayEvents, isNextBeyond2h } = useMemo(() => {
     const now: { event: FestivalEvent; start: Date; end: Date }[] = [];
-    const next: { event: FestivalEvent; start: Date; end: Date }[] = [];
-    
+    const allFutureTimed: { event: FestivalEvent; start: Date; end: Date }[] = [];
+    const tbdOrAllDay: FestivalEvent[] = [];
+
     const nextLimit = new Date(currentTime.getTime() + 2 * 60 * 60 * 1000); // +2 hours
 
     events.forEach((event) => {
       const times = getEventDateTimes(event);
-      if (!times) return;
+      if (!times) {
+        tbdOrAllDay.push(event);
+        return;
+      }
 
       const { start, end } = times;
 
       if (start <= currentTime && end >= currentTime) {
         now.push({ event, start, end });
-      } else if (start > currentTime && start <= nextLimit) {
-        next.push({ event, start, end });
+      } else if (start > currentTime) {
+        allFutureTimed.push({ event, start, end });
       }
     });
 
     // Sort Now events by end time (ending soonest first)
     now.sort((a, b) => a.end.getTime() - b.end.getTime());
-    // Sort Next events by start time (starting soonest first)
-    next.sort((a, b) => a.start.getTime() - b.start.getTime());
+
+    // Sort Future events by start time (starting soonest first)
+    allFutureTimed.sort((a, b) => a.start.getTime() - b.start.getTime());
+
+    // Check if we have events in the next 2 hours
+    const within2h = allFutureTimed.filter((item) => item.start <= nextLimit);
+
+    let nextResult: { event: FestivalEvent; start: Date; end: Date }[] = [];
+    let isBeyond2h = false;
+
+    if (within2h.length > 0) {
+      nextResult = within2h;
+    } else if (allFutureTimed.length > 0) {
+      // FALLBACK: If nothing in the next 2 hours, show the next upcoming scheduled events!
+      nextResult = allFutureTimed.slice(0, 6);
+      isBeyond2h = true;
+    }
 
     return {
       nowEvents: now,
-      nextEvents: next,
+      nextEvents: nextResult,
+      tbdOrAllDayEvents: tbdOrAllDay,
+      isNextBeyond2h: isBeyond2h,
     };
   }, [events, currentTime]);
 
@@ -94,19 +117,24 @@ export const NowNext: React.FC<NowNextProps> = ({
       return type === "start" ? "starting now" : "ending now";
     }
 
-    const hours = Math.floor(diffMins / 60);
+    const totalHours = Math.floor(diffMins / 60);
     const mins = diffMins % 60;
+    const days = Math.floor(totalHours / 24);
+    const hours = totalHours % 24;
 
     let timeStr = "";
-    if (hours > 0) {
+    if (days > 0) {
+      timeStr += `${days}d `;
+    }
+    if (hours > 0 || days > 0) {
       timeStr += `${hours}h `;
     }
     timeStr += `${mins}m`;
 
     if (type === "start") {
-      return `starts in ${timeStr}`;
+      return `starts in ${timeStr.trim()}`;
     } else {
-      return diffMs < 0 ? `ended ${timeStr} ago` : `ends in ${timeStr}`;
+      return diffMs < 0 ? `ended ${timeStr.trim()} ago` : `ends in ${timeStr.trim()}`;
     }
   };
 
@@ -138,7 +166,7 @@ export const NowNext: React.FC<NowNextProps> = ({
               })}
             </span>
           </div>
-          <div className="now-next-date">{displayDateStr}</div>
+          <div className="now-next-date">{displayDateStr} (PDT)</div>
         </div>
 
         {isSimulated && (
@@ -150,7 +178,7 @@ export const NowNext: React.FC<NowNextProps> = ({
       </div>
 
       <div className="now-next-grid">
-        {/* Happening Now Column */}
+        {/* 1. Happening Now Column */}
         <div className="now-next-column now-col">
           <div className="column-title-row">
             <span className="col-indicator-dot now-dot"></span>
@@ -167,7 +195,6 @@ export const NowNext: React.FC<NowNextProps> = ({
             ) : (
               nowEvents.map(({ event, start, end }) => {
                 const progress = getProgressPercent(start, end);
-                const startedAgo = formatCountdown(start, "end").replace("ends in", "started");
                 return (
                   <div
                     key={`now-${event.id}`}
@@ -216,11 +243,13 @@ export const NowNext: React.FC<NowNextProps> = ({
           </div>
         </div>
 
-        {/* Upcoming Next Column */}
+        {/* 2. Upcoming Next Column */}
         <div className="now-next-column next-col">
           <div className="column-title-row">
             <span className="col-indicator-dot next-dot"></span>
-            <h2>Upcoming Next (Next 2h)</h2>
+            <h2>
+              {isNextBeyond2h ? "Upcoming Next (Next Scheduled)" : "Upcoming Next (Next 2h)"}
+            </h2>
             <span className="col-count">{nextEvents.length}</span>
           </div>
 
@@ -228,7 +257,7 @@ export const NowNext: React.FC<NowNextProps> = ({
             {nextEvents.length === 0 ? (
               <div className="now-next-empty-state">
                 <span className="empty-emoji">💤</span>
-                <p>No upcoming events in the next 2 hours.</p>
+                <p>No upcoming scheduled events found.</p>
               </div>
             ) : (
               nextEvents.map(({ event, start }) => (
@@ -243,6 +272,61 @@ export const NowNext: React.FC<NowNextProps> = ({
                     </span>
                     <span className="event-time">
                       {event.startTime} - {event.endTime}
+                    </span>
+                  </div>
+
+                  <h3 className="card-title">{event.title}</h3>
+
+                  <div className="card-tags">
+                    {event.locationName && (
+                      <span className="tag loc-tag-sm" style={getColorStyle("Location", event.locationName)}>
+                        📍 {event.locationName}
+                      </span>
+                    )}
+                    {event.department && (
+                      <span className="tag dept-badge" style={getColorStyle("Department", event.department)}>
+                        🏢 {event.department}
+                      </span>
+                    )}
+                  </div>
+
+                  {event.description && (
+                    <p className="card-description-preview">{event.description}</p>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* 3. All-Day & Unscheduled / TBD Column */}
+        <div className="now-next-column tbd-col">
+          <div className="column-title-row">
+            <span className="col-indicator-dot" style={{ backgroundColor: "#8b5cf6" }}></span>
+            <h2>All-Day & Flexible / TBD</h2>
+            <span className="col-count">{tbdOrAllDayEvents.length}</span>
+          </div>
+
+          <div className="now-next-card-list">
+            {tbdOrAllDayEvents.length === 0 ? (
+              <div className="now-next-empty-state">
+                <span className="empty-emoji">✨</span>
+                <p>No unscheduled or all-day events.</p>
+              </div>
+            ) : (
+              tbdOrAllDayEvents.slice(0, 10).map((event) => (
+                <div
+                  key={`tbd-${event.id}`}
+                  className="now-next-card clickable"
+                  style={{ borderLeft: "3px solid #8b5cf6" }}
+                  onClick={() => setModalEvent(event)}
+                >
+                  <div className="card-top-row">
+                    <span className="countdown-badge" style={{ backgroundColor: "#f3e8ff", color: "#6b21a8" }}>
+                      📋 All-Day / Unscheduled
+                    </span>
+                    <span className="event-time">
+                      {event.startTime || "TBD"}
                     </span>
                   </div>
 
