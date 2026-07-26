@@ -47,13 +47,21 @@ function excelTimeToMinutes(value: unknown): number | null {
   const raw = asString(value);
   if (!raw || raw === "????" || raw.toLowerCase() === "tbd") return null;
 
-  // 2. Check if it's an ISO / date-time string containing 'T' (e.g. "1899-12-30T08:00:00.000Z")
-  const tMatch = raw.match(/T(\d{1,2}):(\d{2})(?::(\d{2}))?/i);
-  if (tMatch) {
-    const hours = Number(tMatch[1]);
-    const minutes = Number(tMatch[2]);
-    if (hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) {
-      return hours * 60 + minutes;
+  // 2. Check if it's an ISO / date-time string containing 'T' (e.g. "1899-12-30T14:32:00.000Z")
+  if (raw.includes("T")) {
+    if (raw.toUpperCase().endsWith("Z")) {
+      const parsedDate = new Date(raw);
+      if (!isNaN(parsedDate.getTime())) {
+        return parsedDate.getHours() * 60 + parsedDate.getMinutes();
+      }
+    }
+    const tMatch = raw.match(/T(\d{1,2}):(\d{2})(?::(\d{2}))?/i);
+    if (tMatch) {
+      const hours = Number(tMatch[1]);
+      const minutes = Number(tMatch[2]);
+      if (hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) {
+        return hours * 60 + minutes;
+      }
     }
   }
 
