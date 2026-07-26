@@ -27,9 +27,13 @@ export const metadata: Metadata = {
   description: "Interactive MARTIANS map and run-of-show app for The Portal.",
   manifest: "/manifest.json",
   icons: {
-    icon: "/icon.png",
+    icon: [
+      { url: "/icon.png", sizes: "100x100" },
+      { url: "/icon-192.png", sizes: "192x192" },
+      { url: "/icon-512.png", sizes: "512x512" },
+    ],
     shortcut: "/icon.png",
-    apple: "/icon.png",
+    apple: "/apple-touch-icon.png",
   },
 };
 

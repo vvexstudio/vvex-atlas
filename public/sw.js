@@ -1,9 +1,12 @@
-const CACHE_NAME = "portal-cache-v1";
+const CACHE_NAME = "portal-cache-v2";
 const ASSETS_TO_CACHE = [
   "/",
   "/login",
   "/manifest.json",
-  "/icon.png"
+  "/icon.png",
+  "/icon-192.png",
+  "/icon-512.png",
+  "/apple-touch-icon.png"
 ];
 
 self.addEventListener("install", (event) => {

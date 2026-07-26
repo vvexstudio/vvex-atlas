@@ -162,6 +162,19 @@ a {
   color: var(--muted);
 }
 
+.banner-brand-mark {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-full);
+  align-self: center;
+  flex: 0 0 auto;
+}
+
+body.portal-dark .banner-brand-mark {
+  /* the mark is a black disc; keep it legible on charcoal */
+  box-shadow: 0 0 0 1px var(--line);
+}
+
 .legacy-banner-heading {
   color: var(--ink);
   font-family: var(--font-display, serif);

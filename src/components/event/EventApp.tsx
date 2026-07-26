@@ -647,6 +647,8 @@ export function EventApp({
       {/* Header Banner */}
       <header className="legacy-banner">
         <div className="legacy-banner-title">
+          {/* eslint-disable-next-line @next/next/no-img-element -- static 26px brand mark, next/image is overkill */}
+          <img src="/icon.png" alt="" className="banner-brand-mark" width={26} height={26} />
           <h1 className="legacy-banner-heading">The Portal</h1>
           <span className="chip chip-accent eyebrow eyebrow-accent">
             PDT • Black Rock City
