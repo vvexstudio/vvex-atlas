@@ -4,6 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { AdminEntry } from "@/types/admin-entry";
 import { FestivalEvent, Venue } from "@/types/festival";
+import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Chip";
+import { Icon } from "@/components/ui/icons";
 
 interface LocationsDashboardProps {
   venues: Venue[];
@@ -39,27 +42,30 @@ export function LocationsDashboard({ venues, events, entries }: LocationsDashboa
   };
 
   return (
-    <div style={{ display: "grid", gap: "2.5rem", color: "#111827" }}>
+    <div className="admin-page-stack">
       {/* Master Locations Registry Section */}
       <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+        <div className="admin-page-header">
           <div>
-            <h1 style={{ fontSize: "1.5rem", fontWeight: 600, margin: 0 }}>📍 Event Locations Registry</h1>
-            <p style={{ color: "#6b7280", fontSize: "0.85rem", margin: "0.25rem 0 0 0" }}>
+            <h1 className="admin-page-title">
+              <Icon name="mapPin" size={20} />
+              Event Locations Registry
+            </h1>
+            <p className="admin-page-subtitle">
               Active mapped locations from Google Sheet database ({venues.length} locations)
             </p>
           </div>
         </div>
 
-        <div style={{ background: "white", borderRadius: "8px", boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1)", overflowX: "auto" }}>
-          <table style={{ width: "100%", textAlign: "left", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+        <div className="card admin-table-wrap">
+          <table className="admin-table">
             <thead>
-              <tr style={{ backgroundColor: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
-                <th style={{ padding: "0.85rem 1rem", fontWeight: 600, color: "#374151" }}>Location Name</th>
-                <th style={{ padding: "0.85rem 1rem", fontWeight: 600, color: "#374151" }}>Address</th>
-                <th style={{ padding: "0.85rem 1rem", fontWeight: 600, color: "#374151" }}>Category</th>
-                <th style={{ padding: "0.85rem 1rem", fontWeight: 600, color: "#374151" }}>Coordinates</th>
-                <th style={{ padding: "0.85rem 1rem", fontWeight: 600, color: "#374151" }}>Events</th>
+              <tr>
+                <th>Location Name</th>
+                <th>Address</th>
+                <th>Category</th>
+                <th>Coordinates</th>
+                <th>Events</th>
               </tr>
             </thead>
             <tbody>
@@ -69,30 +75,23 @@ export function LocationsDashboard({ venues, events, entries }: LocationsDashboa
                 ).length;
 
                 return (
-                  <tr key={venue.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                    <td style={{ padding: "0.85rem 1rem", fontWeight: 600 }}>{venue.name}</td>
-                    <td style={{ padding: "0.85rem 1rem", color: "#4f46e5", fontWeight: 500 }}>
-                      {venue.address || "—"}
+                  <tr key={venue.id}>
+                    <td>
+                      <strong>{venue.name}</strong>
                     </td>
-                    <td style={{ padding: "0.85rem 1rem" }}>
-                      <span style={{
-                        padding: "0.2rem 0.5rem",
-                        borderRadius: "4px",
-                        backgroundColor: "#f3f4f6",
-                        fontSize: "0.75rem",
-                        fontWeight: 600,
-                        color: "#4b5563"
-                      }}>
-                        {venue.permanence || "Standard"}
-                      </span>
+                    <td>
+                      <span className="admin-link">{venue.address || "—"}</span>
                     </td>
-                    <td style={{ padding: "0.85rem 1rem", color: "#374151", fontFamily: "monospace", fontSize: "0.8rem" }}>
+                    <td>
+                      <Chip tone="neutral">{venue.permanence || "Standard"}</Chip>
+                    </td>
+                    <td className="mono admin-cell-muted">
                       {venue.hasLocation && venue.lat !== undefined && venue.lng !== undefined
                         ? `${venue.lat.toFixed(5)}, ${venue.lng.toFixed(5)}`
                         : "Pending (Synthetic)"}
                     </td>
-                    <td style={{ padding: "0.85rem 1rem", color: "#374151", fontWeight: 600 }}>
-                      {venueEventsCount} shifts
+                    <td>
+                      <strong>{venueEventsCount} shifts</strong>
                     </td>
                   </tr>
                 );
@@ -104,110 +103,80 @@ export function LocationsDashboard({ venues, events, entries }: LocationsDashboa
 
       {/* Local Custom Pins Table Section */}
       <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "1rem" }}>
+        <div className="admin-page-header">
           <div>
-            <h2 style={{ fontSize: "1.25rem", fontWeight: 600, margin: 0 }}>📍 Custom Map Pin Overlays</h2>
-            <p style={{ color: "#6b7280", fontSize: "0.85rem", margin: "0.25rem 0 0 0" }}>
-              Temporary admin pins created via frontend UI ({entries.length} pins). Copy rows to paste into Google Sheet Locations tab.
+            <h2 className="admin-page-title">
+              <Icon name="pin" size={18} />
+              Custom Map Pin Overlays
+            </h2>
+            <p className="admin-page-subtitle">
+              Temporary admin pins created via frontend UI ({entries.length} pins). Copy rows to
+              paste into Google Sheet Locations tab.
             </p>
           </div>
-          <div style={{ display: "flex", gap: "0.75rem" }}>
-            <button
+          <div className="admin-mlg-actions">
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={copiedSuccess ? "check" : "copy"}
               onClick={handleCopyForGoogleSheets}
-              style={{
-                padding: "0.45rem 0.9rem",
-                backgroundColor: "#4f46e5",
-                color: "white",
-                border: "none",
-                borderRadius: "6px",
-                fontWeight: 600,
-                fontSize: "0.85rem",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.3rem"
-              }}
             >
-              {copiedSuccess ? "✅ TSV Rows Copied to Clipboard!" : "📋 Copy Pins for Google Sheet"}
-            </button>
+              {copiedSuccess ? "Copied" : "Copy Pins for Google Sheet"}
+            </Button>
 
-            <Link 
-              href="/admin/new"
-              style={{ 
-                padding: "0.45rem 0.9rem", 
-                backgroundColor: "#10b981", 
-                color: "white", 
-                borderRadius: "6px",
-                textDecoration: "none",
-                fontWeight: 600,
-                fontSize: "0.85rem"
-              }}
-            >
-              + Add Custom Pin
+            <Link href="/admin/new" className="btn btn-primary btn-sm">
+              Add Custom Pin
             </Link>
           </div>
         </div>
 
-        <div style={{ background: "white", borderRadius: "8px", boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1)", overflowX: "auto" }}>
-          <table style={{ width: "100%", textAlign: "left", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+        <div className="card admin-table-wrap">
+          <table className="admin-table">
             <thead>
-              <tr style={{ backgroundColor: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
-                <th style={{ padding: "0.85rem 1rem", fontWeight: 500, color: "#6b7280" }}>Name</th>
-                <th style={{ padding: "0.85rem 1rem", fontWeight: 500, color: "#6b7280" }}>Type</th>
-                <th style={{ padding: "0.85rem 1rem", fontWeight: 500, color: "#6b7280" }}>Location / Address</th>
-                <th style={{ padding: "0.85rem 1rem", fontWeight: 500, color: "#6b7280" }}>Coordinates</th>
-                <th style={{ padding: "0.85rem 1rem", fontWeight: 500, color: "#6b7280" }}>Sheet Status</th>
-                <th style={{ padding: "0.85rem 1rem", fontWeight: 500, color: "#6b7280", textAlign: "right" }}>Actions</th>
+              <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Location / Address</th>
+                <th>Coordinates</th>
+                <th>Sheet Status</th>
+                <th className="admin-cell-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {entries.map((entry) => {
-                const isSuperceded = sheetVenueIds.has(entry.id.toLowerCase()) || sheetVenueNames.has(entry.name.trim().toLowerCase());
+                const isSuperceded =
+                  sheetVenueIds.has(entry.id.toLowerCase()) ||
+                  sheetVenueNames.has(entry.name.trim().toLowerCase());
 
                 return (
-                  <tr key={entry.id} style={{ borderBottom: "1px solid #f3f4f6", backgroundColor: isSuperceded ? "#f9fafb" : "white" }}>
-                    <td style={{ padding: "0.85rem 1rem", fontWeight: 500 }}>
-                      {entry.name}
-                    </td>
-                    <td style={{ padding: "0.85rem 1rem" }}>
-                      <span style={{ 
-                        display: "inline-block", 
-                        padding: "0.2rem 0.6rem", 
-                        borderRadius: "9999px", 
-                        backgroundColor: entry.serviceType ? "#f97316" : "#8b5cf6",
-                        color: "white",
-                        fontSize: "0.75rem",
-                        fontWeight: 600
-                      }}>
+                  <tr key={entry.id} className={isSuperceded ? "admin-row-superseded" : undefined}>
+                    <td>{entry.name}</td>
+                    <td>
+                      <Chip tone={entry.serviceType ? "warn" : "accent"}>
                         {entry.projectType === "services" && entry.serviceType
                           ? `Services: ${entry.serviceType}`
                           : entry.projectType}
-                      </span>
+                      </Chip>
                     </td>
-                    <td style={{ padding: "0.85rem 1rem", color: "#374151" }}>
-                      {entry.locationInternal || "—"}
-                    </td>
-                    <td style={{ padding: "0.85rem 1rem", color: "#6b7280", fontFamily: "monospace", fontSize: "0.8rem" }}>
-                      {entry.hasLocation && entry.lat !== undefined && entry.lng !== undefined 
-                        ? `${entry.lat.toFixed(5)}, ${entry.lng.toFixed(5)}` 
+                    <td>{entry.locationInternal || "—"}</td>
+                    <td className="mono admin-cell-muted">
+                      {entry.hasLocation && entry.lat !== undefined && entry.lng !== undefined
+                        ? `${entry.lat.toFixed(5)}, ${entry.lng.toFixed(5)}`
                         : "Unplaced"}
                     </td>
-                    <td style={{ padding: "0.85rem 1rem" }}>
+                    <td>
                       {isSuperceded ? (
-                        <span style={{ padding: "0.2rem 0.5rem", borderRadius: "4px", backgroundColor: "#dcfce7", color: "#166534", fontSize: "0.75rem", fontWeight: 600 }}>
-                          ✓ In Sheet (Superseded)
-                        </span>
+                        <Chip tone="success" icon="check">
+                          In Sheet (Superseded)
+                        </Chip>
                       ) : (
-                        <span style={{ padding: "0.2rem 0.5rem", borderRadius: "4px", backgroundColor: "#fef3c7", color: "#92400e", fontSize: "0.75rem", fontWeight: 600 }}>
-                          ⚡ Temporary Overlay
-                        </span>
+                        <Chip tone="warn" icon="zap">
+                          Temporary Overlay
+                        </Chip>
                       )}
                     </td>
-                    <td style={{ padding: "0.85rem 1rem", textAlign: "right" }}>
-                      <Link 
-                        href={`/admin/edit/${entry.id}`}
-                        style={{ color: "#2563eb", textDecoration: "none", fontWeight: 500 }}
-                      >
+                    <td className="admin-cell-right">
+                      <Link href={`/admin/edit/${entry.id}`} className="admin-link">
                         Edit
                       </Link>
                     </td>

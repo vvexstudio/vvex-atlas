@@ -56,7 +56,7 @@ function mergeAdminEntries(
         lng: Number(entry.lng),
         hasLocation: true,
         thumbnailUrl: "",
-        accent: entry.projectType === "services" ? "#f97316" : "#8b5cf6",
+        accent: entry.projectType === "services" ? "#9a6a1b" : "#bc5c2d",
         permanence: entry.permanence || entry.projectType || "venue",
       });
     }
@@ -144,7 +144,7 @@ export async function getFestivalDataFromSheets(role: string = "public"): Promis
   let personnelData: any[] = [];
   let departmentsData: any[] = [];
   let rosData: any[] = [];
-  let colorsObj: Record<string, Record<string, { bg: string; fg: string }>> = {};
+  const colorsObj: Record<string, Record<string, { bg: string; fg: string }>> = {};
   let sourceLabel = "";
 
   const hasServiceAccount = Boolean(

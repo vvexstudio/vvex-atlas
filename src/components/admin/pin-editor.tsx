@@ -6,16 +6,25 @@ import { APIProvider, Map, AdvancedMarker, MapMouseEvent } from "@vis.gl/react-g
 import { AdminEntry, ServiceType } from "@/types/admin-entry";
 import { EventType, FestivalDay } from "@/types/festival";
 import { PredefinedLocation } from "@/lib/predefined-locations";
+import { Button } from "@/components/ui/Button";
+import { Icon, type IconName } from "@/components/ui/icons";
 
 type PinEditorProps = {
   initialData?: AdminEntry;
   locationOptions?: PredefinedLocation[];
 };
 
+const SERVICE_ICONS: Record<ServiceType, IconName> = {
+  toilets: "toilet",
+  water: "droplets",
+  garbage: "trash",
+  medic: "cross",
+};
+
 function normalizeText(value: string): string {
   return value
     .toLowerCase()
-    .replace(/[\u2019']/g, "")
+    .replace(/[’']/g, "")
     .replace(/[^a-z0-9]+/g, " ")
     .replace(/\bthe\b/g, "")
     .replace(/\s+/g, " ")
@@ -72,7 +81,7 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
 
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
     initialData && initialData.hasLocation && initialData.lat !== undefined && initialData.lng !== undefined
-      ? { lat: initialData.lat, lng: initialData.lng } 
+      ? { lat: initialData.lat, lng: initialData.lng }
       : null
   );
   const [selectedServiceTool, setSelectedServiceTool] = useState<ServiceType>("toilets");
@@ -271,36 +280,46 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
   };
 
   return (
-    <div style={{ display: "flex", gap: "2rem", height: "calc(100vh - 100px)" }}>
-      <form onSubmit={handleSubmit} style={{ flex: 1, display: "flex", flexDirection: "column", gap: "1rem", background: "white", color: "#111827", padding: "2rem", borderRadius: "8px", overflowY: "auto" }}>
-        <h2 style={{ marginTop: 0 }}>{initialData ? "Edit Pin" : "Add New Pin"}</h2>
-        
-        {error && <div style={{ color: "red", padding: "1rem", background: "#fee2e2", borderRadius: "4px" }}>{error}</div>}
+    <div className="admin-editor">
+      <form onSubmit={handleSubmit} className="card admin-editor-form">
+        <h2 className="admin-editor-title">{initialData ? "Edit Pin" : "Add New Pin"}</h2>
+
+        {error && <div className="admin-error">{error}</div>}
 
         {!isServicesBatchMode ? (
           <div>
-            <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>Project / Title *</label>
-            <input required type="text" value={formData.name} onChange={e => setFormData(f => ({ ...f, name: e.target.value }))} style={{ width: "100%", padding: "0.5rem", border: "1px solid #ccc", borderRadius: "4px" }} />
+            <label className="admin-label">Project / Title *</label>
+            <input
+              required
+              type="text"
+              className="admin-input"
+              value={formData.name}
+              onChange={e => setFormData(f => ({ ...f, name: e.target.value }))}
+            />
           </div>
         ) : (
-          <div style={{ padding: "0.5rem 0.75rem", background: "#f9fafb", borderRadius: "6px", fontSize: "0.875rem", color: "#4b5563" }}>
-            Service pin names are auto-generated on save.
+          <div className="admin-editor-note">Service pin names are auto-generated on save.</div>
+        )}
+
+        {!isServicesBatchMode && (
+          <div>
+            <label className="admin-label">Artist / Host</label>
+            <input
+              type="text"
+              className="admin-input"
+              value={formData.artist}
+              onChange={e => setFormData(f => ({ ...f, artist: e.target.value }))}
+            />
           </div>
         )}
 
         {!isServicesBatchMode && (
           <div>
-            <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>Artist / Host</label>
-            <input type="text" value={formData.artist} onChange={e => setFormData(f => ({ ...f, artist: e.target.value }))} style={{ width: "100%", padding: "0.5rem", border: "1px solid #ccc", borderRadius: "4px" }} />
-          </div>
-        )}
-
-        {!isServicesBatchMode && (
-          <div>
-            <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>Location</label>
+            <label className="admin-label">Location</label>
             <input
               type="text"
               list="predefined-locations"
+              className="admin-input"
               value={formData.locationInternal}
               onChange={(e) => {
                 const nextValue = e.target.value;
@@ -311,7 +330,6 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
                 }
               }}
               placeholder="Choose or type a location"
-              style={{ width: "100%", padding: "0.5rem", border: "1px solid #ccc", borderRadius: "4px" }}
             />
             <datalist id="predefined-locations">
               {locationOptions.map((option, index) => (
@@ -320,7 +338,7 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
                 </option>
               ))}
             </datalist>
-            <p style={{ margin: "0.4rem 0 0", fontSize: "0.8rem", color: "#6b7280" }}>
+            <p className="admin-hint">
               {matchedPredefinedLocation
                 ? `Mapped to ${matchedPredefinedLocation.category}: ${matchedPredefinedLocation.lat.toFixed(5)}, ${matchedPredefinedLocation.lng.toFixed(5)}`
                 : "Selecting a predefined location auto-fills map coordinates."}
@@ -329,11 +347,11 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
         )}
 
         <div>
-          <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>Project Type *</label>
+          <label className="admin-label">Project Type *</label>
           <select
+            className="admin-input"
             value={formData.projectType}
             onChange={e => setFormData(f => ({ ...f, projectType: e.target.value as EventType }))}
-            style={{ width: "100%", padding: "0.5rem", border: "1px solid #ccc", borderRadius: "4px" }}
           >
             {projectTypeOptions.map((type) => (
               <option key={type} value={type}>
@@ -345,11 +363,11 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
 
         {formData.projectType === "services" && !isServicesBatchMode && (
           <div>
-            <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>Service Type *</label>
+            <label className="admin-label">Service Type *</label>
             <select
+              className="admin-input"
               value={formData.serviceType}
               onChange={e => setFormData(f => ({ ...f, serviceType: e.target.value }))}
-              style={{ width: "100%", padding: "0.5rem", border: "1px solid #ccc", borderRadius: "4px" }}
             >
               <option value="">Select service type...</option>
               {serviceOptions.map((serviceType) => (
@@ -364,30 +382,35 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
         {!isServicesBatchMode && (
           <>
             <div>
-              <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>Abridged Project Text</label>
-              <textarea rows={5} value={formData.abridgedProjectText} onChange={e => setFormData(f => ({ ...f, abridgedProjectText: e.target.value }))} style={{ width: "100%", padding: "0.5rem", border: "1px solid #ccc", borderRadius: "4px" }} />
+              <label className="admin-label">Abridged Project Text</label>
+              <textarea
+                rows={5}
+                className="admin-input"
+                value={formData.abridgedProjectText}
+                onChange={e => setFormData(f => ({ ...f, abridgedProjectText: e.target.value }))}
+              />
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <div className="admin-checkbox-row">
               <input
                 id="hasSchedule"
                 type="checkbox"
                 checked={formData.hasSchedule}
                 onChange={(e) => setFormData((f) => ({ ...f, hasSchedule: e.target.checked }))}
               />
-              <label htmlFor="hasSchedule" style={{ fontWeight: 500 }}>
+              <label htmlFor="hasSchedule" className="admin-label admin-label-inline">
                 Include schedule (day/start/end)
               </label>
             </div>
 
             {formData.hasSchedule && (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.75rem" }}>
+              <div className="admin-form-grid-3">
                 <div>
-                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>Day *</label>
+                  <label className="admin-label">Day *</label>
                   <select
+                    className="admin-input"
                     value={formData.day}
                     onChange={e => setFormData(f => ({ ...f, day: e.target.value as FestivalDay }))}
-                    style={{ width: "100%", padding: "0.5rem", border: "1px solid #ccc", borderRadius: "4px" }}
                   >
                     {dayOptions.map((day) => (
                       <option key={day} value={day}>
@@ -397,12 +420,24 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>Start Time *</label>
-                  <input type="text" value={formData.startTime} onChange={e => setFormData(f => ({ ...f, startTime: e.target.value }))} placeholder="e.g. 03/28/2026 2:00 PM" style={{ width: "100%", padding: "0.5rem", border: "1px solid #ccc", borderRadius: "4px" }} />
+                  <label className="admin-label">Start Time *</label>
+                  <input
+                    type="text"
+                    className="admin-input"
+                    value={formData.startTime}
+                    onChange={e => setFormData(f => ({ ...f, startTime: e.target.value }))}
+                    placeholder="e.g. 03/28/2026 2:00 PM"
+                  />
                 </div>
                 <div>
-                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>End Time *</label>
-                  <input type="text" value={formData.endTime} onChange={e => setFormData(f => ({ ...f, endTime: e.target.value }))} placeholder="e.g. 4:00 PM" style={{ width: "100%", padding: "0.5rem", border: "1px solid #ccc", borderRadius: "4px" }} />
+                  <label className="admin-label">End Time *</label>
+                  <input
+                    type="text"
+                    className="admin-input"
+                    value={formData.endTime}
+                    onChange={e => setFormData(f => ({ ...f, endTime: e.target.value }))}
+                    placeholder="e.g. 4:00 PM"
+                  />
                 </div>
               </div>
             )}
@@ -410,51 +445,39 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
         )}
 
         {isServicesBatchMode && (
-          <div style={{ border: "1px solid #e5e7eb", borderRadius: "6px", padding: "0.75rem" }}>
-            <p style={{ margin: "0 0 0.75rem", fontWeight: 500 }}>Service Placement Toolbar *</p>
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <div className="admin-toolbar-box">
+            <p className="admin-label">Service Placement Toolbar *</p>
+            <div className="admin-pill-row">
               {serviceOptions.map((serviceType) => (
                 <button
                   key={serviceType}
                   type="button"
                   onClick={() => setSelectedServiceTool(serviceType)}
-                  style={{
-                    padding: "0.4rem 0.6rem",
-                    borderRadius: "999px",
-                    border: selectedServiceTool === serviceType ? "2px solid #111827" : "1px solid #d1d5db",
-                    background: "white",
-                    cursor: "pointer",
-                    fontWeight: 500,
-                  }}
+                  className={`admin-pill${selectedServiceTool === serviceType ? " admin-pill-active" : ""}`}
                 >
                   {serviceType}
                 </button>
               ))}
             </div>
-            <p style={{ margin: "0.75rem 0 0", fontSize: "0.875rem", color: "#4b5563" }}>
+            <p className="admin-hint">
               Click the map to drop {selectedServiceTool} markers. Pending markers: {servicePins.length}
             </p>
-            <button
-              type="button"
-              onClick={() => setServicePins([])}
-              style={{ marginTop: "0.5rem", fontSize: "0.75rem", padding: "0.25rem 0.5rem", borderRadius: "4px", border: "1px solid #d1d5db", background: "white", cursor: "pointer" }}
-            >
+            <Button variant="ghost" size="sm" icon="trash" onClick={() => setServicePins([])}>
               Clear Pending Service Markers
-            </button>
+            </Button>
             {servicePins.length > 0 && (
-              <div style={{ marginTop: "0.75rem", display: "grid", gap: "0.35rem", maxHeight: "140px", overflowY: "auto" }}>
+              <div className="admin-pin-list">
                 {servicePins.map((pin, idx) => (
-                  <div key={pin.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.8rem", border: "1px solid #e5e7eb", borderRadius: "4px", padding: "0.35rem 0.5rem" }}>
+                  <div key={pin.id} className="admin-pin-row">
                     <span>
-                      {idx + 1}. {pin.serviceType} ({pin.lat.toFixed(5)}, {pin.lng.toFixed(5)})
+                      {idx + 1}. {pin.serviceType}{" "}
+                      <span className="mono">
+                        ({pin.lat.toFixed(5)}, {pin.lng.toFixed(5)})
+                      </span>
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => removePendingServicePin(pin.id)}
-                      style={{ fontSize: "0.75rem", padding: "0.2rem 0.45rem", borderRadius: "4px", border: "1px solid #ef4444", color: "#ef4444", background: "white", cursor: "pointer" }}
-                    >
+                    <Button variant="danger" size="sm" onClick={() => removePendingServicePin(pin.id)}>
                       Delete
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -464,42 +487,46 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
 
         {!isServicesBatchMode && (
           <div>
-            <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>Permanence (e.g. Permanent, Temporary)</label>
-            <input type="text" value={formData.permanence} onChange={e => setFormData(f => ({ ...f, permanence: e.target.value }))} style={{ width: "100%", padding: "0.5rem", border: "1px solid #ccc", borderRadius: "4px" }} />
+            <label className="admin-label">Permanence (e.g. Permanent, Temporary)</label>
+            <input
+              type="text"
+              className="admin-input"
+              value={formData.permanence}
+              onChange={e => setFormData(f => ({ ...f, permanence: e.target.value }))}
+            />
           </div>
         )}
 
-        <div style={{ marginTop: "auto", display: "flex", gap: "1rem", paddingTop: "1rem" }}>
-          <button type="button" onClick={() => router.push("/admin")} style={{ padding: "0.75rem", background: "#f3f4f6", border: "none", borderRadius: "4px", flex: 1, cursor: "pointer", fontWeight: 500 }}>Cancel</button>
+        <div className="admin-editor-actions">
+          <Button variant="secondary" onClick={() => router.push("/admin")}>
+            Cancel
+          </Button>
           {isEditing && (
-            <button
-              type="button"
-              onClick={handleDeleteSavedEntry}
-              disabled={isDeleting || isSubmitting}
-              style={{ padding: "0.75rem", background: "white", border: "1px solid #ef4444", color: "#ef4444", borderRadius: "4px", flex: 1, cursor: isDeleting ? "not-allowed" : "pointer", fontWeight: 600 }}
-            >
+            <Button variant="danger" onClick={handleDeleteSavedEntry} disabled={isDeleting || isSubmitting}>
               {isDeleting ? "Deleting..." : "Delete Entry"}
-            </button>
+            </Button>
           )}
-          <button type="submit" disabled={isSubmitting} style={{ padding: "0.75rem", background: "#2563eb", color: "white", border: "none", borderRadius: "4px", flex: 1, cursor: "pointer", fontWeight: 500 }}>
+          <Button variant="primary" type="submit" disabled={isSubmitting}>
             {isSubmitting ? "Saving..." : "Save admin entry"}
-          </button>
+          </Button>
         </div>
       </form>
 
-      <div style={{ flex: 1, background: "#e5e7eb", borderRadius: "8px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: "1rem", background: "white", color: "#111827", borderBottom: "1px solid #e5e7eb" }}>
-          <p style={{ margin: 0, fontWeight: 500 }}>Click on the map to set the exact coordinates.</p>
-          <p style={{ margin: 0, fontSize: "0.875rem", color: "#6b7280" }}>
+      <div className="admin-editor-map">
+        <div className="admin-map-header">
+          <p className="admin-label">Click on the map to set the exact coordinates.</p>
+          <p className="admin-hint">
             {isServicesBatchMode
               ? `Pending markers: ${servicePins.length}`
               : `Current location: ${location ? `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}` : "Not set (will be marked as Unplaced)"}`}
           </p>
           {!isServicesBatchMode && location && (
-            <button type="button" onClick={() => setLocation(null)} style={{ marginTop: "0.5rem", fontSize: "0.75rem", padding: "0.25rem 0.5rem", color: "red", border: "1px solid red", borderRadius: "4px", background: "transparent", cursor: "pointer" }}>Clear Location</button>
+            <Button variant="danger" size="sm" icon="trash" onClick={() => setLocation(null)}>
+              Clear Location
+            </Button>
           )}
         </div>
-        <div style={{ flex: 1 }}>
+        <div className="admin-map-canvas">
           <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""}>
             <Map
               defaultCenter={location || { lat: 40.7864, lng: -119.2065 }}
@@ -514,7 +541,7 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
             >
               {!isServicesBatchMode && location && (
                 <AdvancedMarker position={location} draggable onDragEnd={handleSingleLocationDragEnd}>
-                  <div style={{ width: "20px", height: "20px", background: "#3b82f6", borderRadius: "50%", border: "3px solid white", boxShadow: "0 0 4px rgba(0,0,0,0.5)" }} />
+                  <div className="admin-map-dot" />
                 </AdvancedMarker>
               )}
               {isServicesBatchMode &&
@@ -528,10 +555,10 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
                     <button
                       type="button"
                       onClick={() => removePendingServicePin(pin.id)}
-                      style={{ width: "26px", height: "26px", display: "grid", placeItems: "center", background: "#111827", color: "white", borderRadius: "999px", border: "2px solid white", boxShadow: "0 0 4px rgba(0,0,0,0.5)", fontSize: "14px", cursor: "pointer" }}
+                      className="admin-map-marker"
                       title="Click to delete marker"
                     >
-                      {pin.serviceType === "toilets" ? "🚻" : pin.serviceType === "water" ? "💧" : pin.serviceType === "garbage" ? "🗑" : "✚"}
+                      <Icon name={SERVICE_ICONS[pin.serviceType]} size={14} />
                     </button>
                   </AdvancedMarker>
                 ))}

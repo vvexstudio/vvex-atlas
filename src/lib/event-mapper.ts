@@ -1,7 +1,7 @@
 import type { Venue, FestivalEvent, Department, FestivalDay } from "@/types/festival";
 
 const DEFAULT_THUMBNAIL = "";
-const DEFAULT_ACCENT = "#8b5cf6";
+const DEFAULT_ACCENT = "#bc5c2d";
 const DAY_BY_INDEX: FestivalDay[] = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
 function asString(value: unknown): string {

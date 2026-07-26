@@ -1,38 +1,51 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Icon, type IconName } from "@/components/ui/icons";
+import "./admin.css";
+
+const NAV_TABS: { href: string; icon: IconName; label: string; exact?: boolean }[] = [
+  { href: "/admin", icon: "mapPin", label: "Locations", exact: true },
+  { href: "/admin/magic-links", icon: "key", label: "Magic Links & Feeds" },
+  { href: "/admin/health", icon: "stethoscope", label: "Data Health" },
+];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f3f4f6", fontFamily: "system-ui, sans-serif" }}>
-      <header style={{ backgroundColor: "white", padding: "1rem 2rem", boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "2rem" }}>
-          <h2 style={{ fontSize: "1.25rem", fontWeight: 600, margin: 0 }}>The Portal — Admin</h2>
-          <nav style={{ display: "flex", gap: "1.5rem" }}>
-            <Link 
-              href="/admin" 
-              style={{ color: "#4b5563", textDecoration: "none", fontWeight: 600, fontSize: "0.95rem" }}
-            >
-              📍 Locations
-            </Link>
-            <Link 
-              href="/admin/magic-links" 
-              style={{ color: "#4b5563", textDecoration: "none", fontWeight: 600, fontSize: "0.95rem" }}
-            >
-              🔑 Magic Links & Feeds
-            </Link>
-            <Link 
-              href="/admin/health" 
-              style={{ color: "#4b5563", textDecoration: "none", fontWeight: 600, fontSize: "0.95rem" }}
-            >
-              🩺 Data Health
-            </Link>
+    <div className="admin-page">
+      <header className="admin-header">
+        <div className="admin-header-left">
+          <div className="admin-brand">
+            <img src="/icon.png" alt="" width={26} height={26} className="admin-brand-logo" />
+            <h2 className="admin-brand-title">The Portal — Admin</h2>
+          </div>
+          <nav className="admin-nav">
+            {NAV_TABS.map((tab) => {
+              const isActive = tab.exact
+                ? pathname === tab.href
+                : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+              return (
+                <Link
+                  key={tab.href}
+                  href={tab.href}
+                  className={`admin-nav-tab${isActive ? " admin-nav-tab-active" : ""}`}
+                >
+                  <Icon name={tab.icon} size={14} />
+                  {tab.label}
+                </Link>
+              );
+            })}
           </nav>
         </div>
-        <Link href="/" style={{ color: "#6b7280", textDecoration: "none" }}>Back to Map</Link>
+        <Link href="/" className="btn btn-ghost btn-sm">
+          <Icon name="chevronLeft" size={14} />
+          Back to App
+        </Link>
       </header>
-      <main style={{ maxWidth: "1200px", margin: "0 auto", padding: "2rem" }}>
-        {children}
-      </main>
+      <main className="admin-main">{children}</main>
     </div>
   );
 }
-

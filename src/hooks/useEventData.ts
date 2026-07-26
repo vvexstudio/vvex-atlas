@@ -113,7 +113,7 @@ export const useEventData = (role: string | null, initialData: InitialData) => {
                 lng: Number(entry.lng),
                 hasLocation: true,
                 thumbnailUrl: "",
-                accent: entry.projectType === "services" ? "#f97316" : "#8b5cf6",
+                accent: entry.projectType === "services" ? "#9a6a1b" : "#bc5c2d",
                 permanence: entry.permanence || entry.projectType || "venue",
               });
             }
