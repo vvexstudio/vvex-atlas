@@ -13,6 +13,11 @@ interface HealthData {
     } | null;
     heartbeatAgeSeconds: number | null;
   };
+  linterReport?: {
+    timestamp: string;
+    issueCounts: { errors: number; warnings: number; info: number };
+    issues: { id: string; severity: "error" | "warning" | "info"; category: string; message: string }[];
+  };
   counts: {
     venues: number;
     events: number;
@@ -157,7 +162,52 @@ export default function AdminHealthPage() {
         </div>
       </div>
 
-      {/* Grid Row 3: Warnings and Failures */}
+      {/* Grid Row 3: Schema Linter Report */}
+      {data.linterReport && (
+        <div style={{ background: "white", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 1px 3px 0 rgba(0,0,0,0.1)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+            <h3 style={{ fontSize: "0.9rem", color: "#6b7280", fontWeight: 600, margin: 0, textTransform: "uppercase" }}>
+              🔍 Schema Validation & Quality Report
+            </h3>
+            <div style={{ display: "flex", gap: "0.5rem", fontSize: "0.75rem", fontWeight: 700 }}>
+              <span style={{ background: "#fee2e2", color: "#991b1b", padding: "0.2rem 0.5rem", borderRadius: "4px" }}>
+                {data.linterReport.issueCounts.errors} Errors
+              </span>
+              <span style={{ background: "#fef3c7", color: "#92400e", padding: "0.2rem 0.5rem", borderRadius: "4px" }}>
+                {data.linterReport.issueCounts.warnings} Warnings
+              </span>
+              <span style={{ background: "#e0f2fe", color: "#075985", padding: "0.2rem 0.5rem", borderRadius: "4px" }}>
+                {data.linterReport.issueCounts.info} Info
+              </span>
+            </div>
+          </div>
+          {data.linterReport.issues.length === 0 ? (
+            <p style={{ color: "#10b981", fontSize: "0.85rem", margin: 0 }}>✅ 0 schema lint issues detected. Data quality is clean.</p>
+          ) : (
+            <div style={{ display: "grid", gap: "0.5rem", maxHeight: "200px", overflowY: "auto" }}>
+              {data.linterReport.issues.map((issue) => (
+                <div
+                  key={issue.id}
+                  style={{
+                    fontSize: "0.8rem",
+                    padding: "0.5rem 0.75rem",
+                    borderRadius: "4px",
+                    borderLeft: `4px solid ${
+                      issue.severity === "error" ? "#ef4444" : (issue.severity === "warning" ? "#f59e0b" : "#3b82f6")
+                    }`,
+                    background: issue.severity === "error" ? "#fef2f2" : (issue.severity === "warning" ? "#fffbebe" : "#f0f9ff"),
+                    color: "#1f2937"
+                  }}
+                >
+                  <strong>[{issue.category.toUpperCase()}]</strong> {issue.message}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Grid Row 4: Warnings and Failures */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1.5rem" }}>
         
         {/* Unmapped Locations warnings */}

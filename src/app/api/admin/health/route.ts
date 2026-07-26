@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { adminDb } from "@/lib/firebase-admin";
 import { verifySessionCookie, isAdminEmail } from "@/lib/auth";
 import { getFestivalData } from "@/lib/festival-data";
+import { validateFestivalData } from "@/lib/schema-lint";
 
 async function isAuthorized(): Promise<boolean> {
   const cookieStore = await cookies();
@@ -26,6 +27,16 @@ export async function GET() {
 
   // Gather festival data to inspect current state
   const festivalData = await getFestivalData("admin");
+  const personnel = festivalData.personnel || [];
+  const departments = festivalData.departments || [];
+
+  // Run schema linter
+  const linterReport = validateFestivalData(
+    festivalData.events,
+    festivalData.venues,
+    personnel,
+    departments
+  );
 
   const firebaseHealth: {
     configured: boolean;
@@ -65,7 +76,6 @@ export async function GET() {
   });
 
   // Identify failed invites
-  const personnel = festivalData.personnel || [];
   const onboardingFailures = personnel
     .filter((p: any) => p.invite_status && String(p.invite_status).toLowerCase().includes("fail"))
     .map((p: any) => ({
@@ -90,14 +100,16 @@ export async function GET() {
   return NextResponse.json({
     dataSource: festivalData.sourceLabel,
     firebase: firebaseHealth,
+    linterReport,
     counts: {
       venues: festivalData.venues.length,
       events: festivalData.events.length,
       personnel: personnel.length,
-      departments: (festivalData.departments || []).length
+      departments: departments.length
     },
     unmappedLocations: Array.from(unmappedLocations),
     onboardingFailures,
     personnelLog,
   });
 }
+

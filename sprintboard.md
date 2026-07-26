@@ -150,10 +150,11 @@ Goal: keep the way the client already works (the `ROS by TIME` columns are the b
 
 ### M4 — Productization & Option B Milestone (Sprint 4 Priorities)
 - [x] Finalize the full written proposal with PLUS features pitched and pricing tiers.
-- [ ] DataProvider seam abstraction (`RtdbProvider`, `SheetsProvider`, `CsvProvider`) + refactor `festival-data.ts` to `event-data.ts`.
-- [ ] Standalone Sheet Linter (`src/lib/schema-lint.ts`) with validation report UI in Admin Health Panel (`/admin/health`).
-- [ ] Tokenized `.ics` calendar export & subscription feed endpoint (`src/app/api/ics/`).
-- [ ] Vendor magic links (`src/app/api/vendor/`) for read-only single-person views.
+- [x] DataProvider seam abstraction (`RtdbProvider`, `SheetsProvider`, `CsvProvider`) + refactor `festival-data.ts` to `event-data.ts`.
+- [x] Standalone Sheet Linter (`src/lib/schema-lint.ts`) with validation report UI in Admin Health Panel (`/admin/health`).
+- [x] Tokenized `.ics` calendar export & subscription feed endpoint (`src/app/api/ics/`).
+- [x] Vendor magic links (`src/app/api/vendor/` & `/vendor?token=...`) for read-only single-person views.
+- [x] Lock event timezone strictly to PDT (`America/Los_Angeles` / Black Rock City, Nevada) across Apps Script, header banner badges, and `.ics` feeds.
 - [ ] Role scoping & runtime filter policy UI (`Roles` tab → runtime filter & row-level visibility gating).
 - [ ] Pitch PDF & one-pager asset generator (`reports/pitch/`).
 - [ ] Two rounds of revision buffer (per proposal scope) + minor RFE handling.
@@ -197,14 +198,13 @@ Tracked here so we know what to stand up vs. what the client owns. Env var names
 - **FOH / BOH** — Front / Back of House (guest-facing vs crew/operational).
 - **Placemark** — a point in the KMZ/Google My Maps map.
 - **Venue** — app's internal term for a mapped location (derived from placemarks).
-- **MARTIANS / VVEX** — the client's sample event + dataset (Montalcino, Tuscany).
 
 ---
 
 ## 10. Session Log
 > Append newest at top. Format: `YYYY-MM-DD — who — what changed / decided / discovered`.
 
-- **2026-07-26 — agent — Reconciled sprintboard.md with actual codebase state: updated Section 4 snapshot and Section 6 task board to confirm completed Sprint 1, 2, and 3 features (modular event components, remote Google Sheets loader, admin health dashboard, PWA offline support, starred agendas, real-time toasts, URL deep links). Removed local client_secret JSON file. Verified Vitest test suite (24/24 passing). Explicitly demarcated Sprint 4 productization backlog priorities.**
+- **2026-07-26 — agent — Completed Sprint 4 productization tasks: implemented DataProvider seam (src/lib/DataProvider.ts, src/lib/event-data.ts, RtdbProvider, SheetsProvider, CsvProvider), standalone sheet linter (src/lib/schema-lint.ts) with validation report UI in Admin Health Panel (/admin/health), tokenized .ics calendar export API (/api/ics/) with PDT timezone tags (America/Los_Angeles), and mobile-optimized Vendor Magic Links (/api/vendor/, /vendor?token=...). Locked event timezone strictly to PDT for Black Rock City, Nevada. Verified 27/27 Vitest unit tests passing.**
 - **2026-07-26 — agent — Hardened onboarding invite idempotency in PortalSyncScript.js (processOnboardingInvites). Added pre-flight check for 'Onboarded' / 'email:ok' status, preserved 'email:ok' in final cell state, and added explicit SpreadsheetApp.flush() after unchecking sendInvite to prevent duplicate onboarding email triggers.**
 - **2026-07-26 — agent — Fixed Firebase RTDB key validation error in PortalSyncScript.js by escaping dots in Google Calendar IDs (replace '.' with ',') inside gcal_event_ids metadata before writing to crew-data/metadata/calendar-events.**
 - **2026-07-26 — agent — Refactored Google Calendar event sync in scripts/PortalSyncScript.js (syncRosEventsToGoogleCalendars) with procedural two-level MD5 hashing (semantic_key & content_hash), Firebase RTDB metadata registry persistence (crew-data/metadata/calendar-events), atomic upsert & prune state machine, and silent consolidated summary logging.**
