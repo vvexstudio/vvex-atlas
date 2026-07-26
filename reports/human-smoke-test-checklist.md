@@ -41,6 +41,7 @@ These tests verify database synchronization, email deliverability, permission ga
 - [x] **Step 11 (Ampersand Email Check):** Onboard a test user with department list including `"F&B"`. Set `Send Invite` to `TRUE` and run the script.
 - [x] **Step 12:** Verify the received onboarding email displays `"F&B"` under departments and contains a subscription link for the `"F&B"` calendar.
 - [x] **Step 13 (Ampersand Group Verification):** Confirm in the Google Workspace Admin Console that the user was added to `f&b@yourdomain.com` (not `f-b@yourdomain.com`) and that no duplicate `f-b` group was created.
+- [x] **Step 14 (Onboarding Email Idempotency Check):** Onboard a test user by checking `Send Invite` = `TRUE`. Run `syncAllToFirebase()`. Verify exactly one email arrives. Verify `invite_status` updates to `"Onboarded on <Timestamp>; email:ok"` and `send_invite` is set to `FALSE`. Run sync again and confirm zero duplicate emails are sent.
 
 ---
 
@@ -104,6 +105,16 @@ These tests verify database synchronization, email deliverability, permission ga
 - [ ] **Step 2:** Run the Google Apps Script sync manually.
 - [ ] **Step 3:** Verify the execution logs show `Inaccessible calendar ID...` followed by `Creating missing/inaccessible calendar...`.
 - [ ] **Step 4:** Confirm in the spreadsheet that the corrupted ID has been replaced with a brand new, valid calendar ID.
+
+---
+
+### 8. 📅 Apps Script Calendar Procedural Sync & Prune State Machine
+*Verify that event sync uses procedural two-level MD5 hashing to update events in-place and prune deleted rows without duplicates.*
+
+- [x] **Step 1 (Initial Sync & Metadata Registry):** Run `syncAllToFirebase()`. Open Firebase Console $\rightarrow$ Realtime Database $\rightarrow$ `/crew-data/metadata/calendar-events` and confirm `semantic_key` entries are created storing `content_hash` and dot-escaped `gcal_event_ids`.
+- [x] **Step 2 (Idempotent Unchanged Sync):** Re-run `syncAllToFirebase()` without modifying the sheet. Verify logs show `0 updated, 0 added, 0 pruned, N unchanged`. Confirm Google Calendar API was not called and 0 duplicate events were created.
+- [x] **Step 3 (In-Place Time & Detail Patch):** Modify an event's start/end time or description in the `ROS by TIME` sheet. Run `syncAllToFirebase()`. Verify logs show `1 updated, 0 added, 0 pruned, N-1 unchanged`. Open Google Calendar and verify the event updated in-place without creating a duplicate.
+- [x] **Step 4 (Automated Event Pruning):** Delete an event row from `ROS by TIME`. Run `syncAllToFirebase()`. Verify logs show `1 pruned`. Open Google Calendar and confirm the deleted event was purged from all assigned department calendars.
 
 ---
 
