@@ -217,6 +217,13 @@ function processOnboardingInvites(startRow) {
     }
 
     if (sendInvite === true && email) {
+      if (currentStatus.indexOf("Onboarded") !== -1 || currentStatus.indexOf("email:ok") !== -1) {
+        Logger.log("Info: " + email + " is already onboarded/emailed. Skipping duplicate invite.");
+        sheet.getRange(rowNum, sendInviteColIdx).setValue(false);
+        SpreadsheetApp.flush();
+        continue;
+      }
+
       Logger.log("Processing invite for: " + email);
       try {
         const domain = getWorkspaceDomain();
@@ -310,7 +317,7 @@ function processOnboardingInvites(startRow) {
 
         // STEP 4: Send Onboarding Email (Idempotent)
         const step4Pattern = "email:ok";
-        if (currentStatus.indexOf(step4Pattern) === -1) {
+        if (currentStatus.indexOf(step4Pattern) === -1 && currentStatus.indexOf("Onboarded") === -1) {
           let htmlBody = "";
           let calendarSectionHtml = "";
           if (isAdmin) {
@@ -398,16 +405,18 @@ function processOnboardingInvites(startRow) {
         }
 
         // Complete Onboarding
-        sheet.getRange(rowNum, inviteStatusColIdx).setValue("Onboarded on " + new Date().toISOString());
+        sheet.getRange(rowNum, inviteStatusColIdx).setValue("Onboarded on " + new Date().toISOString() + "; email:ok");
         sheet.getRange(rowNum, sendInviteColIdx).setValue(false);
         if (activeColIdx) {
           sheet.getRange(rowNum, activeColIdx).setValue(true);
         }
+        SpreadsheetApp.flush();
       } catch (err) {
         Logger.log("Failed to process invite for " + email + ": " + err);
         const cell = sheet.getRange(rowNum, inviteStatusColIdx);
         const currentVal = String(cell.getValue() || "");
         cell.setValue(currentVal + (currentVal ? "; " : "") + "failed: " + err.message);
+        SpreadsheetApp.flush();
       }
     }
   }
@@ -521,6 +530,88 @@ function writeToFirebase(path, data) {
     payload: JSON.stringify(data)
   };
   UrlFetchApp.fetch(url, options);
+}
+
+function readFromFirebase(path) {
+  const dbUrl = CONFIG.FIREBASE_DB_URL.endsWith("/") ? CONFIG.FIREBASE_DB_URL : CONFIG.FIREBASE_DB_URL + "/";
+  const token = getFirebaseAccessToken();
+  const url = dbUrl + path + ".json";
+
+  const options = {
+    method: "get",
+    headers: {
+      "Authorization": "Bearer " + token
+    },
+    muteHttpExceptions: true
+  };
+  try {
+    const response = UrlFetchApp.fetch(url, options);
+    if (response.getResponseCode() === 200) {
+      const text = response.getContentText();
+      return (text && text !== "null") ? JSON.parse(text) : null;
+    }
+  } catch (e) {
+    Logger.log("Error reading from Firebase (" + path + "): " + e);
+  }
+  return null;
+}
+
+function computeMd5(input) {
+  const rawHash = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, String(input || ""), Utilities.Charset.UTF_8);
+  let txt = "";
+  for (let i = 0; i < rawHash.length; i++) {
+    let byteVal = rawHash[i];
+    if (byteVal < 0) byteVal += 256;
+    let byteStr = byteVal.toString(16);
+    if (byteStr.length === 1) byteStr = "0" + byteStr;
+    txt += byteStr;
+  }
+  return txt;
+}
+
+function normalizeString(val) {
+  return String(val || "").trim().toLowerCase();
+}
+
+function escapeFirebaseKey(key) {
+  return String(key || "").replace(/\./g, ",");
+}
+
+function unescapeFirebaseKey(key) {
+  return String(key || "").replace(/,/g, ".");
+}
+
+function formatDateIso(date) {
+  if (!date || !(date instanceof Date) || isNaN(date.getTime())) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function insertGcalEvent(payload, calId) {
+  return Calendar.Events.insert(payload, calId);
+}
+
+function patchGcalEvent(payload, calId, gcalEventId) {
+  if (typeof Calendar.Events.patch === "function") {
+    return Calendar.Events.patch(payload, calId, gcalEventId);
+  } else if (typeof Calendar.Events.update === "function") {
+    return Calendar.Events.update(payload, calId, gcalEventId);
+  }
+  throw new Error("Calendar.Events.patch method not available");
+}
+
+function deleteGcalEvent(calId, gcalEventId) {
+  try {
+    if (typeof Calendar.Events.delete === "function") {
+      return Calendar.Events.delete(calId, gcalEventId);
+    } else if (typeof Calendar.Events.remove === "function") {
+      return Calendar.Events.remove(calId, gcalEventId);
+    }
+  } catch (e) {
+    // Ignore if event was already deleted
+  }
 }
 
 function filterPublicEvents(events) {
@@ -775,29 +866,37 @@ function getWorkspaceDomain() {
 }
 
 /**
- * Synchronizes events from the 'ROS by TIME' (or 'ROS') sheet into their respective Department Google Calendars.
+ * Synchronizes events from the 'ROS by TIME' (or 'ROS') sheet into their respective Department Google Calendars
+ * using procedural two-level hashing (semantic_key + content_hash) and atomic upsert/prune state machine.
  */
 function syncRosEventsToGoogleCalendars(ss) {
+  const syncStartTime = Date.now();
   ss = ss || SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID || SpreadsheetApp.getActiveSpreadsheet().getId());
   
   // 1. Build map of department name -> google_calendar_id from Departments tab
   const deptCalMap = getDepartmentCalendarMap(ss);
-
   const calendarKeys = Object.keys(deptCalMap);
   if (calendarKeys.length === 0) {
     Logger.log("No valid Google Calendar IDs found.");
     return;
   }
 
-  // 2. Read ROS events
+  // 2. Fetch existing sync metadata registry from Firebase RTDB
+  const metadataPath = "crew-data/metadata/calendar-events";
+  const metadata = readFromFirebase(metadataPath) || {};
+
+  // 3. Read ROS events
   const rosSheet = ss.getSheetByName("ROS by TIME") || ss.getSheetByName("ROS");
   if (!rosSheet) return;
   const rosEvents = readSheetToJson(rosSheet);
 
-  Logger.log("Starting Google Calendar event sync for " + rosEvents.length + " ROS rows across " + calendarKeys.length + " department calendars.");
+  const activeKeys = new Set();
+  const occurrenceMap = {};
 
-  let syncedCount = 0;
-  let skippedCount = 0;
+  let updatedCount = 0;
+  let addedCount = 0;
+  let prunedCount = 0;
+  let unchangedCount = 0;
 
   rosEvents.forEach(row => {
     const action = String(row["action"] || "").trim();
@@ -833,12 +932,11 @@ function syncRosEventsToGoogleCalendars(ss) {
 
     let endTime;
     if (isAllDay) {
-      // 24 hours later
       endTime = new Date(startTime.getTime() + 24 * 60 * 60 * 1000);
     } else {
       endTime = parseRosDateTime(startDateVal, endTimeVal);
       if (!endTime || isNaN(endTime.getTime())) {
-        endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hr default
+        endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
       } else if (endTime <= startTime) {
         endTime.setDate(endTime.getDate() + 1);
       }
@@ -848,6 +946,7 @@ function syncRosEventsToGoogleCalendars(ss) {
     const leadDept = String(row["lead_dept"] || row["department"] || row["lead_department"] || "").trim();
     const support1 = String(row["support_dept_1"] || "").trim();
     const support2 = String(row["support_dept_2"] || "").trim();
+    const fohBoh = String(row["foh_boh"] || "").trim();
 
     const deptsRaw = [leadDept, support1, support2].filter(Boolean).join(", ");
     let depts = parseCsvList(deptsRaw);
@@ -856,55 +955,141 @@ function syncRosEventsToGoogleCalendars(ss) {
       depts = calendarKeys;
     }
 
-    const processedCalIds = new Set();
+    const targetCalIds = new Set();
     depts.forEach(dept => {
       const calId = deptCalMap[dept.toLowerCase()];
-      if (!calId || processedCalIds.has(calId)) return;
-      processedCalIds.add(calId);
-
-      try {
-        const cal = CalendarApp.getCalendarById(calId);
-        if (!cal) {
-          Logger.log("Could not access Google Calendar ID: " + calId);
-          return;
-        }
-
-        // Check if event already exists in window to prevent duplication
-        let existingEvents;
-        if (isAllDay) {
-          // Check the entire day window
-          const startWindow = new Date(startTime.getFullYear(), startTime.getMonth(), startTime.getDate(), 0, 0, 0);
-          const endWindow = new Date(startTime.getFullYear(), startTime.getMonth(), startTime.getDate(), 23, 59, 59);
-          existingEvents = cal.getEvents(startWindow, endWindow);
-        } else {
-          existingEvents = cal.getEvents(new Date(startTime.getTime() - 60000), new Date(endTime.getTime() + 60000));
-        }
-
-        const duplicate = existingEvents.find(e => e.getTitle() === title);
-
-        if (!duplicate) {
-          if (isAllDay) {
-            cal.createAllDayEvent(title, startTime, {
-              location: locationName,
-              description: description ? (action ? action + "\n\n" + description : description) : action
-            });
-          } else {
-            cal.createEvent(title, startTime, endTime, {
-              location: locationName,
-              description: description ? (action ? action + "\n\n" + description : description) : action
-            });
-          }
-          syncedCount++;
-        } else {
-          skippedCount++;
-        }
-      } catch (err) {
-        Logger.log("Failed to sync event '" + title + "' to calendar " + calId + ": " + err);
-      }
+      if (calId) targetCalIds.add(calId);
     });
+
+    if (targetCalIds.size === 0) return;
+
+    // --- Procedural Two-Level Hashing ---
+    const startDateIso = formatDateIso(startTime);
+    const baseIdentityStr = normalizeString(startDateIso) + "::" + normalizeString(locationName) + "::" + normalizeString(title);
+    const occurrenceIndex = (occurrenceMap[baseIdentityStr] || 0) + 1;
+    occurrenceMap[baseIdentityStr] = occurrenceIndex;
+
+    const semanticKeyInput = baseIdentityStr + "::" + occurrenceIndex;
+    const semanticKey = computeMd5(semanticKeyInput);
+    activeKeys.add(semanticKey);
+
+    const startTimeStr = isAllDay ? startDateIso : startTime.toISOString();
+    const endTimeStr = isAllDay ? formatDateIso(endTime) : endTime.toISOString();
+    const supportDeptsStr = [support1, support2].filter(Boolean).map(normalizeString).join(",");
+    const contentHashInput = normalizeString(startTimeStr) + "::" + normalizeString(endTimeStr) + "::" + normalizeString(description) + "::" + normalizeString(leadDept) + "::" + supportDeptsStr + "::" + normalizeString(fohBoh);
+    const contentHash = computeMd5(contentHashInput);
+
+    // Prepare Google Calendar Event Payload
+    const payload = {
+      summary: title,
+      location: locationName,
+      description: description ? (action ? action + "\n\n" + description : description) : action
+    };
+
+    if (isAllDay) {
+      payload.start = { date: startDateIso };
+      payload.end = { date: formatDateIso(endTime) };
+    } else {
+      payload.start = { dateTime: startTime.toISOString() };
+      payload.end = { dateTime: endTime.toISOString() };
+    }
+
+    const existingEntry = metadata[semanticKey];
+
+    if (existingEntry && existingEntry.content_hash === contentHash) {
+      // Unchanged Row: Skip Google Calendar API calls
+      unchangedCount++;
+    } else if (existingEntry) {
+      // Time/Detail Change: Patch existing Google Calendar events in-place
+      const gcalEventIds = existingEntry.gcal_event_ids || {};
+      targetCalIds.forEach(calId => {
+        const escapedCalId = escapeFirebaseKey(calId);
+        const existingGcalId = gcalEventIds[escapedCalId];
+        if (existingGcalId) {
+          try {
+            executeWithRetry(() => patchGcalEvent(payload, calId, existingGcalId));
+          } catch (patchErr) {
+            // Fallback to insert if patch failed (e.g. event was manually deleted)
+            try {
+              const newEvt = executeWithRetry(() => insertGcalEvent(payload, calId));
+              if (newEvt && newEvt.id) {
+                gcalEventIds[escapedCalId] = newEvt.id;
+              }
+            } catch (insertErr) {
+              // Ignore single calendar failure
+            }
+          }
+        } else {
+          try {
+            const newEvt = executeWithRetry(() => insertGcalEvent(payload, calId));
+            if (newEvt && newEvt.id) {
+              gcalEventIds[escapedCalId] = newEvt.id;
+            }
+          } catch (insertErr) {
+            // Ignore single calendar failure
+          }
+        }
+      });
+
+      // Delete event from calendars no longer assigned
+      Object.keys(gcalEventIds).forEach(escapedCalId => {
+        const calId = unescapeFirebaseKey(escapedCalId);
+        if (!targetCalIds.has(calId)) {
+          executeWithRetry(() => deleteGcalEvent(calId, gcalEventIds[escapedCalId]));
+          delete gcalEventIds[escapedCalId];
+        }
+      });
+
+      metadata[semanticKey] = {
+        content_hash: contentHash,
+        gcal_event_ids: gcalEventIds,
+        last_updated: new Date().toISOString()
+      };
+      updatedCount++;
+    } else {
+      // New Event: Insert into target calendars
+      const gcalEventIds = {};
+      targetCalIds.forEach(calId => {
+        const escapedCalId = escapeFirebaseKey(calId);
+        try {
+          const createdEvt = executeWithRetry(() => insertGcalEvent(payload, calId));
+          if (createdEvt && createdEvt.id) {
+            gcalEventIds[escapedCalId] = createdEvt.id;
+          }
+        } catch (err) {
+          // Ignore single calendar failure
+        }
+      });
+
+      metadata[semanticKey] = {
+        content_hash: contentHash,
+        gcal_event_ids: gcalEventIds,
+        last_updated: new Date().toISOString()
+      };
+      addedCount++;
+    }
   });
 
-  Logger.log("Google Calendar sync complete. Synced new: " + syncedCount + ", skipped existing: " + skippedCount);
+  // 4. Cleanup / Prune Pass (Deleted Spreadsheet Rows)
+  Object.keys(metadata).forEach(key => {
+    if (!activeKeys.has(key)) {
+      const staleEntry = metadata[key];
+      const gcalMap = (staleEntry && staleEntry.gcal_event_ids) || {};
+      Object.keys(gcalMap).forEach(escapedCalId => {
+        const calId = unescapeFirebaseKey(escapedCalId);
+        executeWithRetry(() => deleteGcalEvent(calId, gcalMap[escapedCalId]));
+      });
+      delete metadata[key];
+      prunedCount++;
+    }
+  });
+
+  // 5. Save updated metadata registry to Firebase RTDB
+  writeToFirebase(metadataPath, metadata);
+
+  // 6. Single consolidated summary log
+  const elapsedSec = ((Date.now() - syncStartTime) / 1000).toFixed(1);
+  Logger.log("✓ Google Calendar sync complete (" + elapsedSec + "s): " + updatedCount + " updated, " + addedCount + " added, " + prunedCount + " pruned, " + unchangedCount + " unchanged.");
 }
 
 /**
