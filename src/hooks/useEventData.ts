@@ -86,17 +86,76 @@ export const useEventData = (role: string | null, initialData: InitialData) => {
           const rosData = data.events || [];
           const personnelData = data.personnel || [];
           const departmentsData = data.departments || [];
+          const adminEntriesMap = data.entries || {};
 
           const mapped = parseSpreadsheetData(locationsData, rosData, personnelData, departmentsData);
 
-          setVenues(mapped.venues);
-          setEvents(mapped.events);
+          const adminVenues: Venue[] = [];
+          const adminEvents: FestivalEvent[] = [];
+          const adminEntriesList = Object.values(adminEntriesMap);
+
+          adminEntriesList.forEach((entryRaw: any) => {
+            const entry = entryRaw;
+            if (!entry || typeof entry !== "object") return;
+            const hasLocation = entry.hasLocation && entry.lat !== undefined && entry.lng !== undefined;
+            
+            if (hasLocation) {
+              adminVenues.push({
+                id: entry.id,
+                name: entry.name,
+                label: entry.serviceType ? "Service" : (entry.projectType === "venue" ? "Venue" : "Installation"),
+                mapLabel: entry.name,
+                shortDescription: entry.artist ? `By ${entry.artist}` : "",
+                description: entry.abridgedProjectText || "",
+                x: 0,
+                y: 0,
+                lat: Number(entry.lat),
+                lng: Number(entry.lng),
+                hasLocation: true,
+                thumbnailUrl: "",
+                accent: entry.projectType === "services" ? "#f97316" : "#8b5cf6",
+                permanence: entry.permanence || entry.projectType || "venue",
+              });
+            }
+
+            if (entry.hasSchedule) {
+              const matchEvent = mapped.events.find(e => e.day === entry.day);
+              const scheduleDate = matchEvent ? matchEvent.scheduleDate : (entry.day === "fri" ? "2026-08-28" : (entry.day === "sat" ? "2026-08-29" : "2026-08-30"));
+              
+              adminEvents.push({
+                id: `event-${entry.id}`,
+                venueId: entry.id,
+                title: entry.name,
+                host: entry.artist || "",
+                description: entry.abridgedProjectText || "",
+                day: entry.day,
+                startTime: entry.startTime,
+                endTime: entry.endTime,
+                type: entry.projectType,
+                thumbnailUrl: "",
+                hasLocation,
+                lat: entry.lat,
+                lng: entry.lng,
+                source: "admin",
+                scheduleDate,
+                locationName: entry.locationInternal || "",
+                department: entry.projectType === "services" ? "Services" : "Art",
+                leadPointPerson: entry.artist || "",
+              });
+            }
+          });
+
+          const finalVenues = [...mapped.venues, ...adminVenues];
+          const finalEvents = [...mapped.events, ...adminEvents];
+
+          setVenues(finalVenues);
+          setEvents(finalEvents);
           setPersonnel(mapped.personnel);
           setDepartments(mapped.departments);
           setSourceLabel(`Firebase RTD Live (${role.toUpperCase()})`);
           
           // Cache snapshot locally for offline fallback
-          saveOfflineSnapshot(mapped.venues, mapped.events, mapped.personnel, mapped.departments);
+          saveOfflineSnapshot(finalVenues, finalEvents, mapped.personnel, mapped.departments);
           setLastSynced(new Date().toISOString());
         }
       },

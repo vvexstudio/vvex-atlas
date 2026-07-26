@@ -21,6 +21,14 @@ interface HealthData {
   };
   unmappedLocations: string[];
   onboardingFailures: { email: string; status: string }[];
+  personnelLog?: {
+    name: string;
+    email: string;
+    role: string;
+    department: string;
+    active: boolean;
+    inviteStatus: string;
+  }[];
 }
 
 export default function AdminHealthPage() {
@@ -74,7 +82,7 @@ export default function AdminHealthPage() {
     : "Never";
 
   return (
-    <div style={{ display: "grid", gap: "2rem" }}>
+    <div style={{ display: "grid", gap: "2rem", color: "#111827" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h1 style={{ fontSize: "1.5rem", fontWeight: 600 }}>System & Data Health Panel</h1>
         <span style={{ 
@@ -187,6 +195,56 @@ export default function AdminHealthPage() {
           )}
         </div>
       </div>
+
+      {/* Access & Onboarding Audit Log */}
+      {data.personnelLog && data.personnelLog.length > 0 && (
+        <div style={{ background: "white", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 1px 3px 0 rgba(0,0,0,0.1)" }}>
+          <h3 style={{ fontSize: "0.9rem", color: "#6b7280", fontWeight: 600, marginBottom: "1rem", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            📑 Access & Onboarding Audit Log ({data.personnelLog.length} Crew)
+          </h3>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", textAlign: "left", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+              <thead>
+                <tr style={{ backgroundColor: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
+                  <th style={{ padding: "0.75rem", fontWeight: 600, color: "#374151" }}>Name</th>
+                  <th style={{ padding: "0.75rem", fontWeight: 600, color: "#374151" }}>Email</th>
+                  <th style={{ padding: "0.75rem", fontWeight: 600, color: "#374151" }}>Role / Dept</th>
+                  <th style={{ padding: "0.75rem", fontWeight: 600, color: "#374151" }}>Status</th>
+                  <th style={{ padding: "0.75rem", fontWeight: 600, color: "#374151" }}>Sync Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.personnelLog.map((person, idx) => (
+                  <tr key={idx} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                    <td style={{ padding: "0.75rem", fontWeight: 500 }}>{person.name}</td>
+                    <td style={{ padding: "0.75rem", color: "#6b7280" }}>{person.email}</td>
+                    <td style={{ padding: "0.75rem" }}>
+                      <span style={{ background: "#f3f4f6", padding: "0.2rem 0.5rem", borderRadius: "4px", fontSize: "0.75rem", fontWeight: 500 }}>
+                        {person.department || person.role}
+                      </span>
+                    </td>
+                    <td style={{ padding: "0.75rem" }}>
+                      <span style={{
+                        padding: "0.2rem 0.55rem",
+                        borderRadius: "9999px",
+                        fontSize: "0.75rem",
+                        fontWeight: 600,
+                        backgroundColor: person.active ? "#d1fae5" : "#fee2e2",
+                        color: person.active ? "#065f46" : "#991b1b"
+                      }}>
+                        {person.active ? "Active" : "Revoked"}
+                      </span>
+                    </td>
+                    <td style={{ padding: "0.75rem", color: "#4b5563", fontSize: "0.8rem" }}>
+                      {person.inviteStatus}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

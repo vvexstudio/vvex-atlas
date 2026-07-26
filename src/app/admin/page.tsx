@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { readAdminEntries } from "@/lib/admin-entries";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function AdminDashboardPage() {
   const entries = await readAdminEntries();
 
   return (
-    <div>
+    <div style={{ color: "#111827" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
         <h1 style={{ fontSize: "1.5rem", fontWeight: 600 }}>Local Admin Entries</h1>
         <Link 
@@ -29,7 +32,7 @@ export default async function AdminDashboardPage() {
             <tr style={{ backgroundColor: "#f9fafb", borderBottom: "1px solid #f3f4f6" }}>
               <th style={{ padding: "1rem", fontWeight: 500, color: "#6b7280" }}>Name</th>
               <th style={{ padding: "1rem", fontWeight: 500, color: "#6b7280" }}>Type</th>
-              <th style={{ padding: "1rem", fontWeight: 500, color: "#6b7280" }}>Location (Internal)</th>
+              <th style={{ padding: "1rem", fontWeight: 500, color: "#6b7280" }}>Location</th>
               <th style={{ padding: "1rem", fontWeight: 500, color: "#6b7280" }}>Coordinates</th>
               <th style={{ padding: "1rem", fontWeight: 500, color: "#6b7280", textAlign: "right" }}>Actions</th>
             </tr>

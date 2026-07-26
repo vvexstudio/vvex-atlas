@@ -6,6 +6,7 @@ import { APIProvider, Map, AdvancedMarker, MapMouseEvent } from "@vis.gl/react-g
 import { AdminEntry, ServiceType } from "@/types/admin-entry";
 import { EventType, FestivalDay } from "@/types/festival";
 import { PredefinedLocation } from "@/lib/predefined-locations";
+import mapStyles from "@/data/map-styles.json";
 
 type PinEditorProps = {
   initialData?: AdminEntry;
@@ -97,6 +98,14 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
         return;
       }
       setLocation({ lat, lng });
+      setFormData((f) => {
+        const trimmedVal = f.locationInternal.trim();
+        const isCoordPattern = /^-?\d+\.\d+,\s*-?\d+\.\d+$/.test(trimmedVal);
+        if (!trimmedVal || isCoordPattern) {
+          return { ...f, locationInternal: `${lat.toFixed(6)}, ${lng.toFixed(6)}` };
+        }
+        return f;
+      });
     }
   };
 
@@ -124,9 +133,16 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
   ) => {
     const latLng = event.latLng;
     if (!latLng) return;
-    setLocation({
-      lat: latLng.lat(),
-      lng: latLng.lng(),
+    const lat = latLng.lat();
+    const lng = latLng.lng();
+    setLocation({ lat, lng });
+    setFormData((f) => {
+      const trimmedVal = f.locationInternal.trim();
+      const isCoordPattern = /^-?\d+\.\d+,\s*-?\d+\.\d+$/.test(trimmedVal);
+      if (!trimmedVal || isCoordPattern) {
+        return { ...f, locationInternal: `${lat.toFixed(6)}, ${lng.toFixed(6)}` };
+      }
+      return f;
     });
   };
 
@@ -257,7 +273,7 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
 
   return (
     <div style={{ display: "flex", gap: "2rem", height: "calc(100vh - 100px)" }}>
-      <form onSubmit={handleSubmit} style={{ flex: 1, display: "flex", flexDirection: "column", gap: "1rem", background: "white", padding: "2rem", borderRadius: "8px", overflowY: "auto" }}>
+      <form onSubmit={handleSubmit} style={{ flex: 1, display: "flex", flexDirection: "column", gap: "1rem", background: "white", color: "#111827", padding: "2rem", borderRadius: "8px", overflowY: "auto" }}>
         <h2 style={{ marginTop: 0 }}>{initialData ? "Edit Pin" : "Add New Pin"}</h2>
         
         {error && <div style={{ color: "red", padding: "1rem", background: "#fee2e2", borderRadius: "4px" }}>{error}</div>}
@@ -282,7 +298,7 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
 
         {!isServicesBatchMode && (
           <div>
-            <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>Location (Internal)</label>
+            <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>Location</label>
             <input
               type="text"
               list="predefined-locations"
@@ -295,7 +311,7 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
                   setLocation({ lat: matched.lat, lng: matched.lng });
                 }
               }}
-              placeholder="Choose or type a location from MARTIANS map.kmz"
+              placeholder="Choose or type a location"
               style={{ width: "100%", padding: "0.5rem", border: "1px solid #ccc", borderRadius: "4px" }}
             />
             <datalist id="predefined-locations">
@@ -473,7 +489,7 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
       </form>
 
       <div style={{ flex: 1, background: "#e5e7eb", borderRadius: "8px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: "1rem", background: "white", borderBottom: "1px solid #e5e7eb" }}>
+        <div style={{ padding: "1rem", background: "white", color: "#111827", borderBottom: "1px solid #e5e7eb" }}>
           <p style={{ margin: 0, fontWeight: 500 }}>Click on the map to set the exact coordinates.</p>
           <p style={{ margin: 0, fontSize: "0.875rem", color: "#6b7280" }}>
             {isServicesBatchMode
@@ -487,15 +503,15 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
         <div style={{ flex: 1 }}>
           <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""}>
             <Map
-              defaultCenter={{ lat: 33.352, lng: -115.729 }}
-              defaultZoom={16}
-              mapId="2f9f04bb8e9c458045b99a65"
-              mapTypeId="satellite"
-              disableDefaultUI={true}
+              defaultCenter={location || { lat: 40.7864, lng: -119.2065 }}
+              defaultZoom={location ? 16 : 14}
+              mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || "2f9f04bb8e9c458045b99a65"}
+              disableDefaultUI={false}
               zoomControl={true}
               mapTypeControl={true}
               onClick={handleMapClick}
               gestureHandling="greedy"
+              styles={mapStyles}
               style={{ width: "100%", height: "100%" }}
             >
               {!isServicesBatchMode && location && (

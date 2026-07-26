@@ -31,6 +31,71 @@ export type FestivalDataResult = {
   debug: LocationMatchDebug;
 };
 
+import { AdminEntry } from "@/types/admin-entry";
+import { readAdminEntries } from "./admin-entries";
+
+function mergeAdminEntries(
+  venues: Venue[],
+  events: FestivalEvent[],
+  adminEntries: AdminEntry[]
+) {
+  const adminVenues: Venue[] = [];
+  const adminEvents: FestivalEvent[] = [];
+
+  adminEntries.forEach((entry) => {
+    const hasLocation = entry.hasLocation && entry.lat !== undefined && entry.lng !== undefined;
+    if (hasLocation) {
+      adminVenues.push({
+        id: entry.id,
+        name: entry.name,
+        label: entry.serviceType ? "Service" : (entry.projectType === "venue" ? "Venue" : "Installation"),
+        mapLabel: entry.name,
+        shortDescription: entry.artist ? `By ${entry.artist}` : "",
+        description: entry.abridgedProjectText || "",
+        x: 0,
+        y: 0,
+        lat: Number(entry.lat),
+        lng: Number(entry.lng),
+        hasLocation: true,
+        thumbnailUrl: "",
+        accent: entry.projectType === "services" ? "#f97316" : "#8b5cf6",
+        permanence: entry.permanence || entry.projectType || "venue",
+      });
+    }
+
+    if (entry.hasSchedule) {
+      const matchEvent = events.find(e => e.day === entry.day);
+      const scheduleDate = matchEvent ? matchEvent.scheduleDate : (entry.day === "fri" ? "2026-08-28" : (entry.day === "sat" ? "2026-08-29" : "2026-08-30"));
+      
+      adminEvents.push({
+        id: `event-${entry.id}`,
+        venueId: entry.id,
+        title: entry.name,
+        host: entry.artist || "",
+        description: entry.abridgedProjectText || "",
+        day: entry.day,
+        startTime: entry.startTime,
+        endTime: entry.endTime,
+        type: entry.projectType,
+        thumbnailUrl: "",
+        hasLocation,
+        lat: entry.lat,
+        lng: entry.lng,
+        source: "admin",
+        scheduleDate,
+        locationName: entry.locationInternal || "",
+        department: entry.projectType === "services" ? "Services" : "Art",
+        leadPointPerson: entry.artist || "",
+      });
+    }
+  });
+
+  return {
+    venues: [...venues, ...adminVenues],
+    events: [...events, ...adminEvents],
+  };
+}
+
 type KmzPlacemark = {
   id: string;
   name: string;
@@ -349,22 +414,25 @@ export async function getFestivalData(role: string = "guest"): Promise<FestivalD
         const rosData = data.events || [];
         const personnelData = data.personnel || [];
         const departmentsData = data.departments || [];
+        const adminEntriesMap = data.entries || {};
 
         const mapped = parseSpreadsheetData(locationsData, rosData, personnelData, departmentsData);
+        const adminEntries = Object.values(adminEntriesMap) as AdminEntry[];
+        const merged = mergeAdminEntries(mapped.venues, mapped.events, adminEntries);
 
         return {
-          venues: mapped.venues,
-          events: mapped.events,
+          venues: merged.venues,
+          events: merged.events,
           personnel: mapped.personnel,
           departments: mapped.departments,
           colors: colorsObj,
           sourceLabel: `Firebase RTD (${role.toUpperCase()} View)`,
           debug: {
-            totalRows: mapped.events.length,
-            confirmedRows: mapped.events.length,
-            matchedRows: mapped.events.filter((e: any) => e.hasLocation || e.lat !== undefined).length,
+            totalRows: merged.events.length,
+            confirmedRows: merged.events.length,
+            matchedRows: merged.events.filter((e: any) => e.hasLocation || e.lat !== undefined).length,
             unmatchedLocations: [],
-          }
+          },
         };
       }
     }
@@ -570,18 +638,21 @@ export async function getFestivalData(role: string = "guest"): Promise<FestivalD
 
     const { venues, events, personnel, departments } = parseSpreadsheetData(locationsData, rosData, personnelData, departmentsData);
 
+    const adminEntries = await readAdminEntries();
+    const merged = mergeAdminEntries(venues, events, adminEntries);
+
     return {
-      venues,
-      events,
+      venues: merged.venues,
+      events: merged.events,
       personnel,
       departments,
       colors: colorsObj,
       sourceLabel,
       debug: {
-        totalRows: rosData.length,
-        confirmedRows: events.length,
-        matchedRows: events.filter((e) => e.hasLocation).length,
-        unmatchedLocations: [...new Set(events.filter((e) => !e.hasLocation).map((e) => e.locationName || ""))].filter(Boolean),
+        totalRows: rosData.length + adminEntries.length,
+        confirmedRows: merged.events.length,
+        matchedRows: merged.events.filter((e) => e.hasLocation).length,
+        unmatchedLocations: [...new Set(merged.events.filter((e) => !e.hasLocation).map((e) => e.locationName || ""))].filter(Boolean),
       },
     };
   } catch (error) {
@@ -600,17 +671,20 @@ export async function getFestivalData(role: string = "guest"): Promise<FestivalD
       colorsObj = JSON.parse(cachedColorsContent);
     } catch (err) {}
 
+    const adminEntries = await readAdminEntries().catch(() => []);
+    const merged = mergeAdminEntries([], [], adminEntries);
+
     return {
-      venues: [],
-      events: [],
+      venues: merged.venues,
+      events: merged.events,
       personnel: [],
       departments: [],
       colors: colorsObj,
       sourceLabel: "Unavailable",
       debug: {
-        totalRows: 0,
-        confirmedRows: 0,
-        matchedRows: 0,
+        totalRows: adminEntries.length,
+        confirmedRows: merged.events.length,
+        matchedRows: merged.events.filter((e) => e.hasLocation).length,
         unmatchedLocations: [],
       },
     };

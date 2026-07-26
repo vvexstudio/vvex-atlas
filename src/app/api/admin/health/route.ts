@@ -73,6 +73,20 @@ export async function GET() {
       status: p.invite_status
     }));
 
+  // Format personnel audit log
+  const personnelLog = personnel.map((p: any) => {
+    const rawActive = p.active ?? p.Active ?? p.status ?? true;
+    const isActive = rawActive === true || String(rawActive).toLowerCase() === "true" || rawActive === 1;
+    return {
+      name: p.name || p.Name || "Unnamed",
+      email: p.email || p.Email || "No Email",
+      role: p.role || p.Role || p.department || p.Department || "Crew",
+      department: p.department || p.Department || p.role || p.Role || "General",
+      active: isActive,
+      inviteStatus: p.invite_status || p.inviteStatus || (isActive ? "Active" : "Revoked"),
+    };
+  });
+
   return NextResponse.json({
     dataSource: festivalData.sourceLabel,
     firebase: firebaseHealth,
@@ -83,6 +97,7 @@ export async function GET() {
       departments: (festivalData.departments || []).length
     },
     unmappedLocations: Array.from(unmappedLocations),
-    onboardingFailures
+    onboardingFailures,
+    personnelLog,
   });
 }
