@@ -143,7 +143,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
               border: "1px solid var(--danger)",
               borderRadius: "10px",
               padding: "1rem",
-              marginBottom: "2rem",
+              marginBottom: "1.5rem",
               textAlign: "left",
             }}
           >
@@ -151,14 +151,28 @@ export default async function LoginPage({ searchParams }: PageProps) {
               <span style={{ marginRight: "0.5rem", display: "inline-flex", color: "var(--danger)" }}><Icon name="warning" size={14} /></span>
               <strong style={{ color: "var(--danger)", fontSize: "0.875rem" }}>{errorTitle}</strong>
             </div>
-            <p style={{ margin: 0, color: "var(--danger)", fontSize: "0.825rem", lineHeight: "1.25rem" }}>
+            <p style={{ margin: "0 0 0.75rem 0", color: "var(--danger)", fontSize: "0.825rem", lineHeight: "1.25rem" }}>
               {errorMessage}
             </p>
+            {error === "unauthorized" && (
+              <Link
+                href="/?role=public"
+                style={{
+                  display: "inline-block",
+                  fontSize: "0.825rem",
+                  fontWeight: 600,
+                  color: "var(--ink)",
+                  textDecoration: "underline",
+                }}
+              >
+                Explore Public Schedule as Guest →
+              </Link>
+            )}
           </div>
         )}
 
         {/* Sign In Buttons */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
           <style dangerouslySetInnerHTML={{ __html: `
             .google-signin-btn {
               transition: transform 0.2s, box-shadow 0.2s;
@@ -166,6 +180,10 @@ export default async function LoginPage({ searchParams }: PageProps) {
             .google-signin-btn:hover {
               transform: translateY(-1px);
               box-shadow: 0 6px 12px rgba(255, 255, 255, 0.15) !important;
+            }
+            .public-signin-btn:hover {
+              background-color: var(--surface) !important;
+              border-color: var(--accent) !important;
             }
             .admin-gate-link {
               transition: color 0.2s;
@@ -212,10 +230,34 @@ export default async function LoginPage({ searchParams }: PageProps) {
                 d="M9 3.58c1.32 0 2.5.45 3.44 1.35L15 2.05C13.47.63 11.43 0 9 0 5.46 0 2.39 2.02.9 4.97l3.05 2.32C4.66 5.16 6.65 3.58 9 3.58z"
               />
             </svg>
-            Sign in with Google
+            Sign in with Google (Crew Access)
           </a>
+
+          <Link
+            href="/?role=public"
+            className="public-signin-btn"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.5rem",
+              backgroundColor: "transparent",
+              color: "var(--ink)",
+              border: "1px solid var(--line)",
+              borderRadius: "10px",
+              padding: "0.875rem",
+              fontSize: "0.9rem",
+              fontWeight: 500,
+              textDecoration: "none",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+          >
+            <Icon name="externalLink" size={16} />
+            Continue to Public Map & Schedule (No Login) →
+          </Link>
           
-          <div style={{ marginTop: "1.5rem", borderTop: "1px solid var(--line)", paddingTop: "1rem" }}>
+          <div style={{ marginTop: "1rem", borderTop: "1px solid var(--line)", paddingTop: "0.875rem" }}>
             <Link
               href="/admin"
               className="admin-gate-link"

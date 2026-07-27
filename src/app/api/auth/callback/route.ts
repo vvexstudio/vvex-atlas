@@ -89,10 +89,22 @@ export async function GET(request: Request) {
     const approved = await isEmailApproved(sanitizedEmail);
 
     if (!approved) {
-      console.warn(`Access denied: ${sanitizedEmail} is not in the approved list`);
-      return NextResponse.redirect(
-        new URL(`/login?error=unauthorized&email=${encodeURIComponent(sanitizedEmail)}`, origin)
-      );
+      console.warn(`Email ${sanitizedEmail} is not in crew list. Redirecting gracefully to Public View.`);
+      const sessionValue = await createSessionCookie({
+        email: sanitizedEmail,
+        name: name || sanitizedEmail,
+        role: "public",
+        picture,
+      });
+      const cookieStore = await cookies();
+      cookieStore.set("portal_session", sessionValue, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7,
+      });
+      return NextResponse.redirect(new URL("/?role=public&notice=guest-public", origin));
     }
 
     // 4. Resolve the user's role from Firebase RTD auth-directory (if available)

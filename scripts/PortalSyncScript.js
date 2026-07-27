@@ -624,7 +624,12 @@ function deleteGcalEvent(calId, gcalEventId) {
 }
 
 function filterPublicEvents(events) {
-  return events.filter(e => e.foh_boh !== "BOH");
+  return events.filter(e => {
+    const dept = (e.department || "").toLowerCase();
+    const isPublic = dept.includes("public") || dept.includes("foh");
+    const isInternal = dept.includes("admin") || dept.includes("all departments");
+    return isPublic && !isInternal && e.foh_boh !== "BOH";
+  });
 }
 
 function parseCsvList(str) {
