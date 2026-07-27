@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { Venue, FestivalEvent, Department } from "@/types/festival";
 import sheetColors from "@/data/sheet-colors.json";
@@ -10,9 +10,16 @@ import { MapView } from "./MapView";
 import { ScheduleGrid } from "./ScheduleGrid";
 import { RunningSchedule } from "./RunningSchedule";
 import { CalendarView } from "./CalendarView";
+import { Icon } from "@/components/ui/icons";
 import { useAuthProfile } from "@/hooks/useAuthProfile";
 import { useEventData } from "@/hooks/useEventData";
 import { useFilters } from "@/hooks/useFilters";
+
+import { useStarredEvents } from "@/hooks/useStarredEvents";
+import { NowNext } from "./NowNext";
+import { Toasts, ToastMessage } from "./Toasts";
+import { parseUrlParams, buildUrlQuery, UrlState } from "@/lib/url-state";
+import { Legend } from "./Legend";
 
 const MAP_CENTER = { lat: 40.7864, lng: -119.2065 }; // Default Playa (BRC) coordinates
 const MAP_DEFAULT_ZOOM = 13;
@@ -102,13 +109,120 @@ export function EventApp({
   const { userSession, role } = useAuthProfile(initialUserSession);
 
   // 2. Event Data Hook
-  const { venues, events, personnel, departments, sourceLabel } = useEventData(role, {
+  const { venues, events, personnel, departments, sourceLabel, isOffline, lastSynced } = useEventData(role, {
     venues: initialVenues,
     events: initialEvents,
     personnel: initialPersonnel,
     departments: initialDepartments,
     dataSourceLabel,
   });
+
+  // 2b. Starred Personal Agenda Hook
+  const { starredIds, toggleStar, isStarred } = useStarredEvents(userSession?.email);
+
+  // 2c. Custom States for Day-of-Show and Linkage
+  const [isMyScheduleOnly, setIsMyScheduleOnly] = useState(false);
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [focusedVenueId, setFocusedVenueId] = useState<string | null>(null);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [activeCategories, setActiveCategories] = useState<string[]>([]);
+  const prevEventsRef = useRef<FestivalEvent[]>([]);
+
+  // 2d. Live Ticker / Clock / Simulated Time states
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
+  const [isTimeSimulated, setIsTimeSimulated] = useState(false);
+  const [effectiveDateStr, setEffectiveDateStr] = useState("");
+
+  const getEffectiveTime = (evtList: FestivalEvent[]) => {
+    const now = new Date();
+    const eventDates = evtList.map(e => e.scheduleDate).filter(Boolean) as string[];
+    if (eventDates.length === 0) return { time: now, isSimulated: false, dateStr: "" };
+
+    const sortedDates = [...new Set(eventDates)].sort();
+    const startDateStr = sortedDates[0];
+    const endDateStr = sortedDates[sortedDates.length - 1];
+
+    const start = new Date(`${startDateStr}T00:00:00`);
+    const end = new Date(`${endDateStr}T23:59:59`);
+
+    if (now >= start && now <= end) {
+      return { time: now, isSimulated: false, dateStr: now.toISOString().split("T")[0] };
+    }
+
+    // Fall back to simulated time: first day of event, keeping current HH:MM:SS
+    const simulatedTime = new Date(now);
+    const [y, m, d] = startDateStr.split("-").map(Number);
+    simulatedTime.setFullYear(y, m - 1, d);
+    return { time: simulatedTime, isSimulated: true, dateStr: startDateStr };
+  };
+
+  useEffect(() => {
+    if (events.length === 0) return;
+
+    const updateClock = () => {
+      const { time, isSimulated, dateStr } = getEffectiveTime(events);
+      setCurrentTime(time);
+      setIsTimeSimulated(isSimulated);
+      setEffectiveDateStr(dateStr);
+    };
+
+    updateClock();
+    const timer = setInterval(updateClock, 60000);
+    return () => clearInterval(timer);
+  }, [events]);
+
+  // Toast adder helper
+  const addToast = (title: string, message: string, type: "info" | "warning" | "success" = "info") => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setToasts(prev => [...prev, { id, title, message, type, timestamp: new Date() }]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  // Diff successive snapshots to trigger toasts
+  useEffect(() => {
+    if (events.length === 0) return;
+
+    if (prevEventsRef.current.length === 0) {
+      prevEventsRef.current = events;
+      return;
+    }
+
+    const prevEvents = prevEventsRef.current;
+    events.forEach((curr) => {
+      const prev = prevEvents.find((p) => p.id === curr.id);
+      if (!prev) return;
+
+      const timeChanged = prev.startTime !== curr.startTime || prev.endTime !== curr.endTime;
+      const locChanged = prev.locationName !== curr.locationName;
+      const dateChanged = prev.scheduleDate !== curr.scheduleDate;
+
+      if (timeChanged || locChanged || dateChanged) {
+        let msg = "";
+        if (dateChanged) msg += `Date: ${curr.scheduleDate} (was ${prev.scheduleDate}) `;
+        if (timeChanged) msg += `Time: ${curr.startTime}-${curr.endTime} (was ${prev.startTime}-${prev.endTime}) `;
+        if (locChanged) msg += `Location: ${curr.locationName || "TBD"} (was ${prev.locationName || "TBD"}) `;
+        addToast("Event Updated", `"${curr.title}" updated: ${msg.trim()}`, "warning");
+      }
+    });
+
+    prevEventsRef.current = events;
+  }, [events]);
+
+  // Extract unique categories from venues
+  const categoriesList = useMemo(() => {
+    return Array.from(new Set(venues.map(v => v.permanence).filter((p): p is string => !!p))).sort();
+  }, [venues]);
+
+  // 2e. Filter events by Personal Agenda if toggled
+  const activeEventList = useMemo(() => {
+    if (isMyScheduleOnly) {
+      return events.filter(e => starredIds.includes(e.id));
+    }
+    return events;
+  }, [events, isMyScheduleOnly, starredIds]);
 
   // 3. Filters Hook
   const {
@@ -140,25 +254,27 @@ export function EventApp({
     calendarEventPlacements,
     activeFiltersCount,
   } = useFilters({
-    events,
+    events: activeEventList,
     venues,
     mapCenter: MAP_CENTER,
   });
 
   const colors = initialColors || {};
-  // Helper for tag coloring with dynamic sheets support and static fallback
+  // Tag coloring: the designed, theme-aware palette in sheet-colors.json
+  // wins; runtime Google-Sheet swatches only cover keys the palette does
+  // not know about (they are single light-polarity pairs).
   const getColorStyle = (category: "Location" | "Action" | "Department" | "Personnel", value: string | undefined) => {
     if (!value) return {};
     const trimmed = value.trim();
-    
-    // Try dynamic colors from Google Sheet first
-    let colorsMatch = colors?.[category]?.[trimmed];
-    
-    // Fall back to static sheet-colors.json configuration
-    if (!colorsMatch) {
-      colorsMatch = (sheetColors as Record<string, Record<string, { bg: string; fg: string }>>)[category]?.[trimmed];
-    }
-    
+
+    const designed = (sheetColors as Record<
+      string,
+      Record<string, { light: { bg: string; fg: string }; dark: { bg: string; fg: string } }>
+    >)[category]?.[trimmed];
+    const colorsMatch = designed
+      ? designed[isDarkMode ? "dark" : "light"]
+      : colors?.[category]?.[trimmed];
+
     if (colorsMatch) {
       return {
         backgroundColor: colorsMatch.bg,
@@ -169,8 +285,44 @@ export function EventApp({
     return {};
   };
   // Tabs & Layout States
-  const [mainTab, setMainTab] = useState<"schedule" | "calendar" | "map">("schedule");
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [mainTab, setMainTab] = useState<"now-next" | "schedule" | "calendar" | "map">("schedule");
+  const [highlightedEventId, setHighlightedEventId] = useState<string | null>(null);
+  const isProgrammaticScrollRef = useRef(false);
+  const programmaticScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const handleScrollCapture = () => {
+      if (isProgrammaticScrollRef.current) return;
+      if (highlightedEventId) {
+        setHighlightedEventId(null);
+      }
+    };
+    window.addEventListener("scroll", handleScrollCapture, true);
+    return () => {
+      window.removeEventListener("scroll", handleScrollCapture, true);
+    };
+  }, [highlightedEventId]);
+
+  // Three themes: letterpress (light) / noir (warm charcoal) / dusk (plum rose).
+  // SSR renders the noir default; the saved theme is applied to <body> by a
+  // pre-hydration script in the root layout, and this state syncs to it after
+  // mount (reading localStorage in the initializer breaks hydration).
+  const [theme, setTheme] = useState<"letterpress" | "noir" | "dusk">("noir");
+  const isDarkMode = theme !== "letterpress";
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem("portal-theme");
+    if (saved === "letterpress" || saved === "dusk") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time post-hydration sync from localStorage; SSR must render the default
+      setTheme(saved);
+    }
+  }, []);
+
+  const cycleTheme = () => {
+    const next = theme === "letterpress" ? "noir" : theme === "noir" ? "dusk" : "letterpress";
+    setTheme(next);
+    window.localStorage.setItem("portal-theme", next);
+  };
   const [columnWidthScale, setColumnWidthScale] = useState<number>(180);
   const [hourHeightScale, setHourHeightScale] = useState<number>(60);
   const [scheduleWidthScale, setScheduleWidthScale] = useState<number>(750);
@@ -185,15 +337,122 @@ export function EventApp({
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [isMobileScheduleOpen, setIsMobileScheduleOpen] = useState(false);
 
+  // Desktop sidebar resize (drag handle between map panel and sidebar)
+  const [sidebarWidth, setSidebarWidth] = useState<number | null>(() => {
+    if (typeof window === "undefined") return null;
+    const saved = Number(window.localStorage.getItem("portal-sidebar-width"));
+    return saved >= 280 && saved <= 640 ? saved : null;
+  });
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
+
+  const startSidebarResize = (e: React.PointerEvent) => {
+    e.preventDefault();
+    setIsResizingSidebar(true);
+    const clamp = (x: number) => Math.min(640, Math.max(280, window.innerWidth - x));
+    const onMove = (ev: PointerEvent) => setSidebarWidth(clamp(ev.clientX));
+    const onUp = (ev: PointerEvent) => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      setIsResizingSidebar(false);
+      window.localStorage.setItem("portal-sidebar-width", String(clamp(ev.clientX)));
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
+  // Register PWA Service Worker
+  useEffect(() => {
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js").then(
+          (reg) => console.log("ServiceWorker registered with scope: ", reg.scope),
+          (err) => console.error("ServiceWorker registration failed: ", err)
+        );
+      });
+    }
+  }, []);
+
+  // URL state synchronization
+  const [urlInitialized, setUrlInitialized] = useState(false);
+
+  // Restore state from URL on client mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const state = parseUrlParams(params);
+
+    setTimeout(() => {
+      if (state.view && ["now-next", "schedule", "calendar", "map"].includes(state.view)) {
+        setMainTab(state.view as any);
+      }
+      if (state.day) {
+        setSelectedDay(state.day);
+      }
+      if (state.eventId) {
+        const found = initialEvents.find(e => e.id === state.eventId);
+        if (found) setModalEvent(found);
+      }
+      if (state.query) setSearchQuery(state.query);
+      if (state.locations && state.locations.length > 0) setSelectedLocations(state.locations);
+      if (state.actions && state.actions.length > 0) setSelectedActions(state.actions);
+      if (state.departments && state.departments.length > 0) setSelectedDepartments(state.departments);
+      if (state.leads && state.leads.length > 0) setSelectedLeads(state.leads);
+      if (state.mySchedule) setIsMyScheduleOnly(true);
+
+      setUrlInitialized(true);
+    }, 0);
+  }, [initialEvents, setSearchQuery, setSelectedLocations, setSelectedActions, setSelectedDepartments, setSelectedLeads]);
+
+  // Save changes back to URL params
+  useEffect(() => {
+    if (!urlInitialized || typeof window === "undefined") return;
+
+    const state: UrlState = {
+      view: mainTab,
+      day: selectedDay || undefined,
+      eventId: modalEvent?.id || undefined,
+      query: searchQuery || undefined,
+      locations: selectedLocations.length > 0 ? selectedLocations : undefined,
+      actions: selectedActions.length > 0 ? selectedActions : undefined,
+      departments: selectedDepartments.length > 0 ? selectedDepartments : undefined,
+      leads: selectedLeads.length > 0 ? selectedLeads : undefined,
+      mySchedule: isMyScheduleOnly || undefined,
+    };
+
+    const newQuery = buildUrlQuery(state);
+    const newUrl = window.location.pathname + newQuery;
+    window.history.replaceState(null, "", newUrl);
+  }, [
+    urlInitialized,
+    mainTab,
+    selectedDay,
+    modalEvent,
+    searchQuery,
+    selectedLocations,
+    selectedActions,
+    selectedDepartments,
+    selectedLeads,
+    isMyScheduleOnly,
+  ]);
+
+  // Compute filtered groupedEventsByDate matching day tabs
+  const dayFilteredGroupedEvents = useMemo(() => {
+    if (selectedDay) {
+      return groupedEventsByDate.filter((g) => g.date === selectedDay);
+    }
+    return groupedEventsByDate;
+  }, [groupedEventsByDate, selectedDay]);
+
 
   // Sync dark mode class on document body
   useEffect(() => {
     if (typeof document === "undefined") return;
-    document.body.classList.toggle("legacy-theme-dark", isDarkMode);
+    document.body.classList.toggle("portal-dark", theme === "noir");
+    document.body.classList.toggle("portal-dusk", theme === "dusk");
     return () => {
-      document.body.classList.remove("legacy-theme-dark");
+      document.body.classList.remove("portal-dark", "portal-dusk");
     };
-  }, [isDarkMode]);
+  }, [theme]);
 
   // Prevent default Safari iOS pinch-to-zoom gestures globally
   useEffect(() => {
@@ -295,15 +554,29 @@ export function EventApp({
   useEffect(() => {
     if (mainTab !== "calendar" || availableDates.length === 0) return;
     
-    const firstDate = availableDates[0].date;
+    // Find target date to focus: selectedDay or today fallback
+    const targetDate = selectedDay || (availableDates.some(d => d.date === effectiveDateStr) ? effectiveDateStr : availableDates[0].date);
+    
     const dayEvents = filteredEvents.filter(
-      (e) => e.scheduleDate === firstDate && timeToMinutes(e.startTime) !== -1
+      (e) => e.scheduleDate === targetDate && timeToMinutes(e.startTime) !== -1
     );
     
     if (dayEvents.length > 0) {
+      let scrollOffset = 60;
       const earliestStart = Math.min(...dayEvents.map((e) => timeToMinutes(e.startTime)));
-      if (calendarScrollContainerRef.current) {
-        let scrollOffset = 0;
+      
+      const currentMinutes = currentTime ? currentTime.getHours() * 60 + currentTime.getMinutes() : -1;
+      const isTargetToday = targetDate === effectiveDateStr;
+      
+      if (isTargetToday && currentMinutes !== -1) {
+        const hoursArray = Array.from({ length: 24 }, (_, i) => i);
+        const activeHours = hideEmptyHours ? getActiveHoursForDay(dayEvents) : hoursArray;
+        const activeCurrent = hideEmptyHours
+          ? getActiveMinuteOffset(currentMinutes, activeHours)
+          : currentMinutes;
+        // Center on the line (scroll minus 2 hours for context)
+        scrollOffset = (Math.max(0, activeCurrent - 120) / 60) * hourHeightScale;
+      } else {
         if (hideEmptyHours) {
           const activeHours = getActiveHoursForDay(dayEvents);
           const activeStart = getActiveMinuteOffset(earliestStart, activeHours);
@@ -311,10 +584,13 @@ export function EventApp({
         } else {
           scrollOffset = (Math.max(0, earliestStart - 60) / 60) * hourHeightScale;
         }
+      }
+      
+      if (calendarScrollContainerRef.current) {
         calendarScrollContainerRef.current.scrollTop = scrollOffset + 60;
       }
     }
-  }, [mainTab, availableDates, filteredEvents, hourHeightScale, hideEmptyHours]);
+  }, [mainTab, availableDates, filteredEvents, hourHeightScale, hideEmptyHours, selectedDay, effectiveDateStr, currentTime]);
 
 
   // Prevent body scroll when mobile drawers are open
@@ -352,42 +628,87 @@ export function EventApp({
         departmentOptions={departmentOptions}
         leadOptions={leadOptions}
         getColorStyle={getColorStyle}
+        selectedDay={selectedDay}
+        setSelectedDay={setSelectedDay}
+        availableDates={availableDates}
       />
     );
+  };
+
+  const handleRunningScheduleEventClick = (event: FestivalEvent) => {
+    setModalEvent(event);
+
+    if (programmaticScrollTimeoutRef.current) {
+      clearTimeout(programmaticScrollTimeoutRef.current);
+    }
+    isProgrammaticScrollRef.current = true;
+    setHighlightedEventId(event.id);
+
+    if (mainTab === "schedule") {
+      setTimeout(() => {
+        const el = document.getElementById(`event-row-${event.id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 50);
+    } else if (mainTab === "calendar") {
+      setTimeout(() => {
+        const el = document.getElementById(`event-card-dept-${event.id}`) ||
+                   document.getElementById(`event-card-loc-${event.id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 50);
+    }
+
+    programmaticScrollTimeoutRef.current = setTimeout(() => {
+      isProgrammaticScrollRef.current = false;
+    }, 1000);
   };
 
   // Helper to render the body of the running schedule
   const renderScheduleBody = () => {
     return (
       <RunningSchedule
-        groupedEventsByDate={groupedEventsByDate}
+        groupedEventsByDate={dayFilteredGroupedEvents}
         setModalEvent={setModalEvent}
         getColorStyle={getColorStyle}
+        currentTime={currentTime}
+        onEventClick={handleRunningScheduleEventClick}
       />
     );
   };
 
   return (
-    <main className={`legacy-app ${isDarkMode ? "dark-theme" : ""}`}>
+    <main className="legacy-app">
+      {isOffline && (
+        <div className="offline-banner">
+          <span className="offline-icon"><Icon name="warning" size={14} /></span>
+          <span>Offline Mode. Displaying cached data (last synced: {lastSynced ? new Date(lastSynced).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Never"}).</span>
+        </div>
+      )}
       {/* Header Banner */}
       <header className="legacy-banner">
-        <div className="legacy-banner-title" style={{ display: "flex", alignItems: "baseline", gap: "10px" }}>
+        <div className="legacy-banner-title">
+          {/* eslint-disable-next-line @next/next/no-img-element -- static 26px brand mark, next/image is overkill */}
+          <img src="/icon.png" alt="" className="banner-brand-mark" width={26} height={26} />
           <h1 className="legacy-banner-heading">The Portal</h1>
+          <span className="chip chip-accent eyebrow eyebrow-accent">
+            PDT • Black Rock City
+          </span>
           {sourceLabel && (
-            <span style={{ fontSize: "0.75rem", color: "#94a3b8", fontWeight: "normal" }}>
-              ({sourceLabel})
-            </span>
+            <span className="banner-source-label">({sourceLabel})</span>
           )}
         </div>
         <div className="legacy-banner-actions">
-          {userSession && (
+          {userSession && role !== "public" ? (
             <div className="user-profile-section">
               {userSession.picture ? (
                 <img
                   src={userSession.picture}
                   alt={userSession.name || userSession.email}
                   referrerPolicy="no-referrer"
-                  style={{ width: "30px", height: "30px", borderRadius: "50%", border: "1.5px solid #a855f7" }}
+                  style={{ width: "30px", height: "30px", borderRadius: "50%", border: "1.5px solid var(--accent)" }}
                 />
               ) : (
                 <div
@@ -395,79 +716,55 @@ export function EventApp({
                     width: "30px",
                     height: "30px",
                     borderRadius: "50%",
-                    backgroundColor: "#6366f1",
-                    color: "white",
+                    backgroundColor: "var(--accent)",
+                    color: "var(--accent-ink)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     fontWeight: "bold",
                     fontSize: "0.8rem",
-                    border: "1.5px solid #a855f7",
+                    border: "1.5px solid var(--line)",
                   }}
                 >
                   {(userSession.name || userSession.email)[0].toUpperCase()}
                 </div>
               )}
               <div className="user-profile-info">
-                <span style={{ fontSize: "0.8rem", fontWeight: 600, color: isDarkMode ? "#f3f4f6" : "#1f2937", lineHeight: "1.2" }}>
+                <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--ink)", lineHeight: "1.2" }}>
                   {userSession.name || userSession.email.split("@")[0]}
                 </span>
-                <span style={{ fontSize: "0.65rem", color: isDarkMode ? "#9ca3af" : "#6b7280" }}>
+                <span style={{ fontSize: "0.65rem", color: "var(--muted)" }}>
                   {userSession.email}
                 </span>
               </div>
               {role === "admin" && (
                 <Link
                   href="/admin"
-                  style={{
-                    padding: "0.25rem 0.6rem",
-                    backgroundColor: "var(--accent-soft)",
-                    border: "1px solid var(--line)",
-                    color: "var(--accent)",
-                    borderRadius: "5px",
-                    fontSize: "0.7rem",
-                    fontWeight: 600,
-                    textDecoration: "none",
-                    marginRight: "0.5rem",
-                    display: "inline-flex",
-                    alignItems: "center"
-                  }}
+                  className="btn btn-ghost btn-sm"
+                  style={{ marginRight: "0.5rem" }}
                 >
-                  ⚙️ Admin Panel
+                  <Icon name="settings" size={12} /> Admin Panel
                 </Link>
               )}
-              <a
-                href="/api/auth/logout"
-                style={{
-                  padding: "0.25rem 0.6rem",
-                  backgroundColor: "rgba(239, 68, 68, 0.1)",
-                  border: "1px solid rgba(239, 68, 68, 0.3)",
-                  color: "#f87171",
-                  borderRadius: "5px",
-                  fontSize: "0.7rem",
-                  fontWeight: 600,
-                  textDecoration: "none",
-                  transition: "background-color 0.2s",
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = "rgba(239, 68, 68, 0.2)";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = "rgba(239, 68, 68, 0.1)";
-                }}
-              >
-                Logout
+              <a href="/api/auth/logout" className="btn btn-danger btn-sm">
+                <Icon name="logout" size={12} /> Logout
               </a>
+            </div>
+          ) : (
+            <div className="user-profile-section">
+              <Link href="/login" className="btn btn-primary btn-sm" style={{ fontWeight: 600, padding: "0.4rem 0.8rem" }}>
+                <Icon name="user" size={12} /> Login to Crew Portal
+              </Link>
             </div>
           )}
           <button
             type="button"
             className="legacy-theme-switch"
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            aria-label="Toggle dark theme"
-            style={{ width: "32px", height: "32px", padding: "0", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", fontSize: "1rem" }}
+            onClick={cycleTheme}
+            title={`Theme: ${theme} — click to switch`}
+            aria-label={`Current theme ${theme}. Switch to ${theme === "letterpress" ? "noir" : theme === "noir" ? "dusk" : "letterpress"}`}
           >
-            {isDarkMode ? "☀️" : "🌙"}
+            <Icon name={theme === "letterpress" ? "sun" : theme === "noir" ? "moon" : "sparkles"} size={16} />
           </button>
         </div>
       </header>
@@ -483,7 +780,7 @@ export function EventApp({
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             title={isSidebarOpen ? "Hide filters & running schedule" : "Show filters & running schedule"}
           >
-            {isSidebarOpen ? "➡️" : "⬅️"}
+            <Icon name={isSidebarOpen ? "chevronRight" : "chevronLeft"} size={14} />
           </button>
           {/* Main Tab Switcher */}
           <div className="main-tabs-header">
@@ -493,21 +790,38 @@ export function EventApp({
                 className={`main-tab-btn ${mainTab === "schedule" ? "active" : ""}`}
                 onClick={() => setMainTab("schedule")}
               >
-                📋 Schedule List
+                <Icon name="clipboard" size={14} /> Schedule List
               </button>
               <button
                 type="button"
                 className={`main-tab-btn ${mainTab === "calendar" ? "active" : ""}`}
                 onClick={() => setMainTab("calendar")}
               >
-                📅 Calendar Grid
+                <Icon name="calendar" size={14} /> Calendar Grid
               </button>
               <button
                 type="button"
                 className={`main-tab-btn map-tab-btn ${mainTab === "map" ? "active" : ""}`}
                 onClick={() => setMainTab("map")}
               >
-                🗺️ Map View {visibleMappableVenues.length === 0 ? "(Scaffolded)" : ""}
+                <Icon name="map" size={14} /> Map View {visibleMappableVenues.length === 0 ? "(Scaffolded)" : ""}
+              </button>
+              <button
+                type="button"
+                className={`main-tab-btn ${mainTab === "now-next" ? "active" : ""}`}
+                onClick={() => setMainTab("now-next")}
+              >
+                <Icon name="zap" size={14} /> Now &amp; Next
+              </button>
+              <button
+                type="button"
+                className={`main-tab-btn starred-tab-btn ${isMyScheduleOnly ? "active" : ""}`}
+                onClick={() => setIsMyScheduleOnly(!isMyScheduleOnly)}
+                title={isMyScheduleOnly ? "Showing Starred Only" : "Show Starred"}
+                aria-label={isMyScheduleOnly ? "Showing starred only" : "Show starred"}
+                style={{ minWidth: "40px", padding: "0" }}
+              >
+                <Icon name="star" size={16} filled={isMyScheduleOnly} />
               </button>
             </div>
             
@@ -560,21 +874,8 @@ export function EventApp({
                     onClick={() => setHideEmptyHours(!hideEmptyHours)}
                     className={`calendar-toggle-btn ${hideEmptyHours ? "active" : ""}`}
                     aria-pressed={hideEmptyHours}
-                    style={{ padding: "4px 8px", fontSize: "0.75rem", borderRadius: "6px" }}
                   >
-                    {hideEmptyHours ? (
-                      <svg className="control-icon-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }}>
-                        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-                        <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
-                        <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
-                        <line x1="2" y1="2" x2="22" y2="22" />
-                      </svg>
-                    ) : (
-                      <svg className="control-icon-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }}>
-                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                    )}
+                    <Icon name={hideEmptyHours ? "eyeOff" : "eye"} size={12} />
                     <span>Hide Empty Hours</span>
                   </button>
                 </>
@@ -582,17 +883,33 @@ export function EventApp({
             </div>
           </div>
 
+
+
           {/* Main Content Render */}
           <div ref={mainContentRef} className={`main-tab-content tab-${mainTab}`}>
-            {mainTab === "schedule" ? (
+            {mainTab === "now-next" ? (
+              currentTime && (
+                <NowNext
+                  events={events}
+                  currentTime={currentTime}
+                  effectiveDateStr={effectiveDateStr}
+                  isSimulated={isTimeSimulated}
+                  setModalEvent={setModalEvent}
+                  getColorStyle={getColorStyle}
+                />
+              )
+            ) : mainTab === "schedule" ? (
               <ScheduleGrid
-                groupedEventsByDate={groupedEventsByDate}
+                groupedEventsByDate={dayFilteredGroupedEvents}
                 scheduleWidthScale={scheduleWidthScale}
                 getColorStyle={getColorStyle}
+                currentTime={currentTime}
+                setModalEvent={setModalEvent}
+                highlightedEventId={highlightedEventId}
               />
             ) : mainTab === "calendar" ? (
               <CalendarView
-                groupedEventsByDate={groupedEventsByDate}
+                groupedEventsByDate={dayFilteredGroupedEvents}
                 hideEmptyHours={hideEmptyHours}
                 activeDepartments={activeDepartments}
                 activeLocations={activeLocations}
@@ -604,19 +921,59 @@ export function EventApp({
                 setModalEvent={setModalEvent}
                 departments={departments}
                 getColorStyle={getColorStyle}
+                currentTime={currentTime}
+                effectiveDateStr={effectiveDateStr}
+                highlightedEventId={highlightedEventId}
               />
             ) : (
-              <MapView
-                venues={venues}
-                mapCenter={MAP_CENTER}
-                defaultZoom={MAP_DEFAULT_ZOOM}
-              />
+              <div style={{ position: "relative", width: "100%", height: "100%" }}>
+                <MapView
+                  venues={venues}
+                  mapCenter={MAP_CENTER}
+                  defaultZoom={MAP_DEFAULT_ZOOM}
+                  focusedVenueId={focusedVenueId}
+                  setFocusedVenueId={setFocusedVenueId}
+                  setSelectedLocations={setSelectedLocations}
+                  setMainTab={setMainTab}
+                  events={events}
+                  getColorStyle={getColorStyle}
+                  activeCategories={activeCategories.length > 0 ? activeCategories : categoriesList}
+                  isDarkMode={isDarkMode}
+                />
+                {categoriesList.length > 0 && (
+                  <Legend
+                    categories={categoriesList}
+                    activeCategories={activeCategories.length > 0 ? activeCategories : categoriesList}
+                    onToggleCategory={(cat) => {
+                      const active = activeCategories.length > 0 ? activeCategories : [...categoriesList];
+                      const newActive = active.includes(cat)
+                        ? active.filter((c) => c !== cat)
+                        : [...active, cat];
+                      setActiveCategories(newActive.length === categoriesList.length ? [] : newActive);
+                    }}
+                    getColorStyle={getColorStyle}
+                  />
+                )}
+              </div>
             )}
           </div>
         </section>
 
         {/* Right Sidebar Section */}
-        <aside className={`legacy-list-panel ${isSidebarOpen ? "" : "collapsed"}`}>
+        {isSidebarOpen && (
+          <div
+            className={`legacy-sidebar-resize-handle ${isResizingSidebar ? "is-resizing" : ""}`}
+            onPointerDown={startSidebarResize}
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize sidebar"
+          />
+        )}
+        <aside
+          className={`legacy-list-panel ${isSidebarOpen ? "" : "collapsed"}`}
+          style={sidebarWidth !== null ? ({ "--sidebar-width": `${sidebarWidth}px` } as React.CSSProperties) : undefined}
+          suppressHydrationWarning
+        >
           {/* Filters Panel */}
           <section className="legacy-list-block legacy-list-controls">
             {/* Mobile collapsible filters header toggle */}
@@ -626,8 +983,8 @@ export function EventApp({
               onClick={() => setIsMobileFiltersOpen(!isMobileFiltersOpen)}
               title={isMobileFiltersOpen ? "Hide filters" : "Show filters"}
             >
-              <span>🔍 Filters & Search</span>
-              <span>{isMobileFiltersOpen ? "🔼 Collapse" : "🔽 Expand"}</span>
+              <span><Icon name="search" size={14} /> Filters & Search</span>
+              <span><Icon name={isMobileFiltersOpen ? "chevronUp" : "chevronDown"} size={14} /> {isMobileFiltersOpen ? "Collapse" : "Expand"}</span>
             </button>
 
             <div className={`legacy-mobile-filter-body ${isMobileFiltersOpen ? "is-open" : ""}`}>
@@ -644,8 +1001,8 @@ export function EventApp({
               onClick={() => setIsMobileScheduleOpen(!isMobileScheduleOpen)}
               title={isMobileScheduleOpen ? "Hide schedule list" : "Show schedule list"}
             >
-              <span>📋 Running Schedule</span>
-              <span>{isMobileScheduleOpen ? "🔼 Collapse" : "🔽 Expand"}</span>
+              <span><Icon name="clipboard" size={14} /> Running Schedule</span>
+              <span><Icon name={isMobileScheduleOpen ? "chevronUp" : "chevronDown"} size={14} /> {isMobileScheduleOpen ? "Collapse" : "Expand"}</span>
             </button>
 
             <div className={`legacy-mobile-schedule-body ${isMobileScheduleOpen ? "is-open" : ""}`}>
@@ -669,7 +1026,7 @@ export function EventApp({
             setIsMobileScheduleOpen(false);
           }}
         >
-          🔍 Filters &amp; Search {activeFiltersCount > 0 && <span className="mobile-badge">{activeFiltersCount}</span>}
+          <Icon name="search" size={14} /> Filters &amp; Search {activeFiltersCount > 0 && <span className="mobile-badge">{activeFiltersCount}</span>}
         </button>
         {mainTab === "calendar" && (
           <button
@@ -677,7 +1034,7 @@ export function EventApp({
             className={`mobile-bar-btn hide-empty-btn ${hideEmptyHours ? "active" : ""}`}
             onClick={() => setHideEmptyHours(!hideEmptyHours)}
           >
-            {hideEmptyHours ? "👁️ Hide Empty Hours" : "👁️ Show All Hours"}
+            <Icon name={hideEmptyHours ? "eyeOff" : "eye"} size={14} /> {hideEmptyHours ? "Hide Empty Hours" : "Show All Hours"}
           </button>
         )}
         <button
@@ -688,7 +1045,7 @@ export function EventApp({
             setIsMobileFiltersOpen(false);
           }}
         >
-          📋 Running Schedule
+          <Icon name="clipboard" size={14} /> Running Schedule
         </button>
       </div>
 
@@ -697,9 +1054,9 @@ export function EventApp({
         <div className="mobile-drawer-overlay" onClick={() => setIsMobileFiltersOpen(false)}>
           <div className="mobile-drawer-content" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-drawer-header">
-              <h3>🔍 Filters &amp; Search</h3>
-              <button type="button" className="mobile-drawer-close" onClick={() => setIsMobileFiltersOpen(false)}>
-                ✕
+              <h3><Icon name="search" size={14} /> Filters &amp; Search</h3>
+              <button type="button" className="mobile-drawer-close" aria-label="Close" onClick={() => setIsMobileFiltersOpen(false)}>
+                <Icon name="x" size={16} />
               </button>
             </div>
             <div className="mobile-drawer-body">
@@ -714,9 +1071,9 @@ export function EventApp({
         <div className="mobile-drawer-overlay" onClick={() => setIsMobileScheduleOpen(false)}>
           <div className="mobile-drawer-content" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-drawer-header">
-              <h3>📋 Running Schedule ({filteredAndSortedEvents.length})</h3>
-              <button type="button" className="mobile-drawer-close" onClick={() => setIsMobileScheduleOpen(false)}>
-                ✕
+              <h3><Icon name="clipboard" size={14} /> Running Schedule ({filteredAndSortedEvents.length})</h3>
+              <button type="button" className="mobile-drawer-close" aria-label="Close" onClick={() => setIsMobileScheduleOpen(false)}>
+                <Icon name="x" size={16} />
               </button>
             </div>
             <div className="mobile-drawer-body">
@@ -733,10 +1090,19 @@ export function EventApp({
         </footer>
       )}
 
+      <Toasts toasts={toasts} onRemove={removeToast} />
+
       <EventModal
         modalEvent={modalEvent}
         onClose={() => setModalEvent(null)}
         getColorStyle={getColorStyle}
+        isStarred={isStarred}
+        onToggleStar={toggleStar}
+        onShowOnMap={(venueId) => {
+          setFocusedVenueId(venueId);
+          setMainTab("map");
+        }}
+        venues={venues}
       />
     </main>
   );

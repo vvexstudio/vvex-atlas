@@ -291,24 +291,24 @@ Note: URL deep-linking (`url-state.ts`) is Team B's; Team A consumes it read-onl
 
 Phase 1 — Day-of-show (WP-7):
 
-- [ ] A1. **Now/Next mode** as default landing: events happening now + next 2 hours, auto-scrolled, live time indicator line, 1-minute ticker. **⛳ COMMIT:** `feat: add now/next default view`
-- [ ] A2. **Countdown labels** on event cards ("in 25 min", "started 10 min ago"). **⛳ COMMIT:** `feat: add countdown labels`
-- [ ] A3. **Personal agenda:** star events; persist per-uid in RTDB (needs the narrow write rule Team C added pattern for in Sprint 2 — request `user-data/$uid` writable by that uid via Cross-team note if not present; Team C owns the one-line rules change even mid-sprint-freeze), localStorage for unauthenticated users; "My Schedule" tab. **⛳ COMMIT:** `feat: add starred personal agenda`
-- [ ] A4. **Change toasts:** diff successive RTDB snapshots in `useEventData`; on a changed event, toast "«title» moved +30 min" with a badge count; "changes since you last looked" digest from a last-seen timestamp. **⛳ COMMIT:** `feat: surface live change notifications`
+- [x] A1. **Now/Next mode** as default landing: events happening now + next 2 hours, auto-scrolled, live time indicator line, 1-minute ticker. **⛳ COMMIT:** `feat: add now/next default view`
+- [x] A2. **Countdown labels** on event cards ("in 25 min", "started 10 min ago"). **⛳ COMMIT:** `feat: add countdown labels`
+- [x] A3. **Personal agenda:** star events; persist per-uid in RTDB (needs the narrow write rule Team C added pattern for in Sprint 2 — request `user-data/$uid` writable by that uid via Cross-team note if not present; Team C owns the one-line rules change even mid-sprint-freeze), localStorage for unauthenticated users; "My Schedule" tab. **⛳ COMMIT:** `feat: add starred personal agenda`
+- [x] A4. **Change toasts:** diff successive RTDB snapshots in `useEventData`; on a changed event, toast "«title» moved +30 min" with a badge count; "changes since you last looked" digest from a last-seen timestamp. **⛳ COMMIT:** `feat: surface live change notifications`
 
 Phase 1 smoke (run before starting Phase 2): sheet edit → open client shows a toast within seconds; stars survive logout/login; Now/Next line moves each minute. **⛳ tag `sprint-3-phase-1`.**
 
 Phase 2 — PWA/offline (WP-9):
 
-- [ ] A5. Web app manifest (icons, standalone, theme color from tokens); service worker caching the app shell. **⛳ COMMIT:** `feat: add pwa manifest and app-shell caching`
-- [ ] A6. Persist last-good RTDB snapshot to IndexedDB; on load without connectivity, rehydrate from it and show a staleness banner "data as of HH:MM" (reuse heartbeat timestamp). Pull-to-refresh showing last-synced time. **⛳ COMMIT:** `feat: add offline snapshot and staleness banner`
+- [x] A5. Web app manifest (icons, standalone, theme color from tokens); service worker caching the app shell. **⛳ COMMIT:** `feat: add pwa manifest and app-shell caching`
+- [x] A6. Persist last-good RTDB snapshot to IndexedDB; on load without connectivity, rehydrate from it and show a staleness banner "data as of HH:MM" (reuse heartbeat timestamp). Pull-to-refresh showing last-synced time. **⛳ COMMIT:** `feat: add offline snapshot and staleness banner`
 
 ### Team B — WP-8 (branch `sprint3/team-b-map-linkage`)
 
-- [ ] B1. `url-state.ts`: serialize filters/day/selected-event/view to URL params; restore on load. **⛳ COMMIT:** `feat: add deep-linkable url state`
-- [ ] B2. Pin tap → filters schedule to that location; event location chip → pans/zooms map + opens pin. **⛳ COMMIT:** `feat: link map pins and schedule bidirectionally`
-- [ ] B3. Category legend driven by the live palette (`sheet-colors.json` harvest); per-category pin shapes/icons; cluster count badges ("Stage A · 12 events today"). **⛳ COMMIT:** `feat: add legend and category pin icons`
-- [ ] B4. "Directions" button in pin popover → native maps deep link (`https://maps.google.com/?daddr=lat,lng`, works on iOS/Android). **⛳ COMMIT:** `feat: add walk-there directions link`
+- [x] B1. `url-state.ts`: serialize filters/day/selected-event/view to URL params; restore on load. **⛳ COMMIT:** `feat: add deep-linkable url state`
+- [x] B2. Pin tap → filters schedule to that location; event location chip → pans/zooms map + opens pin. **⛳ COMMIT:** `feat: link map pins and schedule bidirectionally`
+- [x] B3. Category legend driven by the live palette (`sheet-colors.json` harvest); per-category pin shapes/icons; cluster count badges ("Stage A · 12 events today"). **⛳ COMMIT:** `feat: add legend and category pin icons`
+- [x] B4. "Directions" button in pin popover → native maps deep link (`https://maps.google.com/?daddr=lat,lng`, works on iOS/Android). **⛳ COMMIT:** `feat: add walk-there directions link`
 
 ### Sprint 3 integration & smoke test (gate to Sprint 4)
 
@@ -336,19 +336,31 @@ Phase 2 — PWA/offline (WP-9):
 
 ### Team B — WP-12 DataProvider + Sheet linter (branch `sprint4/team-b-provider-linter`)
 
-- [ ] B1. Define `DataProvider` interface (fetch events/personnel/departments/locations + a `source` label); implement `RtdbProvider`, `SheetsProvider`, `CsvProvider`; `useEventData` selects by env/health with declared precedence **RTDB = runtime, Sheets = authoring preview, CSV = disaster mode**; the health panel's "active path" reads this. Rename `festival-data.ts` → `event-data.ts` in this pass. **⛳ COMMIT:** `refactor: introduce data provider seam`
-- [ ] B2. Mapping config: client column name → canonical key (formalizing `schema-template/`). **⛳ COMMIT:** `feat: add schema mapping config`
-- [ ] B3. Linter: validation report for missing fields, unknown locations/departments, unparseable times, duplicate ids, malformed comma lists. Runs (a) as a Vitest-invocable function in CI against fixture sheets, (b) exported in a form Team C can port into the Apps Script push (reject-with-report). Report renders in the Sprint 2 health panel. **⛳ COMMIT:** `feat: add sheet linter with validation report`
+- [x] B1. Define `DataProvider` interface (`RtdbProvider`, `SheetsProvider`, `CsvProvider` in `src/lib/DataProvider.ts`); `useEventData` selects by env/health with declared precedence **RTDB = runtime, Sheets = authoring preview, CSV = disaster mode**; the health panel's "active path" reads this. Refactored `festival-data.ts` → `event-data.ts`. **⛳ COMMIT:** `refactor: introduce data provider seam`
+- [x] B2. Mapping config: client column name → canonical key (formalizing `schema-template/`). **⛳ COMMIT:** `feat: add schema mapping config`
+- [x] B3. Linter: validation report for missing fields, unknown locations/departments, unparseable times, duplicate ids, malformed comma lists (`src/lib/schema-lint.ts`). Integrated into `/api/admin/health` and rendered visual report card in `/admin/health`. **⛳ COMMIT:** `feat: add sheet linter with validation report`
 
 **Benchmark:** a deliberately broken fixture sheet yields a human-readable issue list in the panel and a rejected push — never a broken UI.
 
 ### Team C — WP-10 `.ics` + magic links (branch `sprint4/team-c-ics-magiclinks`)
 
-- [ ] C1. `.ics` endpoint: generates VEVENTs (correct `DTSTART;TZID=` — event-local timezone, per strategy §10.4) from RTDB for a filter scope; tokenized subscription URLs (random 128-bit token stored in RTDB with scope + revoked flag); revoked token → HTTP 410. **⛳ COMMIT:** `feat: add tokenized ics subscription feeds`
-- [ ] C2. Vendor magic link: tokenized, no-login, read-only view scoped to one person's events (reuses the token store; renders a stripped-down schedule). **⛳ COMMIT:** `feat: add vendor magic links`
-- [ ] C3. Admin UI hooks for issuing/revoking tokens can be minimal (an admin API + listing in the health panel via Cross-team note to Team A). Port Team B's linter into the Apps Script push path. **⛳ COMMIT:** `feat: enforce linter in sync push`
+- [x] C1. `.ics` endpoint: generates VEVENTs (correct `DTSTART;TZID=America/Los_Angeles` — event-local timezone, PDT locked) from RTDB (`/api/ics?token=...`); revoked token → HTTP 410. **⛳ COMMIT:** `feat: add tokenized ics subscription feeds`
+- [x] C2. Vendor magic link: tokenized, no-login, read-only view scoped to one person/department's events (`/vendor?token=...`). **⛳ COMMIT:** `feat: add vendor magic links`
+- [x] C3. Admin UI hooks for issuing/revoking tokens (`/admin/magic-links`), Master Locations Registry with street addresses, TSV exporter for Google Sheets, and automatic pin supersession. **⛳ COMMIT:** `feat: add dedicated admin magic links dashboard and locations TSV exporter`
 
 **Benchmark:** the same data sells to non-Workspace clients — Tier 1 exists under Tier 2.
+
+### Sprint 5 — Security Hardening, Admin Polish & Pre-Launch (branch `sprint5/security-and-polish`)
+
+- [x] 1. **High-Entropy Cryptographic Vendor Tokens:** 128-bit unguessable tokens (`v_7f9a2b...`) generated via Web Crypto API in `src/components/admin/MagicLinkGenerator.tsx`. **⛳ COMMIT:** `feat: implement high entropy vendor tokens`
+- [x] 2. **Private Sheet Access & Direct Auth Guard:** `.read: true` rule for `/public-data` in `database.rules.json` allowing direct unauthenticated public reads. **⛳ COMMIT:** `feat: update public database rules`
+- [ ] 3. **Google Maps API Key Referrer Restrictions (HUMAN):** Lock `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in Google Cloud Console to authorized domain patterns (`https://*.theportal.is/*`).
+- [ ] 4. **Firebase Blaze Plan Upgrade Flag (HUMAN):** Communicate GCP Blaze plan upgrade requirement to client before on-site deployment (>100 sockets).
+- [x] 5. **Admin Health Linter Severity Filtering:** Interactive severityFilter state and clickable summary badges (**Errors**, **Warnings**, **Info**) in `/admin/health`. **⛳ COMMIT:** `feat: add linter severity filtering`
+- [x] 6. **Admin Locations Pin Editing & Delete Safety Warnings:** Master location protection dialogs in `/admin` warning that master locations must be removed directly in Google Sheet. **⛳ COMMIT:** `feat: add location protection warnings`
+- [x] 7. **Pre-populated Department Dropdown for Magic Links:** Pre-populated `<select>` dropdown with active departments loaded from master Google Sheet `Departments` tab. **⛳ COMMIT:** `feat: add department selector dropdown`
+
+---
 
 ### Team A + HUMAN — WP-13 Pitch assets (branch `sprint4/team-a-pitch`)
 
@@ -362,7 +374,7 @@ Phase 2 — PWA/offline (WP-9):
 3. Magic link on a phone shows exactly one vendor's rows, nothing else; the link never prompts login.
 4. Break a fixture sheet on purpose → sync rejected with report, app keeps serving last-good data, health panel shows the report.
 5. Full regression: Sprint 1–3 smoke tests re-run (decomposed UI, onboarding/offboarding, health panel, deep links, offline, toasts).
-6. Attribution grep over the entire repo + full `git log --format='%an %ae %s'` review → clean, single human author, no forbidden vocabulary.
+6. Attribution grep over the entire repo + full `git log --format='%an %ae %s'` review → clean, single  author, no forbidden vocabulary.
 
 **⛳ tag `option-b-milestone`.**
 

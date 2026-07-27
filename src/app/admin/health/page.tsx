@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Card } from "@/components/ui/Card";
+import { Chip } from "@/components/ui/Chip";
+import { Icon } from "@/components/ui/icons";
+import { MagicLinkGenerator } from "@/components/admin/MagicLinkGenerator";
 
 interface HealthData {
   dataSource: string;
@@ -13,6 +17,11 @@ interface HealthData {
     } | null;
     heartbeatAgeSeconds: number | null;
   };
+  linterReport?: {
+    timestamp: string;
+    issueCounts: { errors: number; warnings: number; info: number };
+    issues: { id: string; severity: "error" | "warning" | "info"; category: string; message: string }[];
+  };
   counts: {
     venues: number;
     events: number;
@@ -21,6 +30,14 @@ interface HealthData {
   };
   unmappedLocations: string[];
   onboardingFailures: { email: string; status: string }[];
+  personnelLog?: {
+    name: string;
+    email: string;
+    role: string;
+    department: string;
+    active: boolean;
+    inviteStatus: string;
+  }[];
 }
 
 export default function AdminHealthPage() {
@@ -47,19 +64,26 @@ export default function AdminHealthPage() {
       }
     }
     fetchHealth();
-    
+
     // Refresh every 30 seconds
     const interval = setInterval(fetchHealth, 30000);
     return () => clearInterval(interval);
   }, []);
 
+  const [severityFilter, setSeverityFilter] = useState<"all" | "error" | "warning" | "info">("all");
+
+  const filteredLinterIssues = data?.linterReport?.issues.filter((issue) => {
+    if (severityFilter === "all") return true;
+    return issue.severity === severityFilter;
+  }) || [];
+
   if (isLoading) {
-    return <div style={{ padding: "2rem", textAlign: "center", color: "#6b7280" }}>Loading system health parameters...</div>;
+    return <div className="admin-loading">Loading system health parameters...</div>;
   }
 
   if (error) {
     return (
-      <div style={{ padding: "1.5rem", backgroundColor: "#fee2e2", border: "1px solid #fca5a5", borderRadius: "8px", color: "#b91c1c", margin: "2rem 0" }}>
+      <div className="admin-error">
         <strong>System Error:</strong> {error}
       </div>
     );
@@ -74,119 +98,224 @@ export default function AdminHealthPage() {
     : "Never";
 
   return (
-    <div style={{ display: "grid", gap: "2rem" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h1 style={{ fontSize: "1.5rem", fontWeight: 600 }}>System & Data Health Panel</h1>
-        <span style={{ 
-          fontSize: "0.85rem", 
-          padding: "0.25rem 0.75rem", 
-          borderRadius: "9999px", 
-          backgroundColor: "#1e1a16", 
-          color: "#f5ead2",
-          fontWeight: 700 
-        }}>
-          Live System Stats
-        </span>
+    <div className="admin-page-stack">
+      <div className="admin-page-header">
+        <h1 className="admin-page-title">System & Data Health Panel</h1>
+        <span className="admin-live-badge">Live System Stats</span>
       </div>
 
       {/* Grid Row 1: Source and Sync status */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1.5rem" }}>
-        
+      <div className="admin-grid-cols">
         {/* Active Data Source */}
-        <div style={{ background: "white", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 1px 3px 0 rgba(0,0,0,0.1)", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-          <h3 style={{ fontSize: "0.9rem", color: "#6b7280", fontWeight: 600, margin: 0, textTransform: "uppercase" }}>Active Data Gateway</h3>
-          <div style={{ fontSize: "1.25rem", fontWeight: 700, color: "#111827" }}>{data.dataSource}</div>
-          <p style={{ margin: 0, fontSize: "0.8rem", color: "#6b7280" }}>
+        <Card className="admin-card admin-stat-card">
+          <h3 className="eyebrow admin-section-title">Active Data Gateway</h3>
+          <div className="admin-stat-value">{data.dataSource}</div>
+          <p className="admin-stat-note">
             Canonical data source from which the Next.js server is rendering the main schedules and venues.
           </p>
-        </div>
+        </Card>
 
         {/* Database Sync Heartbeat */}
-        <div style={{ 
-          background: "white", 
-          padding: "1.5rem", 
-          borderRadius: "8px", 
-          boxShadow: "0 1px 3px 0 rgba(0,0,0,0.1)", 
-          display: "flex", 
-          flexDirection: "column", 
-          gap: "0.5rem",
-          borderLeft: `5px solid ${isHeartbeatStale ? "#ef4444" : "#10b981"}`
-        }}>
-          <h3 style={{ fontSize: "0.9rem", color: "#6b7280", fontWeight: 600, margin: 0, textTransform: "uppercase" }}>Sync Heartbeat Status</h3>
-          <div style={{ fontSize: "1.25rem", fontWeight: 700, color: isHeartbeatStale ? "#ef4444" : "#111827" }}>
-            {isHeartbeatStale ? "⚠️ Heartbeat Stale" : "✅ Heartbeat Healthy"}
+        <Card
+          className={`admin-card admin-stat-card ${
+            isHeartbeatStale ? "admin-heartbeat-stale" : "admin-heartbeat-ok"
+          }`}
+        >
+          <h3 className="eyebrow admin-section-title">Sync Heartbeat Status</h3>
+          <div className="admin-stat-value">
+            <Icon name={isHeartbeatStale ? "warning" : "checkCircle"} size={18} />
+            {isHeartbeatStale ? "Heartbeat Stale" : "Heartbeat Healthy"}
           </div>
-          <div style={{ fontSize: "0.85rem", color: "#374151" }}>
-            <strong>Last Sync:</strong> {heartbeatTimeStr} 
-            {data.firebase.heartbeatAgeSeconds !== null && ` (${Math.floor(data.firebase.heartbeatAgeSeconds / 60)}m ago)`}
+          <div>
+            <strong>Last Sync:</strong> {heartbeatTimeStr}
+            {data.firebase.heartbeatAgeSeconds !== null &&
+              ` (${Math.floor(data.firebase.heartbeatAgeSeconds / 60)}m ago)`}
           </div>
-          <p style={{ margin: 0, fontSize: "0.8rem", color: "#6b7280" }}>
+          <p className="admin-stat-note">
             Updates every time the Google Sheets Apps Script successfully pushes data to Firebase Realtime Database.
           </p>
-        </div>
+        </Card>
       </div>
 
       {/* Grid Row 2: Row Counts */}
-      <div style={{ background: "white", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 1px 3px 0 rgba(0,0,0,0.1)" }}>
-        <h3 style={{ fontSize: "0.9rem", color: "#6b7280", fontWeight: 600, marginBottom: "1rem", textTransform: "uppercase" }}>Data Row Metrics</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem", textAlign: "center" }}>
-          <div style={{ padding: "1rem", background: "#f9fafb", borderRadius: "6px" }}>
-            <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "#111827" }}>{data.counts.venues}</div>
-            <div style={{ fontSize: "0.75rem", color: "#6b7280" }}>Locations</div>
+      <Card className="admin-card">
+        <h3 className="eyebrow admin-section-title">Data Row Metrics</h3>
+        <div className="admin-metric-grid">
+          <div className="admin-metric">
+            <div className="admin-metric-value">{data.counts.venues}</div>
+            <div className="admin-metric-label">Locations</div>
           </div>
-          <div style={{ padding: "1rem", background: "#f9fafb", borderRadius: "6px" }}>
-            <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "#111827" }}>{data.counts.events}</div>
-            <div style={{ fontSize: "0.75rem", color: "#6b7280" }}>Events (ROS)</div>
+          <div className="admin-metric">
+            <div className="admin-metric-value">{data.counts.events}</div>
+            <div className="admin-metric-label">Events (ROS)</div>
           </div>
-          <div style={{ padding: "1rem", background: "#f9fafb", borderRadius: "6px" }}>
-            <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "#111827" }}>{data.counts.personnel}</div>
-            <div style={{ fontSize: "0.75rem", color: "#6b7280" }}>Personnel</div>
+          <div className="admin-metric">
+            <div className="admin-metric-value">{data.counts.personnel}</div>
+            <div className="admin-metric-label">Personnel</div>
           </div>
-          <div style={{ padding: "1rem", background: "#f9fafb", borderRadius: "6px" }}>
-            <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "#111827" }}>{data.counts.departments}</div>
-            <div style={{ fontSize: "0.75rem", color: "#6b7280" }}>Departments</div>
+          <div className="admin-metric">
+            <div className="admin-metric-value">{data.counts.departments}</div>
+            <div className="admin-metric-label">Departments</div>
           </div>
         </div>
-      </div>
+      </Card>
 
-      {/* Grid Row 3: Warnings and Failures */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1.5rem" }}>
-        
-        {/* Unmapped Locations warnings */}
-        <div style={{ background: "white", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 1px 3px 0 rgba(0,0,0,0.1)" }}>
-          <h3 style={{ fontSize: "0.9rem", color: "#6b7280", fontWeight: 600, marginBottom: "1rem", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            ⚠️ Unmapped Locations ({data.unmappedLocations.length})
-          </h3>
-          {data.unmappedLocations.length === 0 ? (
-            <p style={{ color: "#10b981", fontSize: "0.85rem", margin: 0 }}>All locations in events match a valid location on the map.</p>
+      {/* Grid Row 3: Schema Linter Report */}
+      {data.linterReport && (
+        <Card className="admin-card">
+          <div className="admin-section-head">
+            <h3 className="eyebrow admin-section-title">
+              <Icon name="search" size={14} />
+              Schema Validation & Quality Report
+            </h3>
+            <div className="admin-chip-row">
+              <button
+                type="button"
+                onClick={() => setSeverityFilter(severityFilter === "all" ? "all" : "all")}
+                style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
+              >
+                <Chip tone={severityFilter === "all" ? "neutral" : "neutral"}>All ({data.linterReport.issues.length})</Chip>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSeverityFilter(severityFilter === "error" ? "all" : "error")}
+                style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
+              >
+                <Chip tone="danger" style={{ opacity: severityFilter === "all" || severityFilter === "error" ? 1 : 0.4 }}>
+                  {data.linterReport.issueCounts.errors} Errors {severityFilter === "error" ? "✓" : ""}
+                </Chip>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSeverityFilter(severityFilter === "warning" ? "all" : "warning")}
+                style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
+              >
+                <Chip tone="warn" style={{ opacity: severityFilter === "all" || severityFilter === "warning" ? 1 : 0.4 }}>
+                  {data.linterReport.issueCounts.warnings} Warnings {severityFilter === "warning" ? "✓" : ""}
+                </Chip>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSeverityFilter(severityFilter === "info" ? "all" : "info")}
+                style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
+              >
+                <Chip tone="info" style={{ opacity: severityFilter === "all" || severityFilter === "info" ? 1 : 0.4 }}>
+                  {data.linterReport.issueCounts.info} Info {severityFilter === "info" ? "✓" : ""}
+                </Chip>
+              </button>
+            </div>
+          </div>
+          {filteredLinterIssues.length === 0 ? (
+            <p className="admin-ok-text">
+              <Icon name="checkCircle" size={14} />
+              {severityFilter === "all"
+                ? "0 schema lint issues detected. Data quality is clean."
+                : `0 ${severityFilter} issues found.`}
+            </p>
           ) : (
-            <ul style={{ margin: 0, paddingLeft: "1.2rem", fontSize: "0.85rem", color: "#374151" }}>
-              {data.unmappedLocations.map((loc, idx) => (
-                <li key={idx} style={{ marginBottom: "0.25rem" }}>{loc}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        {/* Failed Onboarding Invites */}
-        <div style={{ background: "white", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 1px 3px 0 rgba(0,0,0,0.1)" }}>
-          <h3 style={{ fontSize: "0.9rem", color: "#6b7280", fontWeight: 600, marginBottom: "1rem", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            ❌ Failed Onboarding Invites ({data.onboardingFailures.length})
-          </h3>
-          {data.onboardingFailures.length === 0 ? (
-            <p style={{ color: "#10b981", fontSize: "0.85rem", margin: 0 }}>No onboarding invite failures found in Personnel.</p>
-          ) : (
-            <div style={{ display: "grid", gap: "0.75rem", maxHeight: "250px", overflowY: "auto" }}>
-              {data.onboardingFailures.map((fail, idx) => (
-                <div key={idx} style={{ background: "#fef2f2", padding: "0.5rem", borderLeft: "3px solid #ef4444", borderRadius: "4px", fontSize: "0.8rem" }}>
-                  <strong>{fail.email}</strong>
-                  <div style={{ color: "#b91c1c", marginTop: "2px" }}>{fail.status}</div>
+            <div className="admin-issue-list">
+              {filteredLinterIssues.map((issue) => (
+                <div key={issue.id} className={`admin-issue-row admin-issue-${issue.severity}`}>
+                  <strong>[{issue.category.toUpperCase()}]</strong> {issue.message}
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </Card>
+      )}
+
+      {/* Grid Row 4: Warnings and Failures */}
+      <div className="admin-grid-cols">
+        {/* Unmapped Locations warnings */}
+        <Card className="admin-card">
+          <h3 className="eyebrow admin-section-title">
+            <Icon name="warning" size={14} />
+            Unmapped Locations ({data.unmappedLocations.length})
+          </h3>
+          {data.unmappedLocations.length === 0 ? (
+            <p className="admin-ok-text">All locations in events match a valid location on the map.</p>
+          ) : (
+            <ul className="admin-plain-list">
+              {data.unmappedLocations.map((loc, idx) => (
+                <li key={idx}>{loc}</li>
+              ))}
+            </ul>
+          )}
+        </Card>
+
+        {/* Failed Onboarding Invites */}
+        <Card className="admin-card">
+          <h3 className="eyebrow admin-section-title">
+            <Icon name="xCircle" size={14} />
+            Failed Onboarding Invites ({data.onboardingFailures.length})
+          </h3>
+          {data.onboardingFailures.length === 0 ? (
+            <p className="admin-ok-text">No onboarding invite failures found in Personnel.</p>
+          ) : (
+            <div className="admin-fail-list">
+              {data.onboardingFailures.map((fail, idx) => (
+                <div key={idx} className="admin-fail-row">
+                  <strong className="mono">{fail.email}</strong>
+                  <div className="admin-fail-status">{fail.status}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
       </div>
+
+      {/* Grid Row 4: Vendor Magic Links & iCal Feed Link Generator */}
+      <Card className="admin-card">
+        <h3 className="eyebrow admin-section-title">
+          <Icon name="key" size={14} />
+          Vendor Magic Links & iCal Subscriptions Link Generator
+        </h3>
+        <p className="admin-section-desc">
+          Issue single-vendor schedule magic links for external crew (no password required) or copy
+          tokenized `.ics` calendar subscription feeds.
+        </p>
+        <MagicLinkGenerator compact />
+      </Card>
+
+      {/* Access & Onboarding Audit Log */}
+      {data.personnelLog && data.personnelLog.length > 0 && (
+        <Card className="admin-card">
+          <h3 className="eyebrow admin-section-title">
+            <Icon name="file" size={14} />
+            Access & Onboarding Audit Log ({data.personnelLog.length} Crew)
+          </h3>
+          <div className="admin-table-wrap">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role / Dept</th>
+                  <th>Status</th>
+                  <th>Sync Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.personnelLog.map((person, idx) => (
+                  <tr key={idx}>
+                    <td>{person.name}</td>
+                    <td className="admin-cell-muted mono">{person.email}</td>
+                    <td>
+                      <Chip tone="neutral">{person.department || person.role}</Chip>
+                    </td>
+                    <td>
+                      <Chip tone={person.active ? "success" : "danger"}>
+                        {person.active ? "Active" : "Revoked"}
+                      </Chip>
+                    </td>
+                    <td className="admin-cell-muted">{person.inviteStatus}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icon } from "@/components/ui/icons";
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -38,10 +39,10 @@ export default async function LoginPage({ searchParams }: PageProps) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#0d0f14",
-        backgroundImage: "radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 40%)",
+        backgroundColor: "var(--bg)",
+        backgroundImage: "radial-gradient(circle at 10% 20%, color-mix(in srgb, var(--accent) 15%, transparent) 0%, transparent 40%), radial-gradient(circle at 90% 80%, color-mix(in srgb, var(--accent) 15%, transparent) 0%, transparent 40%)",
         fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-        color: "#f3f4f6",
+        color: "var(--ink)",
         padding: "1rem",
         position: "relative",
         overflow: "hidden",
@@ -56,7 +57,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
           width: "250px",
           height: "250px",
           borderRadius: "50%",
-          backgroundColor: "#4f46e5",
+          backgroundColor: "var(--accent)",
           filter: "blur(120px)",
           opacity: 0.3,
           zIndex: 0,
@@ -70,7 +71,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
           width: "300px",
           height: "300px",
           borderRadius: "50%",
-          backgroundColor: "#8b5cf6",
+          backgroundColor: "var(--accent)",
           filter: "blur(120px)",
           opacity: 0.25,
           zIndex: 0,
@@ -80,9 +81,9 @@ export default async function LoginPage({ searchParams }: PageProps) {
       {/* Main Glassmorphic Container */}
       <div
         style={{
-          background: "rgba(17, 24, 39, 0.7)",
+          background: "var(--surface-raised)",
           backdropFilter: "blur(20px)",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
+          border: "1px solid var(--line)",
           borderRadius: "20px",
           boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4)",
           padding: "3rem 2.5rem",
@@ -103,13 +104,13 @@ export default async function LoginPage({ searchParams }: PageProps) {
               width: "56px",
               height: "56px",
               borderRadius: "16px",
-              background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
-              boxShadow: "0 0 20px rgba(99, 102, 241, 0.4)",
+              background: "var(--accent)",
+              boxShadow: "0 0 20px color-mix(in srgb, var(--accent) 40%, transparent)",
               marginBottom: "1rem",
-              fontSize: "1.75rem",
+              color: "var(--accent-ink)",
             }}
           >
-            🌀
+            <Icon name="loader" size={28} className="spin" />
           </div>
           <h1
             style={{
@@ -117,20 +118,20 @@ export default async function LoginPage({ searchParams }: PageProps) {
               fontSize: "1.75rem",
               fontWeight: 800,
               letterSpacing: "-0.025em",
-              background: "linear-gradient(to right, #ffffff, #d8b4fe)",
+              background: "linear-gradient(to right, var(--ink), var(--accent))",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
             }}
           >
             Access The Portal
           </h1>
-          <p style={{ margin: "0.5rem 0 0", color: "#9ca3af", fontSize: "0.925rem" }}>
+          <p style={{ margin: "0.5rem 0 0", color: "var(--muted)", fontSize: "0.925rem" }}>
             Interactive Map & Run-of-Show Dashboard
           </p>
         </div>
 
         {/* Informative description */}
-        <p style={{ fontSize: "0.875rem", color: "#9ca3af", lineHeight: "1.5rem", marginBottom: "2rem" }}>
+        <p style={{ fontSize: "0.875rem", color: "var(--muted)", lineHeight: "1.5rem", marginBottom: "2rem" }}>
           This dashboard contains internal scheduling and location details. Access requires email verification from our approved directory.
         </p>
 
@@ -138,26 +139,40 @@ export default async function LoginPage({ searchParams }: PageProps) {
         {error && (
           <div
             style={{
-              backgroundColor: "rgba(239, 68, 68, 0.08)",
-              border: "1px solid rgba(239, 68, 68, 0.25)",
+              backgroundColor: "var(--danger-soft)",
+              border: "1px solid var(--danger)",
               borderRadius: "10px",
               padding: "1rem",
-              marginBottom: "2rem",
+              marginBottom: "1.5rem",
               textAlign: "left",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", marginBottom: "0.35rem" }}>
-              <span style={{ marginRight: "0.5rem", fontSize: "1.1rem" }}>⚠️</span>
-              <strong style={{ color: "#ef4444", fontSize: "0.875rem" }}>{errorTitle}</strong>
+              <span style={{ marginRight: "0.5rem", display: "inline-flex", color: "var(--danger)" }}><Icon name="warning" size={14} /></span>
+              <strong style={{ color: "var(--danger)", fontSize: "0.875rem" }}>{errorTitle}</strong>
             </div>
-            <p style={{ margin: 0, color: "#fca5a5", fontSize: "0.825rem", lineHeight: "1.25rem" }}>
+            <p style={{ margin: "0 0 0.75rem 0", color: "var(--danger)", fontSize: "0.825rem", lineHeight: "1.25rem" }}>
               {errorMessage}
             </p>
+            {error === "unauthorized" && (
+              <Link
+                href="/?role=public"
+                style={{
+                  display: "inline-block",
+                  fontSize: "0.825rem",
+                  fontWeight: 600,
+                  color: "var(--ink)",
+                  textDecoration: "underline",
+                }}
+              >
+                Explore Public Schedule as Guest →
+              </Link>
+            )}
           </div>
         )}
 
         {/* Sign In Buttons */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
           <style dangerouslySetInnerHTML={{ __html: `
             .google-signin-btn {
               transition: transform 0.2s, box-shadow 0.2s;
@@ -166,11 +181,15 @@ export default async function LoginPage({ searchParams }: PageProps) {
               transform: translateY(-1px);
               box-shadow: 0 6px 12px rgba(255, 255, 255, 0.15) !important;
             }
+            .public-signin-btn:hover {
+              background-color: var(--surface) !important;
+              border-color: var(--accent) !important;
+            }
             .admin-gate-link {
               transition: color 0.2s;
             }
             .admin-gate-link:hover {
-              color: #a855f7 !important;
+              color: var(--accent) !important;
             }
           ` }} />
           <a
@@ -181,8 +200,8 @@ export default async function LoginPage({ searchParams }: PageProps) {
               alignItems: "center",
               justifyContent: "center",
               gap: "0.75rem",
-              backgroundColor: "#ffffff",
-              color: "#1f2937",
+              backgroundColor: "var(--surface-raised)",
+              color: "var(--ink)",
               border: "none",
               borderRadius: "10px",
               padding: "0.875rem",
@@ -211,20 +230,44 @@ export default async function LoginPage({ searchParams }: PageProps) {
                 d="M9 3.58c1.32 0 2.5.45 3.44 1.35L15 2.05C13.47.63 11.43 0 9 0 5.46 0 2.39 2.02.9 4.97l3.05 2.32C4.66 5.16 6.65 3.58 9 3.58z"
               />
             </svg>
-            Sign in with Google
+            Sign in with Google (Crew Access)
           </a>
+
+          <Link
+            href="/?role=public"
+            className="public-signin-btn"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.5rem",
+              backgroundColor: "transparent",
+              color: "var(--ink)",
+              border: "1px solid var(--line)",
+              borderRadius: "10px",
+              padding: "0.875rem",
+              fontSize: "0.9rem",
+              fontWeight: 500,
+              textDecoration: "none",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+          >
+            <Icon name="externalLink" size={16} />
+            Continue to Public Map & Schedule (No Login) →
+          </Link>
           
-          <div style={{ marginTop: "1.5rem", borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "1rem" }}>
+          <div style={{ marginTop: "1rem", borderTop: "1px solid var(--line)", paddingTop: "0.875rem" }}>
             <Link
               href="/admin"
               className="admin-gate-link"
               style={{
                 fontSize: "0.825rem",
-                color: "#6b7280",
+                color: "var(--muted)",
                 textDecoration: "none",
               }}
             >
-              🔒 Administrative Login Gate
+              <Icon name="lock" size={12} /> Administrative Login Gate
             </Link>
           </div>
         </div>

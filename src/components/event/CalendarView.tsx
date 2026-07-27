@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { FestivalEvent, Department } from "@/types/festival";
 import { CalendarChip } from "./CalendarChip";
+import { Icon, departmentIcon } from "@/components/ui/icons";
 
 interface DateGroup {
   date: string;
@@ -21,28 +22,14 @@ interface CalendarViewProps {
   setModalEvent: (event: FestivalEvent) => void;
   departments: Department[];
   getColorStyle: (category: "Location" | "Action" | "Department" | "Personnel", value: string | undefined) => React.CSSProperties;
+  currentTime: Date | null;
+  effectiveDateStr: string;
+  highlightedEventId: string | null;
 }
 
-const DEPARTMENT_ICONS: Record<string, string> = {
-  "ATPF": "🎪",
-  "Electricity": "⚡",
-  "F&B": "🍽️",
-  "Fly Fleet": "🚁",
-  "Heavy Equipment (WonderBros)": "🚜",
-  "Heavy Equipment (WonderBros) ": "🚜",
-  "Hospitality": "🛎️",
-  "Med / Sec": "🏥",
-  "Rigging": "⚓",
-  "Set Design": "🎨",
-  "Structural": "🏗️",
-  "SolarPunks": "☀️"
-};
-
-const getDepartmentIcon = (dept: string): string => {
-  if (!dept) return "🏢";
-  const clean = dept.trim();
-  return DEPARTMENT_ICONS[clean] || "🏢";
-};
+const getDepartmentIcon = (dept: string): React.ReactNode => (
+  <Icon name={departmentIcon(dept)} size={12} />
+);
 
 const timeToMinutes = (timeStr: string): number => {
   if (!timeStr || timeStr === "TBD") return -1;
@@ -110,13 +97,16 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   setModalEvent,
   departments,
   getColorStyle,
+  currentTime,
+  effectiveDateStr,
+  highlightedEventId,
 }) => {
   const [activeTbdDropdown, setActiveTbdDropdown] = useState<{ day: string; colKey: string } | null>(null);
 
   if (activeDepartments.length === 0 && activeLocations.length === 0) {
     return (
       <div className="empty-calendar-state">
-        <span className="empty-icon">🔍</span>
+        <span className="empty-icon"><Icon name="search" size={28} /></span>
         <h3>No columns to display</h3>
         <p>No locations or departments match your current filters.</p>
       </div>
@@ -129,13 +119,20 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         <div className="spatial-calendar-grid-content">
           {groupedEventsByDate.length === 0 ? (
             <div className="empty-calendar-state">
-              <span className="empty-icon">🔍</span>
+              <span className="empty-icon"><Icon name="search" size={28} /></span>
               <h3>No items match your filters</h3>
               <p>Try resetting filters or typing another search query.</p>
             </div>
           ) : (
             groupedEventsByDate.map((dateGroup) => {
               const activeHours = hideEmptyHours ? getActiveHoursForDay(dateGroup.events) : hoursArray;
+              
+              const currentMinutes = currentTime ? currentTime.getHours() * 60 + currentTime.getMinutes() : -1;
+              const isToday = dateGroup.date === effectiveDateStr;
+              const activeCurrent = isToday && currentMinutes !== -1 && hideEmptyHours
+                ? getActiveMinuteOffset(currentMinutes, activeHours)
+                : currentMinutes;
+              const lineTop = (activeCurrent / 60) * hourHeightScale;
               
               const displayDeptsForDay = hideEmptyHours
                 ? activeDepartments.filter(dept =>
@@ -155,7 +152,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               return (
                 <div key={dateGroup.date} className="calendar-day-section" style={{ width: "100%", minWidth: totalGridWidth }}>
                   {/* Sticky Date/Day Banner */}
-                  <div className="calendar-day-header font-bold">
+                  <div className="calendar-day-header">
                     <span className="sticky-date-label">{dateGroup.dateLabel}</span>
                   </div>
 
@@ -173,7 +170,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                             maxWidth: `${displayDeptsForDay.length * columnWidthScale * 1.25}px`
                           }}
                         >
-                          <span className="sticky-parent-label">🏢 Departments</span>
+                          <span className="sticky-parent-label"><Icon name="building" size={12} /> Departments</span>
                         </div>
                       )}
                       {displayLocsForDay.length > 0 && (
@@ -185,7 +182,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                             maxWidth: `${displayLocsForDay.length * columnWidthScale * 1.25}px`
                           }}
                         >
-                          <span className="sticky-parent-label">📍 Locations</span>
+                          <span className="sticky-parent-label"><Icon name="mapPin" size={12} /> Locations</span>
                         </div>
                       )}
                     </div>
@@ -221,19 +218,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                 <div className="tooltip-body">
                                   {deptInfo["Lead Point Person"] && (
                                     <div className="tooltip-item">
-                                      <span className="tooltip-icon">👤</span>
+                                      <span className="tooltip-icon"><Icon name="user" size={12} /></span>
                                       <span className="tooltip-text">{deptInfo["Lead Point Person"]}</span>
                                     </div>
                                   )}
                                   {deptInfo["Lead Phone"] && (
                                     <div className="tooltip-item">
-                                      <span className="tooltip-icon">📞</span>
+                                      <span className="tooltip-icon"><Icon name="phone" size={12} /></span>
                                       <span className="tooltip-text">{deptInfo["Lead Phone"]}</span>
                                     </div>
                                   )}
                                   {deptInfo["Lead Email"] && (
                                     <div className="tooltip-item">
-                                      <span className="tooltip-icon">✉️</span>
+                                      <span className="tooltip-icon"><Icon name="mail" size={12} /></span>
                                       <span className="tooltip-text">{deptInfo["Lead Email"]}</span>
                                     </div>
                                   )}
@@ -274,7 +271,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                           setActiveTbdDropdown(null);
                                         }}
                                       >
-                                        📌 {event.title}
+                                        <Icon name="pin" size={12} /> {event.title}
                                       </button>
                                     ))}
                                   </div>
@@ -336,7 +333,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                           setActiveTbdDropdown(null);
                                         }}
                                       >
-                                        📌 {event.title}
+                                        <Icon name="pin" size={12} /> {event.title}
                                       </button>
                                     ))}
                                   </div>
@@ -470,7 +467,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                               return (
                                 <div
                                   key={`card-dept-${event.id}`}
-                                  className={`calendar-event-card ${isHighlighted ? "highlighted" : ""} ${searchQuery.trim() !== "" && !isHighlighted ? "dimmed" : ""}`}
+                                  id={`event-card-dept-${event.id}`}
+                                  className={`calendar-event-card ${isHighlighted ? "highlighted" : ""} ${searchQuery.trim() !== "" && !isHighlighted ? "dimmed" : ""} ${highlightedEventId === event.id ? "highlight-active" : ""}`}
                                   style={cardStyle}
                                   onClick={() => setModalEvent(event)}
                                 >
@@ -480,8 +478,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                     </div>
                                     <div className="event-card-title">{event.title}</div>
                                     <div className="event-card-meta">
-                                      {event.locationName && <span className="meta-loc">📍 {event.locationName}</span>}
-                                      {event.leadPointPerson && <span className="meta-lead">👤 {event.leadPointPerson}</span>}
+                                      {event.locationName && <span className="meta-loc"><Icon name="mapPin" size={12} /> {event.locationName}</span>}
+                                      {event.leadPointPerson && <span className="meta-lead"><Icon name="user" size={12} /> {event.leadPointPerson}</span>}
                                     </div>
                                   </div>
                                 </div>
@@ -529,20 +527,21 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                               };
 
                               return (
-                                <div
-                                  key={`card-loc-${event.id}`}
-                                  className={`calendar-event-card ${isHighlighted ? "highlighted" : ""} ${searchQuery.trim() !== "" && !isHighlighted ? "dimmed" : ""}`}
-                                  style={cardStyle}
-                                  onClick={() => setModalEvent(event)}
-                                >
+                                 <div
+                                   key={`card-loc-${event.id}`}
+                                   id={`event-card-loc-${event.id}`}
+                                   className={`calendar-event-card ${isHighlighted ? "highlighted" : ""} ${searchQuery.trim() !== "" && !isHighlighted ? "dimmed" : ""} ${highlightedEventId === event.id ? "highlight-active" : ""}`}
+                                   style={cardStyle}
+                                   onClick={() => setModalEvent(event)}
+                                 >
                                   <div className="card-inner">
                                     <div className="event-card-time">
                                       {event.startTime} – {event.endTime}
                                     </div>
                                     <div className="event-card-title">{event.title}</div>
                                     <div className="event-card-meta">
-                                      {event.department && <span className="meta-dept">🏢 {event.department}</span>}
-                                      {event.leadPointPerson && <span className="meta-lead">👤 {event.leadPointPerson}</span>}
+                                      {event.department && <span className="meta-dept"><Icon name="building" size={12} /> {event.department}</span>}
+                                      {event.leadPointPerson && <span className="meta-lead"><Icon name="user" size={12} /> {event.leadPointPerson}</span>}
                                     </div>
                                   </div>
                                 </div>
@@ -552,6 +551,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         );
                       })}
                     </div>
+                    {isToday && activeCurrent >= 0 && activeCurrent <= activeHours.length * 60 && (
+                      <div
+                        className="calendar-live-time-line"
+                        style={{ top: `${lineTop}px` }}
+                      >
+                        <span className="live-line-dot"></span>
+                        <span className="live-line-label">
+                          {currentTime!.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               );

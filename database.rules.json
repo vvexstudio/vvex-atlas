@@ -1,28 +1,22 @@
 {
   "rules": {
     "public-data": {
-      ".read": "auth != null",
+      ".read": true,
       ".write": "false"
     },
     "crew-data": {
-      "departments": {
-        "$department_id": {
-          ".read": "auth.token.role === 'admin' || (auth != null && auth.token.departments != null && auth.token.departments[$department_id] === true)",
-          ".write": "false"
-        }
-      },
-      "venues": {
-        ".read": "auth.token.role === 'crew' || auth.token.role === 'admin'",
-        ".write": "false"
-      },
-      "metadata": {
-        ".read": "auth.token.role === 'crew' || auth.token.role === 'admin'",
-        ".write": "false"
-      }
+      ".read": "auth.token.role === 'crew' || auth.token.role === 'admin'",
+      ".write": "false"
     },
     "admin-data": {
       ".read": "auth.token.role === 'admin'",
       ".write": "false"
+    },
+    "user-data": {
+      "$escaped_email": {
+        ".read": "auth != null && auth.token.escapedEmail === $escaped_email",
+        ".write": "auth != null && auth.token.escapedEmail === $escaped_email"
+      }
     },
     "auth-directory": {
       ".read": "auth != null",

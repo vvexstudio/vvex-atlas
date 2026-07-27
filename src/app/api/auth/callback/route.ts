@@ -89,20 +89,34 @@ export async function GET(request: Request) {
     const approved = await isEmailApproved(sanitizedEmail);
 
     if (!approved) {
-      console.warn(`Access denied: ${sanitizedEmail} is not in the approved list`);
-      return NextResponse.redirect(
-        new URL(`/login?error=unauthorized&email=${encodeURIComponent(sanitizedEmail)}`, origin)
-      );
+      console.warn(`Email ${sanitizedEmail} is not in crew list. Redirecting gracefully to Public View.`);
+      const sessionValue = await createSessionCookie({
+        email: sanitizedEmail,
+        name: name || sanitizedEmail,
+        role: "public",
+        picture,
+      });
+      const cookieStore = await cookies();
+      const cookieOpts = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax" as const,
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7,
+      };
+      cookieStore.set("portal_session", sessionValue, cookieOpts);
+      cookieStore.set("portal_user_session", sessionValue, cookieOpts);
+      return NextResponse.redirect(new URL("/?role=public&notice=guest-public", origin));
     }
 
     // 4. Resolve the user's role from Firebase RTD auth-directory (if available)
-    let role = "guest";
+    let role = "crew";
     if (adminDb) {
       try {
         const escapedEmail = sanitizedEmail.replace(/\./g, ",");
         const userSnapshot = await adminDb.ref(`auth-directory/${escapedEmail}`).once("value");
         if (userSnapshot.exists()) {
-          role = userSnapshot.val().role || "guest";
+          role = userSnapshot.val().role || "crew";
         }
       } catch (dbErr) {
         console.error("Failed to query user role during OAuth callback:", dbErr);
@@ -117,15 +131,17 @@ export async function GET(request: Request) {
       role,
     });
 
-    // Set cookie using next/headers cookies API
+    // Set cookie using next/headers cookies API (support both cookie names)
     const cookieStore = await cookies();
-    cookieStore.set("portal_user_session", sessionCookieVal, {
+    const cookieOpts = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       path: "/",
       maxAge: 60 * 60 * 24 * 7, // 7 days
-      sameSite: "lax",
-    });
+      sameSite: "lax" as const,
+    };
+    cookieStore.set("portal_user_session", sessionCookieVal, cookieOpts);
+    cookieStore.set("portal_session", sessionCookieVal, cookieOpts);
 
     console.log(`Access granted: ${email} successfully logged in`);
     return NextResponse.redirect(new URL(state, origin));

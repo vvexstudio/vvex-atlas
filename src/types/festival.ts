@@ -23,6 +23,7 @@ export type Venue = {
   mapLabel?: string;
   shortDescription: string;
   description: string;
+  address?: string;
   x: number;
   y: number;
   lat?: number;

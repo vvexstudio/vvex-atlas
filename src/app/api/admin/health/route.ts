@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { adminDb } from "@/lib/firebase-admin";
 import { verifySessionCookie, isAdminEmail } from "@/lib/auth";
 import { getFestivalData } from "@/lib/festival-data";
+import { validateFestivalData } from "@/lib/schema-lint";
 
 async function isAuthorized(): Promise<boolean> {
   const cookieStore = await cookies();
@@ -26,6 +27,16 @@ export async function GET() {
 
   // Gather festival data to inspect current state
   const festivalData = await getFestivalData("admin");
+  const personnel = festivalData.personnel || [];
+  const departments = festivalData.departments || [];
+
+  // Run schema linter
+  const linterReport = validateFestivalData(
+    festivalData.events,
+    festivalData.venues,
+    personnel,
+    departments
+  );
 
   const firebaseHealth: {
     configured: boolean;
@@ -65,7 +76,6 @@ export async function GET() {
   });
 
   // Identify failed invites
-  const personnel = festivalData.personnel || [];
   const onboardingFailures = personnel
     .filter((p: any) => p.invite_status && String(p.invite_status).toLowerCase().includes("fail"))
     .map((p: any) => ({
@@ -73,16 +83,33 @@ export async function GET() {
       status: p.invite_status
     }));
 
+  // Format personnel audit log
+  const personnelLog = personnel.map((p: any) => {
+    const rawActive = p.active ?? p.Active ?? p.status ?? true;
+    const isActive = rawActive === true || String(rawActive).toLowerCase() === "true" || rawActive === 1;
+    return {
+      name: p.name || p.Name || "Unnamed",
+      email: p.email || p.Email || "No Email",
+      role: p.role || p.Role || p.department || p.Department || "Crew",
+      department: p.department || p.Department || p.role || p.Role || "General",
+      active: isActive,
+      inviteStatus: p.invite_status || p.inviteStatus || (isActive ? "Active" : "Revoked"),
+    };
+  });
+
   return NextResponse.json({
     dataSource: festivalData.sourceLabel,
     firebase: firebaseHealth,
+    linterReport,
     counts: {
       venues: festivalData.venues.length,
       events: festivalData.events.length,
       personnel: personnel.length,
-      departments: (festivalData.departments || []).length
+      departments: departments.length
     },
     unmappedLocations: Array.from(unmappedLocations),
-    onboardingFailures
+    onboardingFailures,
+    personnelLog,
   });
 }
+

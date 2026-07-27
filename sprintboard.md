@@ -42,26 +42,29 @@ A private, reusable **interactive map + run-of-show (ROS) schedule** app for **T
 
 ## 4. Current State Snapshot
 
-**Stack:** Next.js 16.1.6, React 19.2.3, TypeScript. Google Maps via `@vis.gl/react-google-maps`. Data parsing: `xlsx`, `jszip`, `fast-xml-parser`.
+**Stack:** Next.js 16.1.6, React 19.2.3, TypeScript. Google Maps via `@vis.gl/react-google-maps`. Testing: Vitest (`npm run test`, 24 tests passing). Data parsing: `xlsx`, `jszip`, `fast-xml-parser`.
 
 - 📢 **Canonical Repository:** As of 2026-07-09, this repository (`portal-dev`), branch `main`, is the single source of truth. All other checkouts are read-only. **HUMAN-VERIFY:** Confirm that no unmerged work remains on any other machine, and run `git pull` on them to discard local divergence.
 
 **What exists and works:**
-- `src/components/festival-map-app.tsx` (~2,880 lines) — mature single shared view: Google map, geofenced markers, category/project-type filters, fuzzy search, day tabs, timeline view, service icons, event modals.
-- `src/lib/festival-data.ts` — server loader: parses KMZ placemarks → venues, `ROS by TIME` sheet → events, infers event types from text, name-matches schedule locations to placemarks, keeps unmatched rows as "unmapped."
-- `/admin` — single shared-cookie gate (`admin_access=true`) + password server action (`src/app/admin/actions.ts`, `src/proxy.ts`). CRUD pin editor (`src/components/admin/pin-editor.tsx`); entries persist to local `portal-admin-entries.json`.
+- `src/components/event/*` — modular frontend architecture (`EventApp.tsx`, `MapView.tsx`, `ScheduleGrid.tsx`, `CalendarView.tsx`, `NowNext.tsx`, `Legend.tsx`, `Toasts.tsx`, `FilterBar.tsx`, `EventModal.tsx`) with dark/light themes, countdown badges, time axis indicator, and mobile pinch-to-zoom / bottom drawers.
+- `src/lib/festival-data.ts` — server loader: reads remote Google Sheet tabs (`Locations`/`Personnel`/`Departments`/`ROS`) via OAuth API with public CSV fallback.
+- `/admin` & `/admin/health` — password & OAuth role-gated admin portal and live data-health system monitor (`src/app/admin/health/page.tsx`). Admin pin CRUD persisted to Firebase RTDB (`admin-data/entries`) with disk fallback.
+- `scripts/PortalSyncScript.js` — secretless Google Apps Script engine (OAuth JWT bearer tokens) featuring procedural two-level MD5 hashing, atomic upsert/prune state machine, RTDB metadata persistence, and idempotent email onboarding.
+- **PWA & Offline & Agendas:** Service worker (`public/sw.js`), IndexedDB snapshot cache (`src/lib/offline-cache.ts`), starred agendas synced to Firebase RTDB (`/user-data/$email/starred`), and deep-linkable URL parameters (`src/lib/url-state.ts`).
 
-**Data work completed this session (remote sheet `1rpmzT4…`):**
+**Data work completed (remote sheet `1rpmzT4…`):**
 - ✅ Added **`Locations`** tab (24 rows): id, name, aliases, category, foh_boh_default, lat/lng (synthetic), capacity, notes.
 - ✅ Added **`Personnel`** tab (23 rows): synthetic people + vendor teams (Cosimo, ALMA, ZANU, Sebach, …) with role/dept/org/type/email/phone/visibility.
-- ✅ Generated **`ROS`** structured tab (91 rows) from the `ROS BY AREA` grid — every row mapped to a `location_id`, 64 with a parsed `lead_point_person`, times parsed from entry text. (Pending: import `schema-template/ROS.csv` into the sheet — Locations/Personnel already imported.)
+- ✅ Generated **`ROS`** structured tab (91 rows) from the `ROS BY AREA` grid — every row mapped to a `location_id`, 64 with a parsed `lead_point_person`, times parsed from entry text.
 - ✅ Schema + production-data template documented in `schema-template/README.md` (+ `.csv` files). `.env.example` written.
 
-**Still open / to fix:**
-- 🔴 **App still reads local files.** `festival-data.ts` parses the OFFLINE KMZ/XLSX and hardcodes paths. Must be rewritten to pull the **Google Sheet tabs** (`Locations`/`Personnel`/`ROS`) remotely. → M0/M1.
-- 🟠 **Google My Map is private** (`/edit` link) → KML export 403s. `Locations` lat/lng are synthetic until real coords arrive or the map is shared "anyone with link can view."
-- 🟡 No tests, no CI. `node_modules` not installed in this checkout.
-- 🟡 Inherited "festival" naming throughout; not yet themed to theportal.is.
+**Still open / to fix (Sprint 4 & Client Inputs):**
+- 🟢 **Remote data fetching:** Google Sheets API + CSV fallback fully active.
+- 🟢 **Component refactoring & Naming:** `festival-map-app.tsx` decomposed into modular `src/components/event/*` components.
+- 🟢 **Tests & CI:** Vitest suite (6 files, 24 tests passing) + GitHub Actions CI workflow.
+- 🟠 **Google My Map is private** (`/edit` link) → KML export 403s. `Locations` lat/lng are synthetic until real coords arrive or map is shared "anyone with link can view."
+- 🔵 **Pending Sprint 4 Features:** `.ics` calendar feeds (`/api/ics`), vendor magic links (`/api/vendor`), standalone sheet linter (`schema-lint.ts`), and pitch PDF assets.
 
 ---
 
@@ -128,18 +131,44 @@ Goal: keep the way the client already works (the `ROS by TIME` columns are the b
 
 ### M3 — Option B operational (PLUS features, pitched + staged)
 - [x] Role-based auth (admin / lead / vendor / guest) replacing the single shared cookie (OAuth credentials configured, fixing redirect logic for reverse proxy / dev envs).
-- [ ] Admin dashboard to scope what each role sees (`Roles` tab → runtime filter).
-- [ ] Row-level `visibility` + FOH/BOH gating in the map/schedule.
-- [ ] Contacts Directory + personal view.
-- [ ] Calendar `.ics` export + subscription feed per role/person.
 - [x] Reusable schema template proven by loading a *second* synthetic event end-to-end.
 - [x] Deprecate Approved Emails tab and consolidate access checks to Personnel sheet.
 - [x] Integrate passwordless admin page auth with SSR environment fallback (ADMIN_EMAILS) and top-bar profile action button.
 - [x] Optimize print stylesheet to pack schedule days compactly, scale columns, and remove blank trailing overflow pages.
+- [x] Day-of-Show Dashboard view (Now/Next happening now & upcoming events).
+- [x] Starred Personal Agenda items with Realtime Database sync and offline localStorage fallback.
+- [x] Programmatic Map focused pan & zoom coordinate synchronization from event cards.
+- [x] Map pin legend overlay with permanence visibility toggle filtering.
+- [x] Live countdown duration badges on event cards in timeline lists and grids.
+- [x] Realtime update change notifications toasted warning alerts.
+- [x] Calendar current time indicator line overlay with today auto-scrolling.
+- [x] PWA offline caching manifest.json and sw.js service worker.
+- [x] Procedural two-level MD5 hashing & atomic upsert/prune state machine for Google Calendar sync (eliminating event duplicates & purging deleted rows).
+- [x] Firebase RTDB metadata registry persistence for calendar sync state (`crew-data/metadata/calendar-events`).
+- [x] Idempotent onboarding invite sequence preventing duplicate email delivery.
+- [x] Verification suite with Vitest unit tests (24/24 passing), clean lint checks, and successful Next.js production compiles.
 
-### M4 — Proposal + handoff
-- [ ] Finalize the full written proposal with PLUS features pitched and pricing tiers.
+### M4 — Productization & Option B Milestone (Sprint 4 Priorities)
+- [x] Finalize the full written proposal with PLUS features pitched and pricing tiers.
+- [x] DataProvider seam abstraction (`RtdbProvider`, `SheetsProvider`, `CsvProvider`) + refactor `festival-data.ts` to `event-data.ts`.
+- [x] Standalone Sheet Linter (`src/lib/schema-lint.ts`) with validation report UI in Admin Health Panel (`/admin/health`).
+- [x] Tokenized `.ics` calendar export & subscription feed endpoint (`src/app/api/ics/`).
+- [x] Vendor magic links (`src/app/api/vendor/` & `/vendor?token=...`) for read-only single-person views.
+- [x] Lock event timezone strictly to PDT (`America/Los_Angeles` / Black Rock City, Nevada) across Apps Script, header banner badges, and `.ics` feeds.
+- [x] UI/UX design pass, custom component library, and aesthetic theme integration across all views.
+- [ ] Role scoping & runtime filter policy UI (`Roles` tab → runtime filter & row-level visibility gating).
+- [ ] Pitch PDF & one-pager asset generator (`reports/pitch/`).
 - [ ] Two rounds of revision buffer (per proposal scope) + minor RFE handling.
+
+### M5 — Security Hardening, Admin Polish & Pre-Launch (Sprint 5 Priorities)
+- [x] **High-Entropy Cryptographic Vendor Tokens (Priority #1):** Replace plain department string tokens (`?token=Lighting`) with 128-bit unguessable tokens (`v_7f9a2b...`) generated via Crypto API (`src/components/admin/MagicLinkGenerator.tsx`).
+- [x] **Private Sheet Access & Direct Auth Guard:** Update `database.rules.json` to allow `.read: true` for `/public-data` and enforce direct authenticated Firebase RTDB / Service Account API access for private sheets without fallback to synthetic stubs.
+- [ ] **Google Maps API Key Referrer Restrictions:** Restrict `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in Google Cloud Console to authorized domain patterns (`https://*.theportal.is/*`, `https://*.web.app/*`, `http://localhost:3000/*`).
+- [ ] **CLIENT COMMUNICATION FLAG (Firebase Blaze Plan Upgrade):** Flag client requirement to upgrade GCP project to Firebase Blaze (Pay-as-you-go) before deploying an event with >100 concurrent on-site sockets.
+- [x] **Admin Health Linter Filtering:** Added interactive severityFilter state and clickable summary badges (**Errors**, **Warnings**, **Info**) in `/admin/health` to filter issue list by severity.
+- [x] **Admin Locations Pin Editing & Delete Safety Warnings:** Added alert protection dialogs for Google Sheet locations in `/admin` location table, warning that deletions must be performed directly in Google Sheet and providing guidance for editing pin coordinates.
+- [x] **Pre-populated Department Dropdown for Magic Links:** Replaced raw text input on `/admin/magic-links` with a select dropdown pre-populated with active departments loaded from the Google Sheet `Departments` tab.
+- [ ] **Role Visibility & Public Gating Audit:** Audit public role views (`/public-data`) to ensure events mapped to internal departments (`Electricity`, `BOH`) remain invisible to unauthenticated public logins.
 
 ---
 
@@ -180,13 +209,35 @@ Tracked here so we know what to stand up vs. what the client owns. Env var names
 - **FOH / BOH** — Front / Back of House (guest-facing vs crew/operational).
 - **Placemark** — a point in the KMZ/Google My Maps map.
 - **Venue** — app's internal term for a mapped location (derived from placemarks).
-- **MARTIANS / VVEX** — the client's sample event + dataset (Montalcino, Tuscany).
 
 ---
 
 ## 10. Session Log
 > Append newest at top. Format: `YYYY-MM-DD — who — what changed / decided / discovered`.
 
+- **2026-07-26 — agent — Completely eliminated legacy 'guest' role and hardened public event visibility gating. Unapproved Google OAuth sign-ins and unauthenticated public visitors strictly default to 'public' role. Gated full BOH shift visibility strictly to verified crew roles (admin, crew, lead, department_lead). Scoped IndexedDB/localStorage offline cache snapshots by role key (portal_offline_snapshot_public vs crew vs admin) and preserved valid SSR initialData on client RTDB connection errors. Added 1-click 'Login to Crew Portal' header button for public visitors and guarded starred events RTDB listeners against unauthenticated permission_denied errors. Verified Next.js 16 build (2.5s) and 27/27 Vitest unit tests passing.**
+- **2026-07-26 — agent — Implemented Sprint 5 features (items 1, 2, 5, 6, 7): high-entropy 128-bit cryptographic vendor token generator in MagicLinkGenerator.tsx, database.rules.json public-data read permission update, interactive schema linter severity filtering badges (Errors, Warnings, Info) in Admin Health panel (/admin/health), master location delete protection & edit guidance alerts in Locations Dashboard (/admin), and pre-populated department select dropdown. All 27 Vitest unit tests and Next.js 16 production build passing cleanly.**
+- **2026-07-26 — agent — Merged design/ui-updates branch back into sprint4/productization-milestone (incorporating full UI redesign, custom component primitives in src/components/ui/, admin styling modularization in src/app/admin/admin.css, and PWA icon assets). Staged Sprint 5 backlog tasks for high-entropy vendor tokens, Google Maps referrer lockdown, Firebase Blaze plan customer notification, and admin panel interactivity.**
+- **2026-07-26 — agent — Created and published dedicated design branch 'design/ui-updates' for UI/UX styling runs and aesthetic refinements.**
+- **2026-07-26 — agent — Enhanced Now & Next dashboard (src/components/event/NowNext.tsx) to automatically fall back to showing the next upcoming scheduled events (regardless of distance in future) when no events occur within 2 hours, and added a dedicated 'All-Day & Flexible / TBD' column. Added Google Maps API key error (ApiProjectMapError) diagnostic overlay in MapView.tsx, created dedicated Admin Magic Links page (/admin/magic-links), added Google Sheets TSV row exporter in Admin Locations dashboard (/admin), and enabled supersession of temporary pins when synced from Google Sheets Locations tab.**
+- **2026-07-26 — agent — Completed Sprint 4 productization tasks: implemented DataProvider seam (src/lib/DataProvider.ts, src/lib/event-data.ts, RtdbProvider, SheetsProvider, CsvProvider), standalone sheet linter (src/lib/schema-lint.ts) with validation report UI in Admin Health Panel (/admin/health), tokenized .ics calendar export API (/api/ics/) with PDT timezone tags (America/Los_Angeles), and mobile-optimized Vendor Magic Links (/api/vendor/, /vendor?token=...). Locked event timezone strictly to PDT for Black Rock City, Nevada. Verified 27/27 Vitest unit tests passing.**
+- **2026-07-26 — agent — Hardened onboarding invite idempotency in PortalSyncScript.js (processOnboardingInvites). Added pre-flight check for 'Onboarded' / 'email:ok' status, preserved 'email:ok' in final cell state, and added explicit SpreadsheetApp.flush() after unchecking sendInvite to prevent duplicate onboarding email triggers.**
+- **2026-07-26 — agent — Fixed Firebase RTDB key validation error in PortalSyncScript.js by escaping dots in Google Calendar IDs (replace '.' with ',') inside gcal_event_ids metadata before writing to crew-data/metadata/calendar-events.**
+- **2026-07-26 — agent — Refactored Google Calendar event sync in scripts/PortalSyncScript.js (syncRosEventsToGoogleCalendars) with procedural two-level MD5 hashing (semantic_key & content_hash), Firebase RTDB metadata registry persistence (crew-data/metadata/calendar-events), atomic upsert & prune state machine, and silent consolidated summary logging.**
+- **2026-07-26 — agent — Sanitized entriesMap payload in src/lib/admin-entries.ts before writing to Firebase RTDB by stripping out undefined fields via JSON.parse(JSON.stringify(entriesMap)), resolving Firebase RTDB set() runtime errors and enabling clean real-time pin synchronization.**
+- **2026-07-26 — agent — Fixed admin entries reading bug in src/lib/admin-entries.ts. Updated readAdminEntries to fall back to reading local portal-admin-entries.json when Firebase RTDB returns an empty payload or has no entries, and automatically seed Firebase RTDB with local entries to keep local disk and Firebase RTDB state in sync.**
+- **2026-07-26 — agent — Fixed database access rules to allow crew and admin roles to read crew-data at the root level, resolving permission denied errors for non-admin crew. Hardened Apps Script Google Groups member addition logic to report and throw failures rather than silently passing. Removed redundant allowExternalMembers calls from the group check path to optimize sync performance. Fixed case-sensitive header parsing in event-mapper.ts by introducing a robust case-insensitive key helper getRowValue. Upgraded excelTimeToMinutes in event-mapper.ts to support ISO date-times, 24h, and 12h meridians, resolving time-rendering issues and restoring full calendar grid functionality. Fixed ScheduleGrid table width styling to apply both width and minWidth values, enabling responsive layout scaling and horizontal scroll via the width slider.**
+- **2026-07-25 — agent — Optimized Admin onboarding to only add users to the 'all-departments' group. Tucked calendar subscription links inside a collapsed HTML details panel in onboarding emails. Enabled automatic self-healing for deleted/inaccessible Google Calendars in Google Sheets. Resolved template loading error by trying multiple path fallbacks. Finalized full written proposal in proposal.md and updated smoke test checklist.**
+- **2026-07-25 — agent — Enabled Google Groups Settings API advanced service in appsscript.json and integrated allowExternalMembers programmatically in PortalSyncScript.js to configure newly created/existing groups to accept external crew members (@gmail.com). Added dynamic calendar & group provisioning (self-healing) at the start of sync, resolved TBD date-times as all-day events with [TBD] appended to titles, nested All Departments/Admin group subscriptions, and hardened processOffboardingRemovals to completely offboard Admins/All Departments users from all groups.**
+- **2026-07-24 — agent — Fixed event synchronization duplicates and timezone shift issues in PortalSyncScript.js. Introduced calendar ID deduplication per event to avoid duplicate entries when multiple departments map to the same Google Calendar ID, resolved time object checking to correctly parse scheduled times instead of defaulting to midnight (preventing all-day shifts), and excluded Sunrise and Sunset events from calendar synchronization.**
+- **2026-07-19 — agent — Removed auto-creation of Google Calendars in Apps Script: replaced getOrProvisionDepartmentCalendars with strict getDepartmentCalendarMap that strictly reads existing google_calendar_ids from the Departments tab.**
+- **2026-07-19 — agent** — Resolved Department column mismatch in Apps Script event sync: updated syncRosEventsToGoogleCalendars to read 'Lead Dept', 'Support Dept 1', and 'Support Dept 2' columns from ROS by TIME tab (matching the canonical sheet headers).
+- **2026-07-19 — agent** — Added self-healing getOrProvisionDepartmentCalendars() helper in PortalSyncScript.js to automatically create and resolve Google Calendar IDs for departments missing explicit IDs in the Google Sheet.
+- **2026-07-19 — agent** — Added syncRosEventsToGoogleCalendars() to PortalSyncScript.js to automatically push ROS by TIME event rows into department Google Calendars (with duplicate prevention and support for 'All Departments' events).
+- **2026-07-18 — agent** — Fixed empty calendar bug: refactored readSheetToJson in Apps Script to automatically skip title banners (like row 1 of 'ROS by TIME'), and extracted event-mapping helpers to a client-safe event-mapper.ts to parse raw Firebase RTDB events/venues on both client and server.
+- **2026-07-18 — agent** — Resolved the Google Calendar 'primary' ID placeholder in PortalSyncScript.js. The Apps Script now dynamically maps department names to their google_calendar_ids retrieved from the Departments tab and formats onboarding welcome email links accordingly.
+- **2026-07-14 — agent** — Authored a comprehensive migration and configuration guide for moving the Google Cloud Platform, Firebase Realtime Database, Google Workspace Groups/Calendars, and Apps Script pipeline from the legacy 'vvexstudio@gmail.com' account to the canonical 'admin@vvexstudio.com' credentials and Web App Client ID '6aa34'.
+- **2026-07-14 — agent** — Completed all Sprint 3 integration tasks: implemented PWA support (manifest.json, sw.js service worker); built Now/Next dashboard; synced starred events via Firebase RTDB / localStorage; wired bidirectionally focused venue zoom/pan; styled Map Legend Overlay, Toast warnings, and calendar live timeline indicator line; and updated RunningSchedule/ScheduleGrid/CalendarView with live event countdown labels. Tested with 100% Vitest passing, zero eslint compile errors, and successful Next.js build compilation.
 - **2026-07-13 — agent** — Pivot: Deprecated the 'Approved Emails' tab in favor of the 'Personnel' tab as the single source of truth. Removed approved-emails API endpoints and replaced `/admin/approved-emails` with a deprecation notice card. Optimized calendar print preview sizing, page-breaks, and columns. Integrated server-side `ADMIN_EMAILS` fallback checks inside `page.tsx` for immediate passwordless admin panel access and header actions button display.
 - **2026-07-13 — agent** — Completed all Sprint 2 tasks (WP-6 Data-health, WP-11 Theming, WP-5 Offboarding): implemented multi-department filtering logic (A1); created data-health admin dashboard API and client page (A2); moved admin map pins to Firebase RTDB with file fallback (A3); refactored CSS variable theme tokens (B1); designed branded onboarding email HTML template (B2) and print media stylesheet (B3); added Apps Script group removal logic for offboarded users (C1); gated Next.js token generation for inactive users (C2); wired template-based onboarding emails (C3); and drafted offboarding runbook document (C4). Verified Next.js builds and all tests successfully.
 - **2026-07-13 — agent** — Completed remaining Sprint 1 Team C tasks (WP-4: Apps Script hardening): implemented group, calendar ACL, and membership idempotency checks; progressive status logging; exponential backoff retries; runtime cursor time-limit checkpointing with automatic trigger resumes; sync heartbeat write to Firebase Realtime Database; and clasp deployment configurations (.clasp.json, scripts/appsscript.json, scripts/clasp/README.md).

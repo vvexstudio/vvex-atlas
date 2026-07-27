@@ -13,10 +13,12 @@ function escapeEmail(email: string): string {
 
 export async function GET() {
   const cookieStore = await cookies();
-  const sessionToken = cookieStore.get("portal_user_session")?.value;
+  const sessionToken =
+    cookieStore.get("portal_user_session")?.value ||
+    cookieStore.get("portal_session")?.value;
 
   if (!sessionToken) {
-    return NextResponse.json({ error: "Unauthorized: No session token" }, { status: 401 });
+    return NextResponse.json({ role: "public", token: null, isPublic: true });
   }
 
   // 1. Verify Next.js session
@@ -24,12 +26,12 @@ export async function GET() {
   try {
     session = await verifySessionCookie(sessionToken);
   } catch (err) {
-    console.error("Session verification failed:", err);
-    return NextResponse.json({ error: "Unauthorized: Invalid session" }, { status: 401 });
+    console.warn("Session verification failed, defaulting to public role:", err);
+    return NextResponse.json({ role: "public", token: null, isPublic: true });
   }
 
   if (!session || !session.email) {
-    return NextResponse.json({ error: "Unauthorized: Empty session payload" }, { status: 401 });
+    return NextResponse.json({ role: "public", token: null, isPublic: true });
   }
 
   const email = session.email;
@@ -50,7 +52,7 @@ export async function GET() {
     const escapedEmail = escapeEmail(email);
     const userSnapshot = await adminDb.ref(`auth-directory/${escapedEmail}`).once("value");
     
-    let role = "guest";
+    let role = session.role || "public";
     let departments: string[] = [];
 
     if (userSnapshot.exists()) {
@@ -62,7 +64,7 @@ export async function GET() {
         return NextResponse.json({ error: "Forbidden: Account is inactive" }, { status: 403 });
       }
 
-      role = userData.role || "guest";
+      role = userData.role || "crew";
       
       // Parse departments if defined
       if (typeof userData.departments === "string") {
@@ -71,13 +73,14 @@ export async function GET() {
         departments = userData.departments.filter(Boolean);
       }
     } else {
-      console.warn(`User ${email} not found in Firebase /auth-directory. Defaulting to 'guest'.`);
+      console.warn(`User ${email} not found in Firebase /auth-directory. Defaulting to '${role}'.`);
     }
 
     // 4. Create Firebase Custom Token with custom claims
     const customToken = await adminAuth.createCustomToken(email, {
       role,
       departments,
+      escapedEmail,
     });
 
     return NextResponse.json({ 

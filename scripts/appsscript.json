@@ -1,5 +1,5 @@
 {
-  "timeZone": "America/New_York",
+  "timeZone": "America/Los_Angeles",
   "dependencies": {
     "enabledAdvancedServices": [
       {
@@ -11,6 +11,11 @@
         "userSymbol": "AdminDirectory",
         "serviceId": "admin",
         "version": "directory_v1"
+      },
+      {
+        "userSymbol": "GroupsSettings",
+        "serviceId": "groupssettings",
+        "version": "v1"
       }
     ]
   },

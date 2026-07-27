@@ -1,0 +1,20 @@
+{
+  "entries": [
+    {
+      "id": "admin-f92cc473-5f39-4c3d-87ab-0526df864675",
+      "name": "test2",
+      "artist": "test",
+      "locationInternal": "40.794263, -119.214311",
+      "projectType": "installation",
+      "abridgedProjectText": "",
+      "day": "fri",
+      "startTime": "",
+      "endTime": "",
+      "hasSchedule": false,
+      "permanence": "",
+      "lat": 40.79426292754904,
+      "lng": -119.21431059257839,
+      "hasLocation": true
+    }
+  ]
+}

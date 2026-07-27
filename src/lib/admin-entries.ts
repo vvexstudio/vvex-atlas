@@ -128,15 +128,16 @@ export async function readAdminEntries(): Promise<AdminEntry[]> {
         const val = snapshot.val();
         if (val && typeof val === "object") {
           const list = Array.isArray(val) ? val : Object.values(val);
-          return list
+          const fbEntries = list
             .map((entry, index) => normalizeEntry(entry, index))
             .filter((entry): entry is AdminEntry => Boolean(entry));
+          if (fbEntries.length > 0) {
+            return fbEntries;
+          }
         }
       }
-      return [];
     } catch (e) {
       console.error("Failed to read admin entries from Firebase:", e);
-      // Fallback to local file on error
     }
   }
 
@@ -149,28 +150,46 @@ export async function readAdminEntries(): Promise<AdminEntry[]> {
   const parsed = JSON.parse(raw) as unknown;
   if (!parsed || typeof parsed !== "object") return [];
   const entries = Array.isArray((parsed as AdminEntriesFile).entries) ? (parsed as AdminEntriesFile).entries : [];
-  return entries
+  const localEntries = entries
     .map((entry, index) => normalizeEntry(entry, index))
     .filter((entry): entry is AdminEntry => Boolean(entry));
+
+  if (adminDb && localEntries.length > 0) {
+    try {
+      const entriesMap: Record<string, AdminEntry> = {};
+      localEntries.forEach((e) => {
+        entriesMap[e.id] = e;
+      });
+      const sanitizedEntriesMap = JSON.parse(JSON.stringify(entriesMap));
+      await adminDb.ref("admin-data/entries").set(sanitizedEntriesMap);
+      await adminDb.ref("crew-data/entries").set(sanitizedEntriesMap);
+      await adminDb.ref("public-data/entries").set(sanitizedEntriesMap);
+    } catch (e) {
+      console.error("Failed to sync local admin entries to Firebase:", e);
+    }
+  }
+
+  return localEntries;
 }
 
 async function writeAdminEntries(entries: AdminEntry[]): Promise<void> {
+  const payload: AdminEntriesFile = { entries };
+  await writeFile(ADMIN_ENTRIES_PATH, JSON.stringify(payload, null, 2), "utf-8");
+
   if (adminDb) {
     try {
       const entriesMap: Record<string, AdminEntry> = {};
       entries.forEach((e) => {
         entriesMap[e.id] = e;
       });
-      await adminDb.ref("admin-data/entries").set(entriesMap);
-      return;
+      const sanitizedEntriesMap = JSON.parse(JSON.stringify(entriesMap));
+      await adminDb.ref("admin-data/entries").set(sanitizedEntriesMap);
+      await adminDb.ref("crew-data/entries").set(sanitizedEntriesMap);
+      await adminDb.ref("public-data/entries").set(sanitizedEntriesMap);
     } catch (e) {
       console.error("Failed to write admin entries to Firebase:", e);
-      // Fallback to local file on error
     }
   }
-
-  const payload: AdminEntriesFile = { entries };
-  await writeFile(ADMIN_ENTRIES_PATH, JSON.stringify(payload, null, 2), "utf-8");
 }
 
 export type UpsertInput = Partial<AdminEntry> & { id?: string; name?: string };

@@ -48,6 +48,6 @@ next-env.d.ts
 to do
 
 # secrets & credentials
-client_secret.json
+client_secret*.json
 *service-account*.json
 
