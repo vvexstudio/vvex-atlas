@@ -318,6 +318,30 @@ export function EventApp({
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [isMobileScheduleOpen, setIsMobileScheduleOpen] = useState(false);
 
+  // Desktop sidebar resize (drag handle between map panel and sidebar)
+  const [sidebarWidth, setSidebarWidth] = useState<number | null>(null);
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
+
+  useEffect(() => {
+    const saved = Number(window.localStorage.getItem("portal-sidebar-width"));
+    if (saved >= 280 && saved <= 640) setSidebarWidth(saved);
+  }, []);
+
+  const startSidebarResize = (e: React.PointerEvent) => {
+    e.preventDefault();
+    setIsResizingSidebar(true);
+    const clamp = (x: number) => Math.min(640, Math.max(280, window.innerWidth - x));
+    const onMove = (ev: PointerEvent) => setSidebarWidth(clamp(ev.clientX));
+    const onUp = (ev: PointerEvent) => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      setIsResizingSidebar(false);
+      window.localStorage.setItem("portal-sidebar-width", String(clamp(ev.clientX)));
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
   // Register PWA Service Worker
   useEffect(() => {
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {
@@ -910,7 +934,19 @@ export function EventApp({
         </section>
 
         {/* Right Sidebar Section */}
-        <aside className={`legacy-list-panel ${isSidebarOpen ? "" : "collapsed"}`}>
+        {isSidebarOpen && (
+          <div
+            className={`legacy-sidebar-resize-handle ${isResizingSidebar ? "is-resizing" : ""}`}
+            onPointerDown={startSidebarResize}
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize sidebar"
+          />
+        )}
+        <aside
+          className={`legacy-list-panel ${isSidebarOpen ? "" : "collapsed"}`}
+          style={sidebarWidth !== null ? ({ "--sidebar-width": `${sidebarWidth}px` } as React.CSSProperties) : undefined}
+        >
           {/* Filters Panel */}
           <section className="legacy-list-block legacy-list-controls">
             {/* Mobile collapsible filters header toggle */}

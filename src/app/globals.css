@@ -249,8 +249,29 @@ body.portal-dark .banner-brand-mark {
   flex-direction: column;
 }
 
+.legacy-sidebar-resize-handle {
+  flex: 0 0 5px;
+  cursor: col-resize;
+  background: transparent;
+  border-left: 1px solid var(--line);
+  transition: background-color 0.15s ease;
+}
+
+.legacy-sidebar-resize-handle:hover,
+.legacy-sidebar-resize-handle.is-resizing {
+  background: var(--accent-soft);
+  border-left-color: var(--accent);
+}
+
+@media (max-width: 1080px) {
+  .legacy-sidebar-resize-handle {
+    display: none;
+  }
+}
+
 .legacy-list-panel {
-  width: min(460px, 40vw);
+  /* --sidebar-width is set inline by the resize handle drag */
+  width: min(var(--sidebar-width, 460px), 45vw);
   flex: 0 0 auto;
   border-left: 1px solid var(--line);
   background: var(--surface-raised);
@@ -586,7 +607,7 @@ body.portal-dark .banner-brand-mark {
   font-size: var(--text-sm);
   color: var(--muted);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .main-tab-btn:hover {
   background: rgba(255, 255, 255, 0.4);
@@ -879,7 +900,7 @@ body.portal-dark .banner-brand-mark {
   font-size: var(--text-sm);
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   width: 100%;
 }
 .clear-filters-btn:hover {
@@ -1197,7 +1218,7 @@ body.portal-dark .banner-brand-mark {
   white-space: nowrap;
   gap: 4px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   user-select: none;
 }
 
@@ -1380,7 +1401,7 @@ body.portal-dark .banner-brand-mark {
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--ink);
-  transition: all 0.2s;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .header-tbd-toggle-btn:hover,
@@ -1532,7 +1553,7 @@ body.portal-dark .banner-brand-mark {
   box-sizing: border-box;
   text-align: left;
   line-height: 1.2;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   position: relative;
 }
 
@@ -1999,7 +2020,7 @@ body.portal-dark .banner-brand-mark {
     border: 1px solid var(--line);
     background: var(--surface);
     color: var(--ink);
-    transition: all 0.2s;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
   }
 
   .mobile-bar-btn:active {
@@ -2049,15 +2070,16 @@ body.portal-dark .banner-brand-mark {
 
 .mobile-drawer-content {
   width: 100%;
-  max-height: 80vh;
+  height: 100vh;
+  height: 100dvh;
   background: var(--surface-raised);
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
   box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
   animation: drawer-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   padding: 16px;
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
 }
 
 .mobile-drawer-header {
@@ -2540,6 +2562,17 @@ body.portal-dark .banner-brand-mark {
 
 /* 6. InfoWindow Layout & Linkages */
 .map-infowindow {
+  /* Google's InfoWindow chrome is always white — pin light-theme tokens
+     here so the content stays readable regardless of app theme. */
+  --ink: #1e1a16;
+  --muted: #63584c;
+  --line: rgba(56, 38, 17, 0.18);
+  --surface: #f7efdd;
+  --surface-raised: #fffdf3;
+  --accent: #bc5c2d;
+  --accent-strong: #9c4a20;
+  --accent-ink: #fffdf3;
+  --accent-soft: rgba(188, 92, 45, 0.14);
   max-width: 250px;
   color: var(--ink);
   font-family: var(--font-sans, var(--font-fallback-sans));

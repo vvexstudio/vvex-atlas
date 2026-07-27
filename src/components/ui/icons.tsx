@@ -5,6 +5,7 @@
  * lucide-react directly — they render <Icon name="..." /> so the set
  * stays consistent (16px, 1.75 stroke, currentColor) and swappable.
  */
+import React from "react";
 import {
   Anchor,
   Building2,
@@ -139,7 +140,9 @@ export interface IconProps {
   "aria-hidden"?: boolean;
 }
 
-export function Icon({
+/* Memoized: icons appear hundreds of times in the schedule/calendar lists,
+   so skipping re-renders on unchanged props is a real win. */
+export const Icon = React.memo(function Icon({
   name,
   size = 16,
   className,
@@ -156,7 +159,7 @@ export function Icon({
       aria-hidden={rest["aria-hidden"] ?? true}
     />
   );
-}
+});
 
 /**
  * Department → icon, keyed by the names used in the Google Sheet.
