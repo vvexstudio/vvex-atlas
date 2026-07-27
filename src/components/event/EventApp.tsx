@@ -303,7 +303,19 @@ export function EventApp({
     };
   }, [highlightedEventId]);
 
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  // Three themes: letterpress (light) / noir (warm charcoal) / dusk (plum rose)
+  const [theme, setTheme] = useState<"letterpress" | "noir" | "dusk">(() => {
+    if (typeof window === "undefined") return "noir";
+    const saved = window.localStorage.getItem("portal-theme");
+    return saved === "letterpress" || saved === "noir" || saved === "dusk" ? saved : "noir";
+  });
+  const isDarkMode = theme !== "letterpress";
+
+  const cycleTheme = () => {
+    const next = theme === "letterpress" ? "noir" : theme === "noir" ? "dusk" : "letterpress";
+    setTheme(next);
+    window.localStorage.setItem("portal-theme", next);
+  };
   const [columnWidthScale, setColumnWidthScale] = useState<number>(180);
   const [hourHeightScale, setHourHeightScale] = useState<number>(60);
   const [scheduleWidthScale, setScheduleWidthScale] = useState<number>(750);
@@ -428,11 +440,12 @@ export function EventApp({
   // Sync dark mode class on document body
   useEffect(() => {
     if (typeof document === "undefined") return;
-    document.body.classList.toggle("portal-dark", isDarkMode);
+    document.body.classList.toggle("portal-dark", theme === "noir");
+    document.body.classList.toggle("portal-dusk", theme === "dusk");
     return () => {
-      document.body.classList.remove("portal-dark");
+      document.body.classList.remove("portal-dark", "portal-dusk");
     };
-  }, [isDarkMode]);
+  }, [theme]);
 
   // Prevent default Safari iOS pinch-to-zoom gestures globally
   useEffect(() => {
@@ -734,10 +747,11 @@ export function EventApp({
           <button
             type="button"
             className="legacy-theme-switch"
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            aria-label="Toggle dark theme"
+            onClick={cycleTheme}
+            title={`Theme: ${theme} — click to switch`}
+            aria-label={`Current theme ${theme}. Switch to ${theme === "letterpress" ? "noir" : theme === "noir" ? "dusk" : "letterpress"}`}
           >
-            <Icon name={isDarkMode ? "sun" : "moon"} size={16} />
+            <Icon name={theme === "letterpress" ? "sun" : theme === "noir" ? "moon" : "sparkles"} size={16} />
           </button>
         </div>
       </header>

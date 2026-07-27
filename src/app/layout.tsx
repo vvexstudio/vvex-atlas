@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, IBM_Plex_Mono, Instrument_Sans } from "next/font/google";
+import { Archivo, Fraunces, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
 const fontDisplay = Fraunces({
@@ -9,7 +9,7 @@ const fontDisplay = Fraunces({
   display: "swap",
 });
 
-const fontSans = Instrument_Sans({
+const fontSans = Archivo({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",

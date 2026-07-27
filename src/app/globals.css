@@ -96,6 +96,39 @@ body.portal-dark {
   --gradient-end: #16130f;
 }
 
+body.portal-dusk {
+  /* Dusk Rose — deep plum surfaces, warm cream ink, dusty rose accent */
+  --bg: #201318;
+  --surface: #2b1a21;
+  --surface-raised: #37222b;
+  --ink: #f3e2da;
+  --muted: #b294a0;
+  --line: rgba(243, 226, 218, 0.14);
+
+  --accent: #e0849b;
+  --accent-strong: #eb9fb2;
+  --accent-ink: #2a1219;
+  --accent-soft: rgba(224, 132, 155, 0.16);
+
+  --success: #9dc49a;
+  --success-soft: rgba(157, 196, 154, 0.16);
+  --warn: #dcb277;
+  --warn-soft: rgba(220, 178, 119, 0.16);
+  --danger: #e6907c;
+  --danger-soft: rgba(230, 144, 124, 0.16);
+  --info: #97b3cd;
+  --info-soft: rgba(151, 179, 205, 0.16);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 32px 80px rgba(0, 0, 0, 0.55);
+
+  --gradient-color-1: rgba(55, 34, 43, 0.8);
+  --gradient-color-2: rgba(224, 132, 155, 0.06);
+  --gradient-start: #241419;
+  --gradient-end: #201318;
+}
+
 html,
 body {
   max-width: 100vw;
