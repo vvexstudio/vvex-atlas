@@ -701,7 +701,7 @@ export function EventApp({
           )}
         </div>
         <div className="legacy-banner-actions">
-          {userSession && (
+          {userSession && role !== "public" ? (
             <div className="user-profile-section">
               {userSession.picture ? (
                 <img
@@ -749,6 +749,12 @@ export function EventApp({
               <a href="/api/auth/logout" className="btn btn-danger btn-sm">
                 <Icon name="logout" size={12} /> Logout
               </a>
+            </div>
+          ) : (
+            <div className="user-profile-section">
+              <Link href="/login" className="btn btn-primary btn-sm" style={{ fontWeight: 600, padding: "0.4rem 0.8rem" }}>
+                <Icon name="user" size={12} /> Login to Crew Portal
+              </Link>
             </div>
           )}
           <button

@@ -156,7 +156,7 @@ export const useEventData = (role: string | null, initialData: InitialData) => {
           setEvents(finalEvents);
           setPersonnel(mapped.personnel);
           setDepartments(mapped.departments);
-          setSourceLabel(`Firebase RTD Live (${role.toUpperCase()})`);
+          setSourceLabel(`Firebase RTD Live (${(activeRole || "public").toUpperCase()})`);
           
           // Cache snapshot locally for offline fallback
           saveOfflineSnapshot(finalVenues, finalEvents, mapped.personnel, mapped.departments);
