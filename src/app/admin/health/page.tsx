@@ -70,6 +70,13 @@ export default function AdminHealthPage() {
     return () => clearInterval(interval);
   }, []);
 
+  const [severityFilter, setSeverityFilter] = useState<"all" | "error" | "warning" | "info">("all");
+
+  const filteredLinterIssues = data?.linterReport?.issues.filter((issue) => {
+    if (severityFilter === "all") return true;
+    return issue.severity === severityFilter;
+  }) || [];
+
   if (isLoading) {
     return <div className="admin-loading">Loading system health parameters...</div>;
   }
@@ -162,19 +169,52 @@ export default function AdminHealthPage() {
               Schema Validation & Quality Report
             </h3>
             <div className="admin-chip-row">
-              <Chip tone="danger">{data.linterReport.issueCounts.errors} Errors</Chip>
-              <Chip tone="warn">{data.linterReport.issueCounts.warnings} Warnings</Chip>
-              <Chip tone="info">{data.linterReport.issueCounts.info} Info</Chip>
+              <button
+                type="button"
+                onClick={() => setSeverityFilter(severityFilter === "all" ? "all" : "all")}
+                style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
+              >
+                <Chip tone={severityFilter === "all" ? "neutral" : "neutral"}>All ({data.linterReport.issues.length})</Chip>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSeverityFilter(severityFilter === "error" ? "all" : "error")}
+                style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
+              >
+                <Chip tone="danger" style={{ opacity: severityFilter === "all" || severityFilter === "error" ? 1 : 0.4 }}>
+                  {data.linterReport.issueCounts.errors} Errors {severityFilter === "error" ? "✓" : ""}
+                </Chip>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSeverityFilter(severityFilter === "warning" ? "all" : "warning")}
+                style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
+              >
+                <Chip tone="warn" style={{ opacity: severityFilter === "all" || severityFilter === "warning" ? 1 : 0.4 }}>
+                  {data.linterReport.issueCounts.warnings} Warnings {severityFilter === "warning" ? "✓" : ""}
+                </Chip>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSeverityFilter(severityFilter === "info" ? "all" : "info")}
+                style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
+              >
+                <Chip tone="info" style={{ opacity: severityFilter === "all" || severityFilter === "info" ? 1 : 0.4 }}>
+                  {data.linterReport.issueCounts.info} Info {severityFilter === "info" ? "✓" : ""}
+                </Chip>
+              </button>
             </div>
           </div>
-          {data.linterReport.issues.length === 0 ? (
+          {filteredLinterIssues.length === 0 ? (
             <p className="admin-ok-text">
               <Icon name="checkCircle" size={14} />
-              0 schema lint issues detected. Data quality is clean.
+              {severityFilter === "all"
+                ? "0 schema lint issues detected. Data quality is clean."
+                : `0 ${severityFilter} issues found.`}
             </p>
           ) : (
             <div className="admin-issue-list">
-              {data.linterReport.issues.map((issue) => (
+              {filteredLinterIssues.map((issue) => (
                 <div key={issue.id} className={`admin-issue-row admin-issue-${issue.severity}`}>
                   <strong>[{issue.category.toUpperCase()}]</strong> {issue.message}
                 </div>

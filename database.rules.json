@@ -1,7 +1,7 @@
 {
   "rules": {
     "public-data": {
-      ".read": "auth != null",
+      ".read": true,
       ".write": "false"
     },
     "crew-data": {

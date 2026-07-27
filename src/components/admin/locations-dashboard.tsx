@@ -66,6 +66,7 @@ export function LocationsDashboard({ venues, events, entries }: LocationsDashboa
                 <th>Category</th>
                 <th>Coordinates</th>
                 <th>Events</th>
+                <th className="admin-cell-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -73,6 +74,18 @@ export function LocationsDashboard({ venues, events, entries }: LocationsDashboa
                 const venueEventsCount = events.filter(
                   (e) => e.locationName && e.locationName.toLowerCase() === venue.name.toLowerCase()
                 ).length;
+
+                const handleDeleteClick = () => {
+                  alert(
+                    `⚠️ Master Location Protection:\n\n'${venue.name}' is synced directly from the canonical Google Sheet.\n\nTo delete this location permanently, please remove its row directly from the 'Locations' tab of your master Google Sheet database.`
+                  );
+                };
+
+                const handleEditClick = () => {
+                  alert(
+                    `📍 Master Location Edit Guidance:\n\n'${venue.name}' is populated from the Google Sheet Locations tab.\n\nTo update coordinates or address permanently, edit the 'Lat', 'Long', or 'Address' columns in your master Google Sheet. Alternatively, create a Custom Pin Overlay below and click 'Copy Pins for Google Sheet'.`
+                  );
+                };
 
                 return (
                   <tr key={venue.id}>
@@ -92,6 +105,24 @@ export function LocationsDashboard({ venues, events, entries }: LocationsDashboa
                     </td>
                     <td>
                       <strong>{venueEventsCount} shifts</strong>
+                    </td>
+                    <td className="admin-cell-right">
+                      <button
+                        type="button"
+                        className="admin-link"
+                        onClick={handleEditClick}
+                        style={{ background: "none", border: "none", cursor: "pointer", marginRight: "12px" }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="admin-link"
+                        onClick={handleDeleteClick}
+                        style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-danger, #ef4444)" }}
+                      >
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 );
