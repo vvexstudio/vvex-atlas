@@ -5,23 +5,25 @@ import { verifySessionCookie, isAdminEmail } from "@/lib/auth-cookie";
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. Exclude public paths
+  // 1. Exclude public paths (homepage, login, vendor links, ics feeds, static assets)
   const isPublicPath =
+    pathname === "/" ||
     pathname === "/login" ||
+    pathname.startsWith("/vendor") ||
+    pathname.startsWith("/api/ics") ||
+    pathname.startsWith("/api/vendor") ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/_next") ||
     pathname.includes(".") ||
     pathname.startsWith("/assets");
 
-  if (isPublicPath) {
-    return NextResponse.next();
-  }
-
-  // 2. Fetch and verify Google OAuth session cookie
-  const sessionToken = request.cookies.get("portal_user_session")?.value;
+  // 2. Fetch and verify Google OAuth session cookie (support both cookie keys)
+  const sessionToken =
+    request.cookies.get("portal_user_session")?.value ||
+    request.cookies.get("portal_session")?.value;
   const session = sessionToken ? await verifySessionCookie(sessionToken) : null;
 
-  // 3. Handle admin routes protection
+  // 3. Handle admin routes protection (requires admin password cookie or admin role)
   if (pathname.startsWith("/admin")) {
     const hasAdminAccess = request.cookies.get("admin_access")?.value === "true";
     const hasOAuthAdminAccess = session ? (session.role === "admin" || isAdminEmail(session.email)) : false;
@@ -38,11 +40,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 4. Handle general app protection (e.g., homepage /)
-  if (!session) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(loginUrl);
+  // 4. Public paths proceed cleanly
+  if (isPublicPath) {
+    return NextResponse.next();
   }
 
   return NextResponse.next();
