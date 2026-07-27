@@ -25,4 +25,5 @@ export const eventTypeLabels: Record<EventType, string> = {
   venue: "Venue Operations",
   food: "Food / Beverage",
   services: "Logistics",
+  ceremony: "Ceremony",
 };

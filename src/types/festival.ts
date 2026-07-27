@@ -14,7 +14,8 @@ export type EventType =
   | "dj"
   | "venue"
   | "food"
-  | "services";
+  | "services"
+  | "ceremony";
 
 export type Venue = {
   id: string;
