@@ -55,7 +55,17 @@ export default function RootLayout({
       lang="en"
       className={`${fontDisplay.variable} ${fontSans.variable} ${fontMono.variable}`}
     >
-      <body className="portal-dark">{children}</body>
+      {/* suppressHydrationWarning: the inline script below swaps the theme
+          class from localStorage before hydration, on every route (admin
+          included) — the SSR default is portal-dark. */}
+      <body className="portal-dark" suppressHydrationWarning>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("portal-theme");if(t==="letterpress"){document.body.classList.remove("portal-dark","portal-dusk");}else if(t==="dusk"){document.body.classList.remove("portal-dark");document.body.classList.add("portal-dusk");}}catch(e){}})();`,
+          }}
+        />
+        {children}
+      </body>
     </html>
   );
 }

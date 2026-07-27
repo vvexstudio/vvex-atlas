@@ -303,13 +303,20 @@ export function EventApp({
     };
   }, [highlightedEventId]);
 
-  // Three themes: letterpress (light) / noir (warm charcoal) / dusk (plum rose)
-  const [theme, setTheme] = useState<"letterpress" | "noir" | "dusk">(() => {
-    if (typeof window === "undefined") return "noir";
-    const saved = window.localStorage.getItem("portal-theme");
-    return saved === "letterpress" || saved === "noir" || saved === "dusk" ? saved : "noir";
-  });
+  // Three themes: letterpress (light) / noir (warm charcoal) / dusk (plum rose).
+  // SSR renders the noir default; the saved theme is applied to <body> by a
+  // pre-hydration script in the root layout, and this state syncs to it after
+  // mount (reading localStorage in the initializer breaks hydration).
+  const [theme, setTheme] = useState<"letterpress" | "noir" | "dusk">("noir");
   const isDarkMode = theme !== "letterpress";
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem("portal-theme");
+    if (saved === "letterpress" || saved === "dusk") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time post-hydration sync from localStorage; SSR must render the default
+      setTheme(saved);
+    }
+  }, []);
 
   const cycleTheme = () => {
     const next = theme === "letterpress" ? "noir" : theme === "noir" ? "dusk" : "letterpress";

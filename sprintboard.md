@@ -155,9 +155,20 @@ Goal: keep the way the client already works (the `ROS by TIME` columns are the b
 - [x] Tokenized `.ics` calendar export & subscription feed endpoint (`src/app/api/ics/`).
 - [x] Vendor magic links (`src/app/api/vendor/` & `/vendor?token=...`) for read-only single-person views.
 - [x] Lock event timezone strictly to PDT (`America/Los_Angeles` / Black Rock City, Nevada) across Apps Script, header banner badges, and `.ics` feeds.
+- [x] UI/UX design pass, custom component library, and aesthetic theme integration across all views.
 - [ ] Role scoping & runtime filter policy UI (`Roles` tab → runtime filter & row-level visibility gating).
 - [ ] Pitch PDF & one-pager asset generator (`reports/pitch/`).
 - [ ] Two rounds of revision buffer (per proposal scope) + minor RFE handling.
+
+### M5 — Security Hardening, Admin Polish & Pre-Launch (Sprint 5 Priorities)
+- [ ] **High-Entropy Cryptographic Vendor Tokens (Priority #1):** Replace plain department string tokens (`?token=Lighting`) with 128-bit unguessable tokens (`v_7f9a2b...`) stored in `/crew-data/tokens` mapping to department scopes to prevent URL guessing.
+- [ ] **Private Sheet Access & Direct Auth Guard:** Configure private Google Sheet data loading to strictly require authenticated Firebase RTDB / Service Account API access without falling back to synthetic dummy stubs when public CSV exports return 403.
+- [ ] **Google Maps API Key Referrer Restrictions:** Restrict `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in Google Cloud Console to authorized domain patterns (`https://*.theportal.is/*`, `https://*.web.app/*`, `http://localhost:3000/*`).
+- [ ] **CLIENT COMMUNICATION FLAG (Firebase Blaze Plan Upgrade):** Flag client requirement to upgrade GCP project to Firebase Blaze (Pay-as-you-go) before deploying an event with >100 concurrent on-site sockets.
+- [ ] **Admin Health Linter Filtering:** Make summary badges (**Errors**, **Warnings**, **Info**) clickable in `/admin/health` to filter the validation report issue list by severity.
+- [ ] **Admin Locations Pin Editing & Delete Safety Warnings:** Enhance `/admin` pin table so attempting to delete a Google Sheet location prompts a warning (`"Must be deleted directly in Google Sheet Locations tab"`), and editing coordinates for a spreadsheet pin displays new Lat/Lng values with a `"Copy to Sheet"` prompt.
+- [ ] **Pre-populated Department Dropdown for Magic Links:** Replace raw text input on `/admin/magic-links` with a select dropdown pre-populated with all active departments loaded from the Google Sheet `Departments` tab.
+- [ ] **Role Visibility & Public Gating Audit:** Audit public role views (`/public-data`) to ensure events mapped to internal departments (`Electricity`, `BOH`) remain invisible to unauthenticated public logins.
 
 ---
 
@@ -204,6 +215,7 @@ Tracked here so we know what to stand up vs. what the client owns. Env var names
 ## 10. Session Log
 > Append newest at top. Format: `YYYY-MM-DD — who — what changed / decided / discovered`.
 
+- **2026-07-26 — agent — Merged design/ui-updates branch back into sprint4/productization-milestone (incorporating full UI redesign, custom component primitives in src/components/ui/, admin styling modularization in src/app/admin/admin.css, and PWA icon assets). Staged Sprint 5 backlog tasks for high-entropy vendor tokens, Google Maps referrer lockdown, Firebase Blaze plan customer notification, and admin panel interactivity.**
 - **2026-07-26 — agent — Created and published dedicated design branch 'design/ui-updates' for UI/UX styling runs and aesthetic refinements.**
 - **2026-07-26 — agent — Enhanced Now & Next dashboard (src/components/event/NowNext.tsx) to automatically fall back to showing the next upcoming scheduled events (regardless of distance in future) when no events occur within 2 hours, and added a dedicated 'All-Day & Flexible / TBD' column. Added Google Maps API key error (ApiProjectMapError) diagnostic overlay in MapView.tsx, created dedicated Admin Magic Links page (/admin/magic-links), added Google Sheets TSV row exporter in Admin Locations dashboard (/admin), and enabled supersession of temporary pins when synced from Google Sheets Locations tab.**
 - **2026-07-26 — agent — Completed Sprint 4 productization tasks: implemented DataProvider seam (src/lib/DataProvider.ts, src/lib/event-data.ts, RtdbProvider, SheetsProvider, CsvProvider), standalone sheet linter (src/lib/schema-lint.ts) with validation report UI in Admin Health Panel (/admin/health), tokenized .ics calendar export API (/api/ics/) with PDT timezone tags (America/Los_Angeles), and mobile-optimized Vendor Magic Links (/api/vendor/, /vendor?token=...). Locked event timezone strictly to PDT for Black Rock City, Nevada. Verified 27/27 Vitest unit tests passing.**
