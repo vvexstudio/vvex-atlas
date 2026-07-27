@@ -11,7 +11,7 @@ export default async function Home() {
   const sessionToken = cookieStore.get("portal_user_session")?.value;
   const userSession = sessionToken ? await verifySessionCookie(sessionToken) : null;
 
-  let role = "guest";
+  let role = userSession?.role || "public";
   let isActive = true;
 
   if (userSession?.email) {
@@ -26,7 +26,7 @@ export default async function Home() {
           if (userData.active === false || String(userData.active).toUpperCase() === "FALSE") {
             isActive = false;
           } else {
-            role = userData.role || "guest";
+            role = userData.role || role;
           }
         }
       }
@@ -42,8 +42,6 @@ export default async function Home() {
     // 2. Fallback / Admin email override
     if (isAdminEmail(userSession.email)) {
       role = "admin";
-    } else if (userSession.role && role === "guest") {
-      role = userSession.role;
     }
   }
 

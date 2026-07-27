@@ -5,6 +5,8 @@ import { Venue, FestivalEvent, Department } from "@/types/festival";
 import { saveOfflineSnapshot, loadOfflineSnapshot } from "@/lib/offline-cache";
 import { parseSpreadsheetData } from "@/lib/event-mapper";
 
+import { filterEventsByRole } from "@/lib/role-filter";
+
 interface InitialData {
   venues: Venue[];
   events: FestivalEvent[];
@@ -14,8 +16,9 @@ interface InitialData {
 }
 
 export const useEventData = (role: string | null, initialData: InitialData) => {
+  const activeRole = role || "public";
   const [venues, setVenues] = useState<Venue[]>(initialData.venues);
-  const [events, setEvents] = useState<FestivalEvent[]>(initialData.events);
+  const [events, setEvents] = useState<FestivalEvent[]>(filterEventsByRole(initialData.events, activeRole));
   const [personnel, setPersonnel] = useState<unknown[]>(initialData.personnel || []);
   const [departments, setDepartments] = useState<Department[]>(initialData.departments || []);
   const [sourceLabel, setSourceLabel] = useState(initialData.dataSourceLabel || "Static Init");
@@ -146,7 +149,8 @@ export const useEventData = (role: string | null, initialData: InitialData) => {
           });
 
           const finalVenues = [...mapped.venues, ...adminVenues];
-          const finalEvents = [...mapped.events, ...adminEvents];
+          const rawEvents = [...mapped.events, ...adminEvents];
+          const finalEvents = filterEventsByRole(rawEvents, activeRole);
 
           setVenues(finalVenues);
           setEvents(finalEvents);

@@ -266,6 +266,13 @@ export async function getFestivalDataFromCsv(): Promise<FestivalDataResult> {
   };
 }
 
+import { filterEventsByRole } from "./role-filter";
+export { filterEventsByRole };
+
 export async function getFestivalData(role: string = "public"): Promise<FestivalDataResult> {
-  return getFestivalDataFromRtdb(role);
+  const result = await getFestivalDataFromRtdb(role);
+  return {
+    ...result,
+    events: filterEventsByRole(result.events, role),
+  };
 }
