@@ -34,7 +34,7 @@ describe("getFestivalData - location-matching logic", () => {
       };
     });
 
-    const result = await getFestivalData("guest");
+    const result = await getFestivalData("crew");
     expect(result.events).toHaveLength(1);
     const event = result.events[0];
     
@@ -66,7 +66,7 @@ describe("getFestivalData - location-matching logic", () => {
       };
     });
 
-    const result = await getFestivalData("guest");
+    const result = await getFestivalData("crew");
     expect(result.events).toHaveLength(1);
     const event = result.events[0];
     

@@ -12,8 +12,7 @@ export function filterEventsByRole(events: FestivalEvent[], role: string = "publ
     normalizedRole === "admin" ||
     normalizedRole === "crew" ||
     normalizedRole === "lead" ||
-    normalizedRole === "department_lead" ||
-    normalizedRole === "guest";
+    normalizedRole === "department_lead";
 
   if (isInternalCrew) {
     return events;
@@ -25,6 +24,7 @@ export function filterEventsByRole(events: FestivalEvent[], role: string = "publ
     const cat = (e.scheduleCategory || "").toLowerCase();
     const action = (e.action || "").toLowerCase();
     const title = (e.title || "").toLowerCase();
+    const fohBoh = String((e as any).foh_boh || "").toLowerCase();
 
     const isExplicitlyPublic =
       dept.includes("public") ||
@@ -32,14 +32,17 @@ export function filterEventsByRole(events: FestivalEvent[], role: string = "publ
       cat.includes("public") ||
       cat.includes("foh") ||
       action.includes("public") ||
-      title.includes("public");
+      title.includes("public") ||
+      fohBoh.includes("foh") ||
+      fohBoh.includes("public");
 
     const isInternal =
       dept.includes("admin") ||
       dept.includes("all departments") ||
       dept.includes("boh") ||
       cat.includes("boh") ||
-      cat.includes("internal");
+      cat.includes("internal") ||
+      fohBoh.includes("boh");
 
     return isExplicitlyPublic && !isInternal;
   });

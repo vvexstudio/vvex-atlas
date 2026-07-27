@@ -63,7 +63,7 @@ describe("getFestivalData - time-math and rollover logic", () => {
       };
     });
 
-    const result = await getFestivalData("guest");
+    const result = await getFestivalData("crew");
     expect(result.events).toHaveLength(1);
     const event = result.events[0];
     expect(event.title).toBe("Midnight gig");

@@ -44,14 +44,16 @@ export const useStarredEvents = (userEmail?: string) => {
 
   // Real-time synchronization from database or localStorage fallback
   useEffect(() => {
-    // Case 1: Offline / guest / unconfigured Firebase -> LocalStorage
-    if (!clientDb || !escapedEmail) {
+    const isAuthed = Boolean(clientDb && escapedEmail && clientAuth?.currentUser);
+
+    // Case 1: Offline / unauthenticated public guest / unconfigured Firebase -> LocalStorage
+    if (!isAuthed) {
       setTimeout(() => {
         try {
           const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
           setStarredIds(localData ? JSON.parse(localData) : []);
         } catch (err) {
-          console.error("Failed to parse starred events from localStorage:", err);
+          console.warn("Failed to parse starred events from localStorage:", err);
           setStarredIds([]);
         }
         setIsLoading(false);
@@ -63,7 +65,7 @@ export const useStarredEvents = (userEmail?: string) => {
     setTimeout(() => {
       setIsLoading(true);
     }, 0);
-    const starredRef = ref(clientDb, `user-data/${escapedEmail}/starred`);
+    const starredRef = ref(clientDb!, `user-data/${escapedEmail}/starred`);
     
     const unsubscribe = onValue(
       starredRef,
@@ -83,8 +85,7 @@ export const useStarredEvents = (userEmail?: string) => {
         setIsLoading(false);
       },
       (error) => {
-        console.error("Firebase database read error for starred events:", error);
-        // Fall back to localStorage on permission/fetch failure
+        console.warn("Firebase RTDB read skipped for starred events, using localStorage fallback:", error.message);
         try {
           const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
           setStarredIds(localData ? JSON.parse(localData) : []);

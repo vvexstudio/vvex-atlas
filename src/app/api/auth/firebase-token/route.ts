@@ -52,7 +52,7 @@ export async function GET() {
     const escapedEmail = escapeEmail(email);
     const userSnapshot = await adminDb.ref(`auth-directory/${escapedEmail}`).once("value");
     
-    let role = "guest";
+    let role = session.role || "public";
     let departments: string[] = [];
 
     if (userSnapshot.exists()) {
@@ -64,7 +64,7 @@ export async function GET() {
         return NextResponse.json({ error: "Forbidden: Account is inactive" }, { status: 403 });
       }
 
-      role = userData.role || "guest";
+      role = userData.role || "crew";
       
       // Parse departments if defined
       if (typeof userData.departments === "string") {
@@ -73,7 +73,7 @@ export async function GET() {
         departments = userData.departments.filter(Boolean);
       }
     } else {
-      console.warn(`User ${email} not found in Firebase /auth-directory. Defaulting to 'guest'.`);
+      console.warn(`User ${email} not found in Firebase /auth-directory. Defaulting to '${role}'.`);
     }
 
     // 4. Create Firebase Custom Token with custom claims
