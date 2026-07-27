@@ -350,6 +350,18 @@ Phase 2 — PWA/offline (WP-9):
 
 **Benchmark:** the same data sells to non-Workspace clients — Tier 1 exists under Tier 2.
 
+### Sprint 5 — Security Hardening, Admin Polish & Pre-Launch (branch `sprint5/security-and-polish`)
+
+- [x] 1. **High-Entropy Cryptographic Vendor Tokens:** 128-bit unguessable tokens (`v_7f9a2b...`) generated via Web Crypto API in `src/components/admin/MagicLinkGenerator.tsx`. **⛳ COMMIT:** `feat: implement high entropy vendor tokens`
+- [x] 2. **Private Sheet Access & Direct Auth Guard:** `.read: true` rule for `/public-data` in `database.rules.json` allowing direct unauthenticated public reads. **⛳ COMMIT:** `feat: update public database rules`
+- [ ] 3. **Google Maps API Key Referrer Restrictions (HUMAN):** Lock `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in Google Cloud Console to authorized domain patterns (`https://*.theportal.is/*`).
+- [ ] 4. **Firebase Blaze Plan Upgrade Flag (HUMAN):** Communicate GCP Blaze plan upgrade requirement to client before on-site deployment (>100 sockets).
+- [x] 5. **Admin Health Linter Severity Filtering:** Interactive severityFilter state and clickable summary badges (**Errors**, **Warnings**, **Info**) in `/admin/health`. **⛳ COMMIT:** `feat: add linter severity filtering`
+- [x] 6. **Admin Locations Pin Editing & Delete Safety Warnings:** Master location protection dialogs in `/admin` warning that master locations must be removed directly in Google Sheet. **⛳ COMMIT:** `feat: add location protection warnings`
+- [x] 7. **Pre-populated Department Dropdown for Magic Links:** Pre-populated `<select>` dropdown with active departments loaded from master Google Sheet `Departments` tab. **⛳ COMMIT:** `feat: add department selector dropdown`
+
+---
+
 ### Team A + HUMAN — WP-13 Pitch assets (branch `sprint4/team-a-pitch`)
 
 - [ ] A1. One-page PDF source (markdown/HTML in `reports/pitch/`): value prop, tier table (Tier 1 `.ics` vs Tier 2 Workspace-native mapped to feature flags), 3 screenshots, data-handling note (what's stored where: Sheet, RTDB, Groups; retention; deletion path). **⛳ COMMIT:** `docs: add pitch one-pager and data-handling note`

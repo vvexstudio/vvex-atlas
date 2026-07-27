@@ -344,6 +344,16 @@ grep -riE 'claude|anthropic|gemini|openai|gpt|copilot' --include='*' -l . \
 
 **Критерий готовности:** те же структурированные данные успешно экспортируются пользователям без аккаунтов в Workspace — функционал базового тарифа Tier 1 работает независимо внутри Tier 2.
 
+### Спринт 5 — Усиление безопасности, полировка админки и предзапусковая подготовка (ветка `sprint5/security-and-polish`)
+
+- [x] 1. **Криптографические токены вендоров:** генератор 128-битных токенов (`v_7f9a2b...`) через Web Crypto API в `src/components/admin/MagicLinkGenerator.tsx`. **⛳ КОММИТ:** `feat: implement high entropy vendor tokens`
+- [x] 2. **Правила чтений базы данных:** правило `.read: true` для `/public-data` в `database.rules.json` для прямого публичного доступа. **⛳ КОММИТ:** `feat: update public database rules`
+- [ ] 3. **Ограничения HTTP Referrer для Google Maps API (ЧЕЛОВЕК):** привязать ключ `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` в GCP Console к доменам (`https://*.theportal.is/*`).
+- [ ] 4. **Уведомление клиента о тарифном плане Firebase Blaze (ЧЕЛОВЕК):** уведомить клиента о необходимости перехода на платный план GCP Blaze перед полевыми испытаниями (>100 подключений).
+- [x] 5. **Фильтрация отчета линтера по критичности:** интерактивные кнопки-фильтры (**Errors**, **Warnings**, **Info**) в `/admin/health`. **⛳ КОММИТ:** `feat: add linter severity filtering`
+- [x] 6. **Предупреждения о защите мастер-локаций:** модальные уведомления в `/admin` с правилами редактирования и удаления локаций таблицы Google Sheets. **⛳ КОММИТ:** `feat: add location protection warnings`
+- [x] 7. **Выпадающий список департаментов:** pre-populated выпадающий список `<select>` с департаментами из таблицы `Departments`. **⛳ КОММИТ:** `feat: add department selector dropdown`
+
 ### Команда A + ЧЕЛОВЕК — WP-13 Презентационные материалы (ветка `sprint4/team-a-pitch`)
 
 - [ ] A1. Создайте презентационный одностраничник в папке `reports/pitch/` (в формате Markdown/HTML): ценностное предложение продукта, таблица тарифов (Tier 1 .ics против Tier 2 Workspace с привязкой к фичам приложения), 3 демонстрационных скриншота, техническое описание обработки и хранения данных (где что хранится: Sheet, RTDB, Workspace Groups; сроки хранения; регламент удаления данных). **⛳ КОММИТ:** `docs: add pitch one-pager and data-handling note`
