@@ -11,7 +11,7 @@ export interface UserSession {
 
 export const useAuthProfile = (initialSession?: UserSession) => {
   const [userSession] = useState<UserSession | undefined>(initialSession);
-  const [role, setRole] = useState<string | null>(initialSession?.role || null);
+  const [role, setRole] = useState<string>(initialSession?.role || "public");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

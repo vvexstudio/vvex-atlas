@@ -8,7 +8,9 @@ export const revalidate = 0;
 
 export default async function Home() {
   const cookieStore = await cookies();
-  const sessionToken = cookieStore.get("portal_user_session")?.value;
+  const sessionToken =
+    cookieStore.get("portal_user_session")?.value ||
+    cookieStore.get("portal_session")?.value;
   const userSession = sessionToken ? await verifySessionCookie(sessionToken) : null;
 
   let role = userSession?.role || "public";

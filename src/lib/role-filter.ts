@@ -6,14 +6,25 @@ import type { FestivalEvent } from "@/types/festival";
  * - 'public', 'guest', or unauthenticated: ONLY see events explicitly tagged for public / FOH.
  */
 export function filterEventsByRole(events: FestivalEvent[], role: string = "public"): FestivalEvent[] {
-  if (role === "admin" || role === "crew" || role === "lead" || role === "guest") {
+  const normalizedRole = (role || "").toLowerCase();
+
+  // Only filter when explicitly in "public" view
+  if (normalizedRole !== "public") {
     return events;
   }
+
   return events.filter((e) => {
     const dept = (e.department || "").toLowerCase();
     const cat = (e.scheduleCategory || "").toLowerCase();
-    const isExplicitlyPublic = dept.includes("public") || dept.includes("foh") || cat.includes("public");
-    const isInternal = dept.includes("admin") || dept.includes("all departments") || cat.includes("boh");
-    return isExplicitlyPublic && !isInternal;
+    const action = (e.action || "").toLowerCase();
+
+    const isInternal =
+      dept.includes("admin") ||
+      dept.includes("all departments") ||
+      dept.includes("boh") ||
+      cat.includes("boh") ||
+      cat.includes("internal");
+
+    return !isInternal;
   });
 }
