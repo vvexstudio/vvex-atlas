@@ -308,6 +308,47 @@ These manual verification steps validate tokenized calendar subscriptions, vendo
 
 ---
 
+## 🔒 Sprint 5: Security Hardening, Admin Polish & Pre-Launch
+
+These manual verification steps validate token entropy, private sheet access guards, Google Maps referrer lockdown, and admin panel interactivity.
+
+### 1. 🔒 High-Entropy Cryptographic Vendor Tokens
+*Verify unguessable token validation for vendor links and calendar subscriptions.*
+
+- [ ] **Step 1:** Open [/admin/magic-links](file:///Users/vincentnaples/Documents/github/portal-dev/src/app/admin/magic-links/page.tsx).
+- [ ] **Step 2:** Click **Generate Secure Token** $\rightarrow$ confirm a random 128-bit token URL is generated (e.g. `/api/vendor?token=v_7f9a2b...`).
+- [ ] **Step 3:** Open the token URL in an incognito window $\rightarrow$ confirm schedule loads cleanly.
+- [ ] **Step 4:** Attempt to guess or modify the token (e.g. `/api/vendor?token=v_7f9a2b_invalid`) $\rightarrow$ confirm the server returns `404 Not Found` or `401 Unauthorized`.
+
+---
+
+### 2. 🔑 Pre-Populated Department Dropdown on Magic Links Page
+*Verify department dropdown selection.*
+
+- [ ] **Step 1:** Open [/admin/magic-links](file:///Users/vincentnaples/Documents/github/portal-dev/src/app/admin/magic-links/page.tsx).
+- [ ] **Step 2:** Confirm the vendor department selector is a `<select>` dropdown pre-populated with all active departments loaded from the Google Sheet `Departments` tab.
+- [ ] **Step 3:** Select a department (e.g. `Lighting`) $\rightarrow$ confirm link and feed URLs update accordingly.
+
+---
+
+### 3. 🔍 Interactive Linter Severity Filtering
+*Verify issue filtering on the admin health panel.*
+
+- [ ] **Step 1:** Open [/admin/health](file:///Users/vincentnaples/Documents/github/portal-dev/src/app/admin/health/page.tsx).
+- [ ] **Step 2:** Click the **Errors** summary badge $\rightarrow$ verify only Error issues render in the list below.
+- [ ] **Step 3:** Click **Warnings** or **Info** badges $\rightarrow$ confirm the list filters instantly.
+
+---
+
+### 4. 📍 Locations Pin Edit & Delete Protection Warnings
+*Verify safety warnings when attempting to delete or edit Google Sheet locations in the admin panel.*
+
+- [ ] **Step 1:** Open [/admin](file:///Users/vincentnaples/Documents/github/portal-dev/src/app/admin/page.tsx).
+- [ ] **Step 2:** Click **Delete** next to a Google Sheet location $\rightarrow$ confirm a warning modal appears stating: `"Location belongs to Google Sheet master registry. Must be removed directly in the Locations tab of the spreadsheet."`
+- [ ] **Step 3:** Click **Edit** next to a Google Sheet location $\rightarrow$ adjust pin position on map $\rightarrow$ confirm new Lat/Lng displays with a **"Copy New Coords to Sheet"** TSV button.
+
+---
+
 ## 📋 Master Summary of Open Human Smoke Test Items
 
 Use this consolidated checklist during your final manual testing pass across Sprints 2, 3, and 4:
