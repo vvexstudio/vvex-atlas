@@ -319,13 +319,12 @@ export function EventApp({
   const [isMobileScheduleOpen, setIsMobileScheduleOpen] = useState(false);
 
   // Desktop sidebar resize (drag handle between map panel and sidebar)
-  const [sidebarWidth, setSidebarWidth] = useState<number | null>(null);
-  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
-
-  useEffect(() => {
+  const [sidebarWidth, setSidebarWidth] = useState<number | null>(() => {
+    if (typeof window === "undefined") return null;
     const saved = Number(window.localStorage.getItem("portal-sidebar-width"));
-    if (saved >= 280 && saved <= 640) setSidebarWidth(saved);
-  }, []);
+    return saved >= 280 && saved <= 640 ? saved : null;
+  });
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
 
   const startSidebarResize = (e: React.PointerEvent) => {
     e.preventDefault();
@@ -946,6 +945,7 @@ export function EventApp({
         <aside
           className={`legacy-list-panel ${isSidebarOpen ? "" : "collapsed"}`}
           style={sidebarWidth !== null ? ({ "--sidebar-width": `${sidebarWidth}px` } as React.CSSProperties) : undefined}
+          suppressHydrationWarning
         >
           {/* Filters Panel */}
           <section className="legacy-list-block legacy-list-controls">
