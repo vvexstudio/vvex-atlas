@@ -5,19 +5,21 @@ export interface OfflineSnapshot {
   events: FestivalEvent[];
   personnel: unknown[];
   departments: Department[];
+  role: string;
   timestamp: string; // ISO string
 }
 
 const STORAGE_KEY = "portal_offline_snapshot";
 
 /**
- * Saves a data snapshot for offline use.
+ * Saves a data snapshot for offline use, scoped by role.
  */
 export function saveOfflineSnapshot(
   venues: Venue[],
   events: FestivalEvent[],
   personnel: unknown[],
-  departments: Department[]
+  departments: Department[],
+  role: string = "public"
 ) {
   if (typeof window === "undefined") return;
   try {
@@ -26,21 +28,22 @@ export function saveOfflineSnapshot(
       events,
       personnel,
       departments,
+      role: role.toLowerCase(),
       timestamp: new Date().toISOString(),
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(snap));
+    localStorage.setItem(`${STORAGE_KEY}_${role.toLowerCase()}`, JSON.stringify(snap));
   } catch (err) {
     console.error("Failed to save offline snapshot to localStorage:", err);
   }
 }
 
 /**
- * Loads a cached data snapshot if available.
+ * Loads a cached data snapshot for a specific role if available.
  */
-export function loadOfflineSnapshot(): OfflineSnapshot | null {
+export function loadOfflineSnapshot(role: string = "public"): OfflineSnapshot | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(`${STORAGE_KEY}_${role.toLowerCase()}`);
     if (!raw) return null;
     return JSON.parse(raw) as OfflineSnapshot;
   } catch (err) {

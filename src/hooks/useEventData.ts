@@ -159,22 +159,25 @@ export const useEventData = (role: string | null, initialData: InitialData) => {
           setSourceLabel(`Firebase RTD Live (${(activeRole || "public").toUpperCase()})`);
           
           // Cache snapshot locally for offline fallback
-          saveOfflineSnapshot(finalVenues, finalEvents, mapped.personnel, mapped.departments);
+          saveOfflineSnapshot(finalVenues, finalEvents, mapped.personnel, mapped.departments, activeRole);
           setLastSynced(new Date().toISOString());
         }
       },
       (error) => {
-        console.warn("RTDB read failed, falling back to cache if available:", error);
-        // Fallback to cache on DB error
-        const cached = loadOfflineSnapshot();
-        if (cached) {
+        console.warn(`RTDB read failed on path /${nodePath}:`, error);
+        // Fallback to role-scoped cache on DB error if available and non-empty
+        const cached = loadOfflineSnapshot(activeRole);
+        if (cached && cached.events.length > 0) {
           setVenues(cached.venues);
           setEvents(cached.events);
           setPersonnel(cached.personnel);
           setDepartments(cached.departments);
           const timeStr = new Date(cached.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-          setSourceLabel(`Offline Cache (Fallback, Synced ${timeStr})`);
+          setSourceLabel(`Offline Cache (${activeRole.toUpperCase()}, Synced ${timeStr})`);
           setLastSynced(cached.timestamp);
+        } else if (initialData.events && initialData.events.length > 0) {
+          console.log("Preserving server initialData on RTDB error.");
+          setSourceLabel(initialData.dataSourceLabel || `Server Data (${activeRole.toUpperCase()})`);
         }
       }
     );
