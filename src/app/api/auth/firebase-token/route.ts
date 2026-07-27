@@ -13,10 +13,12 @@ function escapeEmail(email: string): string {
 
 export async function GET() {
   const cookieStore = await cookies();
-  const sessionToken = cookieStore.get("portal_user_session")?.value;
+  const sessionToken =
+    cookieStore.get("portal_user_session")?.value ||
+    cookieStore.get("portal_session")?.value;
 
   if (!sessionToken) {
-    return NextResponse.json({ error: "Unauthorized: No session token" }, { status: 401 });
+    return NextResponse.json({ role: "public", token: null, isPublic: true });
   }
 
   // 1. Verify Next.js session
@@ -24,12 +26,12 @@ export async function GET() {
   try {
     session = await verifySessionCookie(sessionToken);
   } catch (err) {
-    console.error("Session verification failed:", err);
-    return NextResponse.json({ error: "Unauthorized: Invalid session" }, { status: 401 });
+    console.warn("Session verification failed, defaulting to public role:", err);
+    return NextResponse.json({ role: "public", token: null, isPublic: true });
   }
 
   if (!session || !session.email) {
-    return NextResponse.json({ error: "Unauthorized: Empty session payload" }, { status: 401 });
+    return NextResponse.json({ role: "public", token: null, isPublic: true });
   }
 
   const email = session.email;

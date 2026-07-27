@@ -26,19 +26,23 @@ export const useAuthProfile = (initialSession?: UserSession) => {
       try {
         const tokenRes = await fetch("/api/auth/firebase-token");
         if (!tokenRes.ok) {
-          throw new Error(`Token fetch failed: status ${tokenRes.status}`);
+          console.log(`Public or guest mode (Status ${tokenRes.status}). Using public role.`);
+          setRole(initialSession?.role || "public");
+          setIsLoading(false);
+          return;
         }
         
-        const { token, role: userRole } = await tokenRes.json();
-        if (!token) {
-          throw new Error("No custom token returned from endpoint");
+        const data = await tokenRes.json();
+        if (data.token && auth) {
+          await signInWithCustomToken(auth, data.token);
+          console.log(`Signed in to Firebase with custom claims. Role: ${data.role}`);
+          setRole(data.role || "public");
+        } else {
+          setRole(data.role || initialSession?.role || "public");
         }
-
-        await signInWithCustomToken(auth!, token);
-        console.log(`Signed in to Firebase with custom claims. Role: ${userRole}`);
-        setRole(userRole);
       } catch (err) {
-        console.error("Firebase custom token auth failed:", err);
+        console.warn("Firebase token fetch warning, defaulting to public role:", err);
+        setRole(initialSession?.role || "public");
       } finally {
         setIsLoading(false);
       }
