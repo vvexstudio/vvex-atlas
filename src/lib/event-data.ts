@@ -147,11 +147,12 @@ export async function getFestivalDataFromSheets(role: string = "public"): Promis
   const colorsObj: Record<string, Record<string, { bg: string; fg: string }>> = {};
   let sourceLabel = "";
 
-  const hasServiceAccount = Boolean(
-    process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY
+  const hasCredentials = Boolean(
+    (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY) ||
+    (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.GOOGLE_REFRESH_TOKEN)
   );
 
-  if (hasServiceAccount) {
+  if (hasCredentials) {
     try {
       const fullSpreadsheet = await getSpreadsheetWithFormatting(spreadsheetId, [tabLocations, tabPersonnel, tabDepartments, tabRos]);
       if (fullSpreadsheet && fullSpreadsheet.sheets) {
