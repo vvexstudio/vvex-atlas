@@ -14,6 +14,7 @@ export default async function Home() {
   const userSession = sessionToken ? await verifySessionCookie(sessionToken) : null;
 
   let role = userSession?.role || "public";
+  let userDepartments: string[] = userSession?.departments || [];
   let isActive = true;
 
   if (userSession?.email) {
@@ -29,6 +30,11 @@ export default async function Home() {
             isActive = false;
           } else {
             role = userData.role || role;
+            if (Array.isArray(userData.departments)) {
+              userDepartments = userData.departments;
+            } else if (typeof userData.departments === "string") {
+              userDepartments = userData.departments.split(",").map((d: string) => d.trim()).filter(Boolean);
+            }
           }
         }
       }
@@ -43,7 +49,9 @@ export default async function Home() {
 
     // 2. Fallback / Admin email override
     if (isAdminEmail(userSession.email)) {
-      role = "admin";
+      if (!role || role === "public") {
+        role = "admin";
+      }
     }
   }
 
@@ -62,7 +70,8 @@ export default async function Home() {
         email: userSession.email,
         name: userSession.name,
         picture: userSession.picture,
-        role: role
+        role: role,
+        departments: userDepartments
       } : undefined}
     />
   );

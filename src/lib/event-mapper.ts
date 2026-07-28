@@ -165,30 +165,73 @@ function parseDateString(val: unknown): Date | null {
 }
 
 export function createVenueFromNewSheetRow(row: any): Venue {
-  if (row && typeof row === "object" && "id" in row && "name" in row && "hasLocation" in row) {
-    return row as Venue;
+  const name = asString(
+    getRowValue(row, ["Location", "location", "Name", "name", "location_id", "Location Name", "location_name"])
+  );
+  if (!name && row && typeof row === "object" && "id" in row && "name" in row) {
+    const v = row as Venue;
+    if (v.hasLocation && Number.isFinite(v.lat) && Number.isFinite(v.lng)) {
+      return v;
+    }
   }
-  const name = asString(getRowValue(row, ["Location", "name", "location_id"]));
-  const lat = Number(getRowValue(row, ["Lat", "Latitude"]));
-  const lng = Number(getRowValue(row, ["Long", "Lng", "Longitude"]));
-  const address = asString(getRowValue(row, ["Address", "Street Address", "Location Address", "location_address"]));
-  const hasLocation = Number.isFinite(lat) && Number.isFinite(lng);
-  const description = asString(getRowValue(row, ["Description", "notes", "notes_internal"]));
+
+  let rawLat = getRowValue(row, ["Lat", "Latitude", "lat", "latitude", "LAT", "LATITUDE", "y", "Y"]);
+  let rawLng = getRowValue(row, ["Long", "Lng", "Longitude", "longitude", "long", "lng", "LONG", "LNG", "x", "X"]);
+  const rawCoords = getRowValue(row, [
+    "Coordinates",
+    "coordinates",
+    "COORDINATES",
+    "Coord",
+    "coord",
+    "Coords",
+    "coords",
+    "location_coordinates",
+    "lat_lng",
+    "latlng",
+  ]);
+
+  if ((rawLat === undefined || rawLng === undefined || rawLat === "" || rawLng === "") && rawCoords) {
+    const str = asString(rawCoords);
+    const coordsMatch = str.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+    if (coordsMatch) {
+      rawLat = coordsMatch[1];
+      rawLng = coordsMatch[2];
+    }
+  }
+
+  if (typeof rawLat === "string" && rawLat.includes(",")) {
+    const coordsMatch = rawLat.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+    if (coordsMatch) {
+      rawLat = coordsMatch[1];
+      rawLng = coordsMatch[2];
+    }
+  }
+
+  const numLat = rawLat !== undefined && rawLat !== null && rawLat !== "" ? Number(rawLat) : undefined;
+  const numLng = rawLng !== undefined && rawLng !== null && rawLng !== "" ? Number(rawLng) : undefined;
+  const hasLocation = numLat !== undefined && numLng !== undefined && Number.isFinite(numLat) && Number.isFinite(numLng);
+
+  const address = asString(getRowValue(row, ["Address", "Street Address", "Location Address", "location_address", "address"]));
+  const description = asString(getRowValue(row, ["Description", "notes", "notes_internal", "description"]));
+  const permanence = asString(getRowValue(row, ["Category", "category", "Permanence", "permanence", "Type", "type", "foh_boh_default"])) || "Standard";
+
+  const venueName = name || (row && typeof row === "object" && row.name ? String(row.name) : "Unnamed Location");
 
   return {
-    id: slugify(name),
-    name,
-    label: "Location",
-    mapLabel: name,
+    id: slugify(venueName),
+    name: venueName,
+    label: permanence,
+    mapLabel: venueName,
     shortDescription: description || "Imported location",
-    description: description || `Location: ${name}`,
+    description: description || `Location: ${venueName}`,
     address: address || undefined,
     x: 0,
     y: 0,
-    lat: hasLocation ? lat : undefined,
-    lng: hasLocation ? lng : undefined,
+    lat: hasLocation ? numLat : undefined,
+    lng: hasLocation ? numLng : undefined,
     hasLocation,
-    thumbnailUrl: DEFAULT_THUMBNAIL,
+    permanence,
+    thumbnailUrl: (row && row.thumbnailUrl) || DEFAULT_THUMBNAIL,
     accent: hasLocation ? DEFAULT_ACCENT : "#6b7280",
   };
 }
@@ -217,7 +260,7 @@ export function createEventFromSheetRow(row: any, venuesById: Map<string, Venue>
   const endStr = endMinutes !== null ? formatMinutes(endMinutes) : asString(endVal) || "TBD";
 
   const venueId = slugify(locationName);
-  const venue = venuesById.get(venueId);
+  const venue = venuesById.get(venueId) || venuesById.get(locationName.toLowerCase().trim());
 
   const projectTypes = parseEventTypes(`${action} ${description}`);
 
@@ -276,7 +319,12 @@ export function parseSpreadsheetData(
     .map(createVenueFromNewSheetRow)
     .filter((v) => v.name && v.name !== "All Locations");
 
-  const venuesById = new Map(venues.map((venue) => [venue.id, venue]));
+  const venuesById = new Map<string, Venue>();
+  venues.forEach((venue) => {
+    venuesById.set(venue.id, venue);
+    venuesById.set(venue.name.toLowerCase().trim(), venue);
+    venuesById.set(slugify(venue.name), venue);
+  });
 
   validRows.forEach((row) => {
     if (row && typeof row === "object" && "id" in row && "title" in row && "startTime" in row) {
@@ -285,7 +333,7 @@ export function parseSpreadsheetData(
     const locName = asString(getRowValue(row, ["SOLARIS ROS Location", "Location", "location_name", "location"]));
     if (locName) {
       const id = slugify(locName);
-      if (!venuesById.has(id)) {
+      if (!venuesById.has(id) && !venuesById.has(locName.toLowerCase().trim())) {
         const fallbackVenue: Venue = {
           id,
           name: locName,
@@ -301,6 +349,7 @@ export function parseSpreadsheetData(
         };
         venues.push(fallbackVenue);
         venuesById.set(id, fallbackVenue);
+        venuesById.set(locName.toLowerCase().trim(), fallbackVenue);
       }
     }
   });

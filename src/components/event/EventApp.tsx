@@ -10,7 +10,7 @@ import { MapView } from "./MapView";
 import { ScheduleGrid } from "./ScheduleGrid";
 import { RunningSchedule } from "./RunningSchedule";
 import { CalendarView } from "./CalendarView";
-import { Icon } from "@/components/ui/icons";
+import { Icon, IconName } from "@/components/ui/icons";
 import { useAuthProfile } from "@/hooks/useAuthProfile";
 import { useEventData } from "@/hooks/useEventData";
 import { useFilters } from "@/hooks/useFilters";
@@ -90,6 +90,7 @@ type EventAppProps = {
     name?: string;
     picture?: string;
     role?: string;
+    departments?: string[];
   };
 };
 
@@ -106,7 +107,7 @@ export function EventApp({
   userSession: initialUserSession,
 }: EventAppProps) {
   // 1. Auth Hook
-  const { userSession, role } = useAuthProfile(initialUserSession);
+  const { userSession, role, departments: userDepartments } = useAuthProfile(initialUserSession);
 
   // 2. Event Data Hook
   const { venues, events, personnel, departments, sourceLabel, isOffline, lastSynced } = useEventData(role, {
@@ -679,6 +680,23 @@ export function EventApp({
     );
   };
 
+  // Compute display badge for current user role & department
+  const activeRoleBadge = useMemo(() => {
+    if (role === "admin") {
+      if (userDepartments && userDepartments.length > 0 && !userDepartments.includes("All Departments")) {
+        return { icon: "shieldCheck" as IconName, text: `Admin • ${userDepartments.join(", ")}`, isHighlight: true };
+      }
+      return { icon: "shieldCheck" as IconName, text: "Admin", isHighlight: true };
+    }
+    if (userDepartments && userDepartments.length > 0 && !userDepartments.includes("Public")) {
+      return { icon: "zap" as IconName, text: userDepartments.join(", "), isHighlight: true };
+    }
+    if (role === "crew") {
+      return { icon: "user" as IconName, text: "Crew", isHighlight: false };
+    }
+    return { icon: "globe" as IconName, text: "Public", isHighlight: false };
+  }, [role, userDepartments]);
+
   return (
     <main className="legacy-app">
       {isOffline && (
@@ -697,11 +715,11 @@ export function EventApp({
             PDT • Black Rock City
           </span>
           {sourceLabel && (
-            <span className="banner-source-label">({sourceLabel})</span>
+            <span className="banner-source-label" title="Data connection mode">({sourceLabel})</span>
           )}
         </div>
         <div className="legacy-banner-actions">
-          {userSession && role !== "public" ? (
+          {userSession ? (
             <div className="user-profile-section">
               {userSession.picture ? (
                 <img
@@ -729,10 +747,29 @@ export function EventApp({
                   {(userSession.name || userSession.email)[0].toUpperCase()}
                 </div>
               )}
-              <div className="user-profile-info">
-                <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--ink)", lineHeight: "1.2" }}>
-                  {userSession.name || userSession.email.split("@")[0]}
-                </span>
+              <div className="user-profile-info" style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                  <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--ink)", lineHeight: "1.2" }}>
+                    {userSession.name || userSession.email.split("@")[0]}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "0.68rem",
+                      fontWeight: 700,
+                      padding: "2px 8px",
+                      borderRadius: "12px",
+                      backgroundColor: activeRoleBadge.isHighlight ? "var(--accent, #f97316)" : "var(--line, rgba(255,255,255,0.15))",
+                      color: activeRoleBadge.isHighlight ? "#ffffff" : "var(--muted)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    <Icon name={activeRoleBadge.icon} size={11} />
+                    {activeRoleBadge.text}
+                  </span>
+                </div>
                 <span style={{ fontSize: "0.65rem", color: "var(--muted)" }}>
                   {userSession.email}
                 </span>

@@ -7,11 +7,13 @@ export interface UserSession {
   name?: string;
   picture?: string;
   role?: string;
+  departments?: string[];
 }
 
 export const useAuthProfile = (initialSession?: UserSession) => {
   const [userSession] = useState<UserSession | undefined>(initialSession);
   const [role, setRole] = useState<string>(initialSession?.role || "public");
+  const [departments, setDepartments] = useState<string[]>(initialSession?.departments || []);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -28,21 +30,23 @@ export const useAuthProfile = (initialSession?: UserSession) => {
         if (!tokenRes.ok) {
           console.log(`Public or guest mode (Status ${tokenRes.status}). Using public role.`);
           setRole(initialSession?.role || "public");
+          setDepartments(initialSession?.departments || []);
           setIsLoading(false);
           return;
         }
         
         const data = await tokenRes.json();
+        if (data.role) setRole(data.role);
+        if (Array.isArray(data.departments)) setDepartments(data.departments);
+
         if (data.token && auth) {
           await signInWithCustomToken(auth, data.token);
           console.log(`Signed in to Firebase with custom claims. Role: ${data.role}`);
-          setRole(data.role || "public");
-        } else {
-          setRole(data.role || initialSession?.role || "public");
         }
       } catch (err) {
         console.warn("Firebase token fetch warning, defaulting to public role:", err);
         setRole(initialSession?.role || "public");
+        setDepartments(initialSession?.departments || []);
       } finally {
         setIsLoading(false);
       }
@@ -51,5 +55,5 @@ export const useAuthProfile = (initialSession?: UserSession) => {
     authenticate();
   }, []);
 
-  return { userSession, role, isLoading };
+  return { userSession, role, departments, isLoading };
 };
