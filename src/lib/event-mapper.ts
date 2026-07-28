@@ -174,6 +174,7 @@ export function createVenueFromNewSheetRow(row: any): Venue {
   const address = asString(getRowValue(row, ["Address", "Street Address", "Location Address", "location_address"]));
   const hasLocation = Number.isFinite(lat) && Number.isFinite(lng);
   const description = asString(getRowValue(row, ["Description", "notes", "notes_internal"]));
+  const category = asString(getRowValue(row, ["Category", "category", "permanence", "type", "label"])) || "Standard";
 
   return {
     id: slugify(name),
@@ -190,6 +191,7 @@ export function createVenueFromNewSheetRow(row: any): Venue {
     hasLocation,
     thumbnailUrl: DEFAULT_THUMBNAIL,
     accent: hasLocation ? DEFAULT_ACCENT : "#6b7280",
+    permanence: category,
   };
 }
 
@@ -298,6 +300,7 @@ export function parseSpreadsheetData(
           hasLocation: false,
           thumbnailUrl: DEFAULT_THUMBNAIL,
           accent: "#6b7280",
+          permanence: "Standard",
         };
         venues.push(fallbackVenue);
         venuesById.set(id, fallbackVenue);

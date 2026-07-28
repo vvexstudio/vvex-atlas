@@ -213,7 +213,7 @@ export function EventApp({
 
   // Extract unique categories from venues
   const categoriesList = useMemo(() => {
-    return Array.from(new Set(venues.map(v => v.permanence).filter((p): p is string => !!p))).sort();
+    return Array.from(new Set(venues.map(v => v.permanence || "Standard").filter(Boolean))).sort();
   }, [venues]);
 
   // 2e. Filter events by Personal Agenda if toggled
@@ -940,20 +940,22 @@ export function EventApp({
                   activeCategories={activeCategories.length > 0 ? activeCategories : categoriesList}
                   isDarkMode={isDarkMode}
                 />
-                {categoriesList.length > 0 && (
-                  <Legend
-                    categories={categoriesList}
-                    activeCategories={activeCategories.length > 0 ? activeCategories : categoriesList}
-                    onToggleCategory={(cat) => {
-                      const active = activeCategories.length > 0 ? activeCategories : [...categoriesList];
-                      const newActive = active.includes(cat)
-                        ? active.filter((c) => c !== cat)
-                        : [...active, cat];
-                      setActiveCategories(newActive.length === categoriesList.length ? [] : newActive);
-                    }}
-                    getColorStyle={getColorStyle}
-                  />
-                )}
+                <Legend
+                  categories={categoriesList}
+                  activeCategories={activeCategories.length > 0 ? activeCategories : categoriesList}
+                  onToggleCategory={(cat) => {
+                    const active = activeCategories.length > 0 ? activeCategories : [...categoriesList];
+                    const newActive = active.includes(cat)
+                      ? active.filter((c) => c !== cat)
+                      : [...active, cat];
+                    setActiveCategories(newActive.length === categoriesList.length ? [] : newActive);
+                  }}
+                  getColorStyle={getColorStyle}
+                  venues={venues}
+                  events={events}
+                  focusedVenueId={focusedVenueId}
+                  onSelectVenue={(id) => setFocusedVenueId(id)}
+                />
               </div>
             )}
           </div>
