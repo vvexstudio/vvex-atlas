@@ -147,11 +147,12 @@ export async function getFestivalDataFromSheets(role: string = "public"): Promis
   const colorsObj: Record<string, Record<string, { bg: string; fg: string }>> = {};
   let sourceLabel = "";
 
-  const hasServiceAccount = Boolean(
-    process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY
+  const hasCredentials = Boolean(
+    (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY) ||
+    (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.GOOGLE_REFRESH_TOKEN)
   );
 
-  if (hasServiceAccount) {
+  if (hasCredentials) {
     try {
       const fullSpreadsheet = await getSpreadsheetWithFormatting(spreadsheetId, [tabLocations, tabPersonnel, tabDepartments, tabRos]);
       if (fullSpreadsheet && fullSpreadsheet.sheets) {
@@ -172,10 +173,23 @@ export async function getFestivalDataFromSheets(role: string = "public"): Promis
           rosData = parsedRos.data;
           const rows = rosSheet.data?.[0]?.rowData || [];
           if (rows.length > 1) {
-            const headers = (rows[0].values || []).map((cell: any) =>
+            let headerRowIndex = 0;
+            for (let i = 0; i < Math.min(rows.length, 10); i++) {
+              const rowVals = (rows[i].values || []).map((cell: any) =>
+                String(cell.userEnteredValue?.stringValue || cell.formattedValue || "").trim().toLowerCase()
+              );
+              const hasKnownHeader = rowVals.some((v: string) =>
+                ["action", "description", "location", "start day", "start", "end time"].includes(v)
+              );
+              if (hasKnownHeader) {
+                headerRowIndex = i;
+                break;
+              }
+            }
+            const headers = (rows[headerRowIndex]?.values || []).map((cell: any) =>
               String(cell.userEnteredValue?.stringValue || cell.formattedValue || "").trim()
             );
-            rosData = rows.slice(1).map((row: any) => {
+            rosData = rows.slice(headerRowIndex + 1).map((row: any) => {
               const item: Record<string, any> = {};
               headers.forEach((header: string, index: number) => {
                 if (header) {

@@ -221,8 +221,9 @@ export const MapView: React.FC<MapViewProps> = ({
       const hasCoords = typeof v.lat === "number" && typeof v.lng === "number";
       if (!hasCoords) return false;
       if (activeCategories && activeCategories.length > 0) {
-        // permanence contains category string e.g. "Hotel" / "Venue"
-        return activeCategories.includes(v.permanence || "");
+        // permanence contains category string e.g. "Standard" / "installation"
+        const category = v.permanence || "Standard";
+        return activeCategories.includes(category);
       }
       return true;
     });

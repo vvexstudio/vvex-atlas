@@ -249,14 +249,28 @@ export function parseSheetDataWithColors<T extends Record<string, any>>(
     return { data: [], colors: {} };
   }
 
-  // Parse headers from the first row
-  const firstRowValues = rows[0].values || [];
+  // Parse headers by finding the row containing expected column names
+  let headerRowIndex = 0;
+  for (let i = 0; i < Math.min(rows.length, 10); i++) {
+    const rowVals = (rows[i].values || []).map((cell: any) =>
+      String(cell.userEnteredValue?.stringValue || cell.formattedValue || "").trim().toLowerCase()
+    );
+    const hasKnownHeader = rowVals.some((v: string) =>
+      ["action", "description", "location", "name", "department", "start day", "start", "end time", "role"].includes(v)
+    );
+    if (hasKnownHeader) {
+      headerRowIndex = i;
+      break;
+    }
+  }
+
+  const firstRowValues = rows[headerRowIndex]?.values || [];
   const headers = firstRowValues.map((cell: any) =>
     String(cell.userEnteredValue?.stringValue || cell.formattedValue || "").trim()
   );
 
   const colorColIndex = headers.indexOf("Color");
-  const dataRows = rows.slice(1);
+  const dataRows = rows.slice(headerRowIndex + 1);
   const data: T[] = [];
   const colors: Record<string, { bg: string; fg: string }> = {};
 

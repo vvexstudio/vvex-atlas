@@ -174,7 +174,6 @@ export function createVenueFromNewSheetRow(row: any): Venue {
       return v;
     }
   }
-
   let rawLat = getRowValue(row, ["Lat", "Latitude", "lat", "latitude", "LAT", "LATITUDE", "y", "Y"]);
   let rawLng = getRowValue(row, ["Long", "Lng", "Longitude", "longitude", "long", "lng", "LONG", "LNG", "x", "X"]);
   const rawCoords = getRowValue(row, [
@@ -213,7 +212,7 @@ export function createVenueFromNewSheetRow(row: any): Venue {
 
   const address = asString(getRowValue(row, ["Address", "Street Address", "Location Address", "location_address", "address"]));
   const description = asString(getRowValue(row, ["Description", "notes", "notes_internal", "description"]));
-  const permanence = asString(getRowValue(row, ["Category", "category", "Permanence", "permanence", "Type", "type", "foh_boh_default"])) || "Standard";
+  const permanence = asString(getRowValue(row, ["Category", "category", "Permanence", "permanence", "Type", "type", "foh_boh_default", "label"])) || "Standard";
 
   const venueName = name || (row && typeof row === "object" && row.name ? String(row.name) : "Unnamed Location");
 
@@ -346,6 +345,7 @@ export function parseSpreadsheetData(
           hasLocation: false,
           thumbnailUrl: DEFAULT_THUMBNAIL,
           accent: "#6b7280",
+          permanence: "Standard",
         };
         venues.push(fallbackVenue);
         venuesById.set(id, fallbackVenue);
