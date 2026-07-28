@@ -173,10 +173,23 @@ export async function getFestivalDataFromSheets(role: string = "public"): Promis
           rosData = parsedRos.data;
           const rows = rosSheet.data?.[0]?.rowData || [];
           if (rows.length > 1) {
-            const headers = (rows[0].values || []).map((cell: any) =>
+            let headerRowIndex = 0;
+            for (let i = 0; i < Math.min(rows.length, 10); i++) {
+              const rowVals = (rows[i].values || []).map((cell: any) =>
+                String(cell.userEnteredValue?.stringValue || cell.formattedValue || "").trim().toLowerCase()
+              );
+              const hasKnownHeader = rowVals.some((v: string) =>
+                ["action", "description", "location", "start day", "start", "end time"].includes(v)
+              );
+              if (hasKnownHeader) {
+                headerRowIndex = i;
+                break;
+              }
+            }
+            const headers = (rows[headerRowIndex]?.values || []).map((cell: any) =>
               String(cell.userEnteredValue?.stringValue || cell.formattedValue || "").trim()
             );
-            rosData = rows.slice(1).map((row: any) => {
+            rosData = rows.slice(headerRowIndex + 1).map((row: any) => {
               const item: Record<string, any> = {};
               headers.forEach((header: string, index: number) => {
                 if (header) {

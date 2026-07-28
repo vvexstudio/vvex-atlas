@@ -84,11 +84,34 @@ async function main() {
     const accessToken = await getAccessToken();
     console.log("✓ Successfully refreshed OAuth access token.");
 
-    console.log("Fetching 'Locations' via API range 'Locations!A1:Z500'...");
-    const values = await getSpreadsheetValues(spreadsheetId, "Locations!A1:Z500", accessToken);
-    console.log(`✓ Successfully retrieved ${values.length} rows using OAuth API.`);
-    if (values.length > 0) {
-      console.log("Headers:", values[0]);
+    const rosRows = await getSpreadsheetValues(spreadsheetId, "ROS by TIME!A1:Z500", accessToken);
+    console.log(`\n--- Tab: "ROS by TIME" ---`);
+    console.log(`Total raw rows: ${rosRows.length}`);
+    
+    // Find header index
+    let headerIdx = 0;
+    for (let i = 0; i < Math.min(rosRows.length, 5); i++) {
+      const rowVals = rosRows[i].map(v => String(v).trim());
+      if (rowVals.some(v => ["Action", "Description", "Location", "Start Day", "Start"].includes(v))) {
+        headerIdx = i;
+        break;
+      }
+    }
+    console.log(`Detected header row index: ${headerIdx}`);
+    console.log("Headers:", rosRows[headerIdx]);
+
+    const headers = rosRows[headerIdx].map(v => String(v).trim());
+    const dataRows = rosRows.slice(headerIdx + 1).map(row => {
+      const item = {};
+      headers.forEach((h, idx) => {
+        if (h) item[h] = row[idx] !== undefined ? String(row[idx]).trim() : "";
+      });
+      return item;
+    }).filter(item => item["Action"] || item["Description"] || item["Location"]);
+
+    console.log(`Successfully parsed ${dataRows.length} event items from ROS by TIME!`);
+    if (dataRows.length > 0) {
+      console.log("Sample Parsed Event 0:", dataRows[0]);
     }
   } catch (err) {
     console.error("❌ OAuth Test failed:", err.message);
