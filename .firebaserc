@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "default": "portal-dev-sandbox",
+    "production": "portal-map-app"
+  }
+}

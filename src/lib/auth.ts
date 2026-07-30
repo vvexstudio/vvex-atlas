@@ -45,3 +45,36 @@ export async function isEmailApproved(email: string): Promise<boolean> {
   const normalizedEmail = email.trim().toLowerCase();
   return list.some(item => item.email.toLowerCase() === normalizedEmail);
 }
+
+/**
+ * Resolves user role directly from Personnel sheet if auth-directory is not yet populated
+ */
+export async function getUserRoleFromPersonnel(email: string): Promise<string | null> {
+  const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "1rpmzT4_6NlAOSryN86ROv3mv1Jf4ydColAlk6MrY1zw";
+  try {
+    const list = await getParsedSheetData<any>(spreadsheetId, "Personnel");
+    const normalizedEmail = email.trim().toLowerCase();
+    for (const item of list) {
+      let itemEmail = "";
+      let itemRole = "";
+      for (const [key, val] of Object.entries(item)) {
+        const cleanKey = key.trim().toLowerCase();
+        if (cleanKey === "email") {
+          itemEmail = String(val).trim().toLowerCase();
+        } else if (cleanKey.includes("role")) {
+          itemRole = String(val).trim();
+        }
+      }
+      if (itemEmail === normalizedEmail && itemRole) {
+        const lower = itemRole.toLowerCase();
+        if (lower.includes("admin")) return "admin";
+        if (lower.includes("public") || lower.includes("guest")) return "guest";
+        return "crew";
+      }
+    }
+  } catch (err) {
+    console.error("Failed to fetch role from Personnel sheet:", err);
+  }
+  return null;
+}
+

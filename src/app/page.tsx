@@ -1,7 +1,7 @@
 import { EventApp } from "@/components/event/EventApp";
 import { getFestivalData } from "@/lib/festival-data";
 import { cookies } from "next/headers";
-import { verifySessionCookie, isAdminEmail } from "@/lib/auth";
+import { verifySessionCookie, isAdminEmail, getUserRoleFromPersonnel } from "@/lib/auth";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -47,11 +47,17 @@ export default async function Home() {
       redirect("/login?error=unauthorized");
     }
 
-    // 2. Fallback / Admin email override
-    if (isAdminEmail(userSession.email)) {
-      if (!role || role === "public") {
+    // 2. Fallback check against Personnel sheet if role is still not admin
+    if (role !== "admin") {
+      const sheetRole = await getUserRoleFromPersonnel(userSession.email);
+      if (sheetRole === "admin") {
         role = "admin";
       }
+    }
+
+    // 3. Fallback / Admin email override (ADMIN_EMAILS always forces admin)
+    if (isAdminEmail(userSession.email)) {
+      role = "admin";
     }
   }
 

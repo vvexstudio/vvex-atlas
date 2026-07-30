@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { verifySessionCookie } from "@/lib/auth";
+import { verifySessionCookie, isAdminEmail, getUserRoleFromPersonnel } from "@/lib/auth";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 
 /**
@@ -64,7 +64,7 @@ export async function GET() {
         return NextResponse.json({ error: "Forbidden: Account is inactive" }, { status: 403 });
       }
 
-      role = userData.role || "crew";
+      role = userData.role || role || "crew";
       
       // Parse departments if defined
       if (typeof userData.departments === "string") {
@@ -73,7 +73,13 @@ export async function GET() {
         departments = userData.departments.filter(Boolean);
       }
     } else {
-      console.warn(`User ${email} not found in Firebase /auth-directory. Defaulting to '${role}'.`);
+      console.warn(`User ${email} not found in Firebase /auth-directory. Resolving fallback role.`);
+      const sheetRole = await getUserRoleFromPersonnel(email);
+      if (sheetRole) role = sheetRole;
+    }
+
+    if (isAdminEmail(email)) {
+      role = "admin";
     }
 
     // 4. Create Firebase Custom Token with custom claims

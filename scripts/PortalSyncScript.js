@@ -77,8 +77,14 @@ function syncAllToFirebase() {
       if (email) {
         const escapedEmail = email.toLowerCase().replace(/\./g, ",");
 
-        // Find role key
-        const roleKey = Object.keys(person).find(k => k.toLowerCase().includes("role"));
+        // Find access level role key: prioritize "app_role" or "access" over generic "role" (job title)
+        let roleKey = Object.keys(person).find(k => {
+          const clean = k.toLowerCase().trim();
+          return clean === "app_role" || clean === "app role" || clean === "app_access" || clean === "auth_role";
+        });
+        if (!roleKey) {
+          roleKey = Object.keys(person).find(k => k.toLowerCase().includes("role"));
+        }
         const roleVal = roleKey ? String(person[roleKey]).trim() : "";
 
         let role = "guest";

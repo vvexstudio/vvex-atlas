@@ -1,0 +1,49 @@
+name: Deploy to Client Production
+
+on:
+  push:
+    branches:
+      - portal-production
+  workflow_dispatch:
+
+jobs:
+  deploy-production:
+    name: Build & Deploy to Client Production
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Quality Gate
+        run: |
+          npm run lint
+          npm run test
+
+      - name: Build Next.js Application
+        env:
+          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+        run: npm run build
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Deploy Realtime Database Rules & Hosting to Firebase
+        run: |
+          npx firebase-tools deploy \
+            --project ${{ secrets.FIREBASE_PROJECT_ID }} \
+            --only hosting,database \
+            --non-interactive

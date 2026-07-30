@@ -47,15 +47,15 @@ During this setup, you will generate and collect the following keys to populate 
 
 ### Phase 1: Google Workspace Setup (`admin.google.com`)
 
-- [ ] **Step 1.1: Verify Workspace Super Admin Account**
+- [x] **Step 1.1: Verify Workspace Super Admin Account**
   - Log into `admin.google.com` using the client's official admin account (e.g., `admin@theportal.is`).
 
-- [ ] **Step 1.2: Enable External Group Memberships**
+- [x] **Step 1.2: Enable External Group Memberships**
   - Go to **Apps $\rightarrow$ Google Workspace $\rightarrow$ Groups for Business $\rightarrow$ Sharing settings**.
   - Set **Accessing topics** and **Member creation** to allow owners/managers to invite external members (`@gmail.com`, vendor domains).
   - *Why:* Crew members and contractors often use external emails; Apps Script needs permission to add external users to department Google Groups.
 
-- [ ] **Step 1.3: Provision Core Department Groups**
+- [x] **Step 1.3: Provision Core Department Groups**
   - Navigate to **Directory $\rightarrow$ Groups**.
   - Create the required department groups (or allow `PortalSyncScript.js` to create them dynamically):
     - `all-departments@clientdomain.com`
@@ -66,20 +66,20 @@ During this setup, you will generate and collect the following keys to populate 
 
 ### Phase 2: Google Cloud Platform (GCP) & OAuth Configuration (`console.cloud.google.com`)
 
-- [ ] **Step 2.1: Create GCP Organization Project**
+- [x] **Step 2.1: Create GCP Organization Project**
   - Open `console.cloud.google.com`.
   - Create a new GCP Project named **`Portal-Map-App`** under the client's GCP Organization.
 
-- [ ] **Step 2.2: Enable Required APIs**
+- [x] **Step 2.2: Enable Required APIs**
   - In the GCP Search Bar, navigate to **APIs & Services $\rightarrow$ Library**.
   - Search for and **Enable** each of the following 5 APIs:
     1. **Maps JavaScript API**
     2. **Google Sheets API**
     3. **Google Calendar API**
     4. **Admin SDK API** (Directory API)
-    5. **Google Groups Settings API**
+    5. **Google Groups Settings API** 
 
-- [ ] **Step 2.3: Configure OAuth 2.0 Consent Screen**
+- [x] **Step 2.3: Configure OAuth 2.0 Consent Screen**
   - Go to **APIs & Services $\rightarrow$ OAuth consent screen**.
   - Choose User Type: **Internal** (or **External** if non-workspace users log in via Google OAuth).
   - App Name: `The Portal Map App`
@@ -88,7 +88,7 @@ During this setup, you will generate and collect the following keys to populate 
   - Authorized Domains: Add `theportal.is`, `web.app`, `firebaseapp.com`.
   - Save and Continue through Scopes (`email`, `profile`, `openid`).
 
-- [ ] **Step 2.4: Create Web OAuth 2.0 Client Credentials**
+- [x] **Step 2.4: Create Web OAuth 2.0 Client Credentials**
   - Go to **APIs & Services $\rightarrow$ Credentials $\rightarrow$ Create Credentials $\rightarrow$ OAuth client ID**.
   - Application type: **Web application**.
   - Name: `Portal Web App Client`.
@@ -103,7 +103,7 @@ During this setup, you will generate and collect the following keys to populate 
   - Copy `Client ID` $\rightarrow$ `GOOGLE_CLIENT_ID`.
   - Copy `Client Secret` $\rightarrow$ `GOOGLE_CLIENT_SECRET`.
 
-- [ ] **Step 2.5: Create & Restrict Google Maps API Key**
+- [x] **Step 2.5: Create & Restrict Google Maps API Key**
   - Go to **Google Maps Platform $\rightarrow$ Credentials $\rightarrow$ Create API Key**.
   - Name: `Portal Maps Key (Production)`.
   - Under **Application Restrictions**: Select **Websites (HTTP referrers)**.
@@ -116,7 +116,7 @@ During this setup, you will generate and collect the following keys to populate 
   - Copy key $\rightarrow$ `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`.
   - *(Optional)* Go to **Map Management** $\rightarrow$ Create Vector Map ID $\rightarrow$ `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID`.
 
-- [ ] **Step 2.6: Create GCP Service Account for Sheets & Backend**
+- [x] **Step 2.6: Create GCP Service Account for Sheets & Backend**
   - Go to **IAM & Admin $\rightarrow$ Service Accounts $\rightarrow$ Create Service Account**.
   - Name: `portal-backend-sync`.
   - Role: Project $\rightarrow$ **Editor** (or minimal needed).
@@ -129,23 +129,23 @@ During this setup, you will generate and collect the following keys to populate 
 
 ### Phase 3: Firebase Project & Realtime Database (`console.firebase.google.com`)
 
-- [ ] **Step 3.1: Add Firebase to Existing GCP Project**
+- [x] **Step 3.1: Add Firebase to Existing GCP Project**
   - Go to `console.firebase.google.com`.
   - Click **Add Project** $\rightarrow$ Select the existing GCP Project created in Phase 2 (`Portal-Map-App`).
   - Confirm billing setup.
 
-- [ ] **Step 3.2: Upgrade Firebase Plan to Blaze (Pay-as-you-go)**
+- [x] **Step 3.2: Upgrade Firebase Plan to Blaze (Pay-as-you-go)**
   - In Firebase Console bottom left, click **Upgrade** next to Spark plan.
   - Select **Blaze Plan** (Pay-as-you-go).
   - ⚠️ *Critical:* Spark plan limits Realtime Database to 100 concurrent websocket connections. Blaze is mandatory for on-site crew usage (>100 active devices).
 
-- [ ] **Step 3.3: Provision Firebase Realtime Database (RTDB)**
+- [x] **Step 3.3: Provision Firebase Realtime Database (RTDB)**
   - In left menu: **Build $\rightarrow$ Realtime Database $\rightarrow$ Create Database**.
   - Select Region (e.g. `us-central1` or nearest to event site).
   - Select **Start in Locked Mode**.
   - Copy RTDB URL (`https://portal-map-app-default-rtdb.firebaseio.com/`) $\rightarrow$ `NEXT_PUBLIC_FIREBASE_DATABASE_URL` & `FIREBASE_DATABASE_URL`.
 
-- [ ] **Step 3.4: Deploy RTDB Security Rules**
+- [x] **Step 3.4: Deploy RTDB Security Rules**
   - Click **Rules** tab in RTDB dashboard.
   - Paste contents of `database.rules.json` from codebase:
     ```json
@@ -178,7 +178,7 @@ During this setup, you will generate and collect the following keys to populate 
     ```
   - Click **Publish**.
 
-- [ ] **Step 3.5: Register Web App in Firebase**
+- [x] **Step 3.5: Register Web App in Firebase**
   - Go to **Project Settings $\rightarrow$ General $\rightarrow$ Your Apps $\rightarrow$ Add App $\rightarrow$ Web App (`</>`)**.
   - App nickname: `Portal Web App`.
   - Copy Firebase SDK Config values to `.env`:
@@ -249,13 +249,28 @@ During this setup, you will generate and collect the following keys to populate 
 
 ### Phase 5: Hosting Deployment & Environment Variables
 
-- [ ] **Step 5.1: Populate Host Environment Variables**
-  - Log into production hosting platform (Firebase App Hosting, Vercel, Cloud Run, etc.).
-  - Set all variables listed in the **Summary Table** above.
+- [ ] **Step 5.1: Configure Repository & Production Branch**
+  - Canonical Vendor Repo: `portal-dev` (remains primary single source of truth).
+  - Production Branch: Create/rename release branch to `portal-production`.
+  - Set branch protection rules on `portal-production` requiring review/approval before merging or pushing.
 
-- [ ] **Step 5.2: Configure Domain & SSL**
-  - Map custom domain (e.g. `app.theportal.is`) in DNS records (A/CNAME records).
+- [ ] **Step 5.2: Set Up GitHub Environment & Secrets**
+  - In GitHub repository settings, create Environment `production` (with manual approval required).
+  - Populate protected Secrets:
+    - `GCP_SA_KEY` / `FIREBASE_SERVICE_ACCOUNT_KEY` (JSON key or Workload Identity provider details)
+    - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
+    - `FIREBASE_DATABASE_URL`
+    - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`
+
+- [ ] **Step 5.3: Configure Firebase CLI & GitHub Actions Workflow**
+  - Configure `.firebaserc` with aliases for `dev` (vendor) and `production` (client).
+  - Add `.github/workflows/deploy-production.yml` triggered on push to `portal-production`.
+
+- [ ] **Step 5.4: Execute Initial Production Deployment & Domain Binding**
+  - Push code to `portal-production` branch to trigger CI build & deploy to Client Firebase project.
+  - Map custom domain (e.g. `app.theportal.is`) in Firebase Hosting DNS setup.
   - Ensure SSL certificate issuance completes cleanly.
+
 
 ---
 

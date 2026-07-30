@@ -45,3 +45,11 @@ npm run build        # production build / type-check gate
 
 ## 7. Open inputs blocking full delivery
 Tracked in `sprintboard.md` §3 — Google Maps key, brand assets, vocabulary/role sign-off, Firebase ownership. Don't invent final answers to these; flag them.
+
+## 8. Deployment & Infrastructure Rules
+- **Canonical Vendor Repository:** `portal-dev` is the single source of truth for source code and Git history. Do not use client forks for primary development.
+- **Environment Isolation:** Vendor Dev, Staging, and Client Production MUST exist in separate Firebase projects. Branches isolate release stages, not backend resources.
+- **Production Branch Target:** Production deploys trigger from the `portal-production` branch (or tagged releases). `main` is used for dev/staging integration.
+- **Deployment Identity:** Deployments authenticate via GCP Workload Identity Federation (WIF) or dedicated Service Accounts granted minimal permissions in the client's GCP org.
+- **Secrets & Protection:** Production deployments require GitHub Environment approvals and protected secrets (`FIREBASE_SERVICE_ACCOUNT`, `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`, etc.). Never commit `.env` or credential files.
+

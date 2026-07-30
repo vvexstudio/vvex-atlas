@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { isEmailApproved, createSessionCookie } from "@/lib/auth";
+import { isEmailApproved, createSessionCookie, isAdminEmail, getUserRoleFromPersonnel } from "@/lib/auth";
 import { adminDb } from "@/lib/firebase-admin";
 
 export async function GET(request: Request) {
@@ -85,7 +85,7 @@ export async function GET(request: Request) {
 
     const sanitizedEmail = email.trim().toLowerCase();
 
-    // 3. Verify user email against Approved Emails tab
+    // 3. Verify user email against Approved Emails / Personnel tab
     const approved = await isEmailApproved(sanitizedEmail);
 
     if (!approved) {
@@ -109,17 +109,30 @@ export async function GET(request: Request) {
       return NextResponse.redirect(new URL("/?role=public&notice=guest-public", origin));
     }
 
-    // 4. Resolve the user's role from Firebase RTD auth-directory (if available)
+    // 4. Resolve the user's role: ADMIN_EMAILS -> Firebase RTD -> Personnel Sheet -> "crew"
     let role = "crew";
-    if (adminDb) {
-      try {
-        const escapedEmail = sanitizedEmail.replace(/\./g, ",");
-        const userSnapshot = await adminDb.ref(`auth-directory/${escapedEmail}`).once("value");
-        if (userSnapshot.exists()) {
-          role = userSnapshot.val().role || "crew";
+
+    if (isAdminEmail(sanitizedEmail)) {
+      role = "admin";
+    } else {
+      if (adminDb) {
+        try {
+          const escapedEmail = sanitizedEmail.replace(/\./g, ",");
+          const userSnapshot = await adminDb.ref(`auth-directory/${escapedEmail}`).once("value");
+          if (userSnapshot.exists() && userSnapshot.val().role) {
+            role = userSnapshot.val().role;
+          } else {
+            const sheetRole = await getUserRoleFromPersonnel(sanitizedEmail);
+            if (sheetRole) role = sheetRole;
+          }
+        } catch (dbErr) {
+          console.error("Failed to query user role during OAuth callback:", dbErr);
+          const sheetRole = await getUserRoleFromPersonnel(sanitizedEmail);
+          if (sheetRole) role = sheetRole;
         }
-      } catch (dbErr) {
-        console.error("Failed to query user role during OAuth callback:", dbErr);
+      } else {
+        const sheetRole = await getUserRoleFromPersonnel(sanitizedEmail);
+        if (sheetRole) role = sheetRole;
       }
     }
 
