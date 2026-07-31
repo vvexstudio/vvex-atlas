@@ -283,7 +283,28 @@ export function EventApp({
         borderColor: colorsMatch.fg + "33", // subtle border with opacity
       };
     }
-    return {};
+
+    // Deterministic fallback palette generator for unlisted departments/locations/actions
+    let hash = 0;
+    for (let i = 0; i < trimmed.length; i++) {
+      hash = trimmed.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue = Math.abs(hash) % 360;
+    const bg = isDarkMode
+      ? `hsl(${hue}, 38%, 18%)`
+      : `hsl(${hue}, 55%, 90%)`;
+    const fg = isDarkMode
+      ? `hsl(${hue}, 70%, 85%)`
+      : `hsl(${hue}, 80%, 25%)`;
+    const border = isDarkMode
+      ? `hsl(${hue}, 50%, 35%)`
+      : `hsl(${hue}, 60%, 70%)`;
+
+    return {
+      backgroundColor: bg,
+      color: fg,
+      borderColor: border,
+    };
   };
   // Tabs & Layout States
   const [mainTab, setMainTab] = useState<"now-next" | "schedule" | "calendar" | "map">("schedule");

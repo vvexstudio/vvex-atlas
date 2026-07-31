@@ -453,15 +453,20 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
                               const activeTop = hideEmptyHours ? getActiveMinuteOffset(placement.top, activeHours) : placement.top;
                               const activeHeight = hideEmptyHours
-                                ? Math.max(35, getActiveMinuteOffset(placement.top + placement.height, activeHours) - activeTop)
+                                ? Math.max(44, getActiveMinuteOffset(placement.top + placement.height, activeHours) - activeTop)
                                 : placement.height;
 
-                              const cardStyle = {
+                              const rawColorStyle = getColorStyle("Department", dept);
+                              const computedHeight = Math.max(44, (activeHeight / 60) * hourHeightScale);
+                              const cleanTitle = (event.title || "").replace(/^[\s\-–—]+|[\s\-–—]+$/g, "").trim() || "Untitled Event";
+
+                              const cardStyle: React.CSSProperties = {
                                 top: `${(activeTop / 60) * hourHeightScale}px`,
-                                height: `${(activeHeight / 60) * hourHeightScale}px`,
+                                height: `${computedHeight}px`,
                                 left: `${placement.left}%`,
                                 width: `${placement.width}%`,
-                                ...getColorStyle("Department", dept)
+                                borderLeft: `4px solid ${rawColorStyle.borderColor || rawColorStyle.color || "var(--accent)"}`,
+                                ...rawColorStyle,
                               };
 
                               return (
@@ -476,7 +481,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                     <div className="event-card-time">
                                       {event.startTime} – {event.endTime}
                                     </div>
-                                    <div className="event-card-title">{event.title}</div>
+                                    <div className="event-card-title">{cleanTitle}</div>
                                     <div className="event-card-meta">
                                       {event.locationName && <span className="meta-loc"><Icon name="mapPin" size={12} /> {event.locationName}</span>}
                                       {event.leadPointPerson && <span className="meta-lead"><Icon name="user" size={12} /> {event.leadPointPerson}</span>}
@@ -515,15 +520,20 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
                               const activeTop = hideEmptyHours ? getActiveMinuteOffset(placement.top, activeHours) : placement.top;
                               const activeHeight = hideEmptyHours
-                                ? Math.max(35, getActiveMinuteOffset(placement.top + placement.height, activeHours) - activeTop)
+                                ? Math.max(44, getActiveMinuteOffset(placement.top + placement.height, activeHours) - activeTop)
                                 : placement.height;
 
-                              const cardStyle = {
+                              const rawColorStyle = getColorStyle("Location", loc);
+                              const computedHeight = Math.max(44, (activeHeight / 60) * hourHeightScale);
+                              const cleanTitle = (event.title || "").replace(/^[\s\-–—]+|[\s\-–—]+$/g, "").trim() || "Untitled Event";
+
+                              const cardStyle: React.CSSProperties = {
                                 top: `${(activeTop / 60) * hourHeightScale}px`,
-                                height: `${(activeHeight / 60) * hourHeightScale}px`,
+                                height: `${computedHeight}px`,
                                 left: `${placement.left}%`,
                                 width: `${placement.width}%`,
-                                ...getColorStyle("Location", loc)
+                                borderLeft: `4px solid ${rawColorStyle.borderColor || rawColorStyle.color || "var(--accent)"}`,
+                                ...rawColorStyle,
                               };
 
                               return (
@@ -538,7 +548,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                     <div className="event-card-time">
                                       {event.startTime} – {event.endTime}
                                     </div>
-                                    <div className="event-card-title">{event.title}</div>
+                                    <div className="event-card-title">{cleanTitle}</div>
                                     <div className="event-card-meta">
                                       {event.department && <span className="meta-dept"><Icon name="building" size={12} /> {event.department}</span>}
                                       {event.leadPointPerson && <span className="meta-lead"><Icon name="user" size={12} /> {event.leadPointPerson}</span>}
