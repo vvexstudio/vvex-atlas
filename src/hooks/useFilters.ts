@@ -163,7 +163,29 @@ export const useFilters = ({ events, venues, mapCenter }: UseFiltersProps) => {
     return [...filteredEvents].sort((a, b) => {
       const dateDelta = (a.scheduleDate || "").localeCompare(b.scheduleDate || "");
       if (dateDelta !== 0) return dateDelta;
-      return (a.startTime || "").localeCompare(b.startTime || "");
+
+      const aMin = timeToMinutes(a.startTime);
+      const bMin = timeToMinutes(b.startTime);
+
+      if (aMin !== bMin) {
+        if (aMin === -1) return 1;
+        if (bMin === -1) return -1;
+        return aMin - bMin;
+      }
+
+      const aEnd = timeToMinutes(a.endTime);
+      const bEnd = timeToMinutes(b.endTime);
+
+      if (aEnd !== bEnd) {
+        if (aEnd === -1) return 1;
+        if (bEnd === -1) return -1;
+        return aEnd - bEnd;
+      }
+
+      const titleDelta = (a.title || "").localeCompare(b.title || "");
+      if (titleDelta !== 0) return titleDelta;
+
+      return (a.id || "").localeCompare(b.id || "");
     });
   }, [filteredEvents]);
 
@@ -178,9 +200,15 @@ export const useFilters = ({ events, venues, mapCenter }: UseFiltersProps) => {
       if (!group) {
         let label = dateStr;
         if (dateStr !== "Date TBD") {
-          const dateObj = new Date(`${dateStr}T00:00:00`);
-          if (!Number.isNaN(dateObj.getTime())) {
+          const parts = dateStr.split("-").map(Number);
+          if (parts.length === 3 && !parts.some(Number.isNaN)) {
+            const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
             label = dateObj.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+          } else {
+            const dateObj = new Date(`${dateStr}T00:00:00`);
+            if (!Number.isNaN(dateObj.getTime())) {
+              label = dateObj.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+            }
           }
         }
         group = {

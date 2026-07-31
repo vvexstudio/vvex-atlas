@@ -101,7 +101,7 @@ export async function getParsedSheetData<T extends Record<string, any>>(
   spreadsheetId: string,
   tabName: string
 ): Promise<T[]> {
-  const range = tabName === "ROS by TIME" ? `${tabName}!A2:Z500` : `${tabName}!A1:Z500`;
+  const range = tabName === "ROS by TIME" ? `${tabName}!A2:Z` : `${tabName}!A1:Z`;
   const rows = await getSpreadsheetValues(spreadsheetId, range);
   if (rows.length === 0) return [];
 

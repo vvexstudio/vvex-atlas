@@ -111,9 +111,9 @@ function formatMinutes(minutes: number | null): string {
 
 function isoDate(date: Date | null): string | undefined {
   if (!date) return undefined;
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(date.getUTCDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
 
@@ -359,7 +359,29 @@ export function parseSpreadsheetData(
   events.sort((a, b) => {
     const dateDelta = (a.scheduleDate || "").localeCompare(b.scheduleDate || "");
     if (dateDelta !== 0) return dateDelta;
-    return (a.startTime || "").localeCompare(b.startTime || "");
+
+    const aMin = excelTimeToMinutes(a.startTime) ?? -1;
+    const bMin = excelTimeToMinutes(b.startTime) ?? -1;
+
+    if (aMin !== bMin) {
+      if (aMin === -1) return 1;
+      if (bMin === -1) return -1;
+      return aMin - bMin;
+    }
+
+    const aEnd = excelTimeToMinutes(a.endTime) ?? -1;
+    const bEnd = excelTimeToMinutes(b.endTime) ?? -1;
+
+    if (aEnd !== bEnd) {
+      if (aEnd === -1) return 1;
+      if (bEnd === -1) return -1;
+      return aEnd - bEnd;
+    }
+
+    const titleDelta = (a.title || "").localeCompare(b.title || "");
+    if (titleDelta !== 0) return titleDelta;
+
+    return (a.id || "").localeCompare(b.id || "");
   });
 
   const personnel = personnelData.map((row) => {

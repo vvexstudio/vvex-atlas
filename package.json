@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:portal": "env-cmd -f .env.local.portal next dev",
+    "dev:portal": "node scripts/dev-portal.js",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

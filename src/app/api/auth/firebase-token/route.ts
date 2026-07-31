@@ -16,9 +16,14 @@ export async function GET() {
   const sessionToken =
     cookieStore.get("portal_user_session")?.value ||
     cookieStore.get("portal_session")?.value;
+  const hasAdminCookie = cookieStore.get("admin_access")?.value === "true";
 
   if (!sessionToken) {
-    return NextResponse.json({ role: "public", token: null, isPublic: true });
+    return NextResponse.json({
+      role: hasAdminCookie ? "admin" : "public",
+      token: null,
+      isPublic: !hasAdminCookie
+    });
   }
 
   // 1. Verify Next.js session
@@ -26,12 +31,20 @@ export async function GET() {
   try {
     session = await verifySessionCookie(sessionToken);
   } catch (err) {
-    console.warn("Session verification failed, defaulting to public role:", err);
-    return NextResponse.json({ role: "public", token: null, isPublic: true });
+    console.warn("Session verification failed, defaulting role based on admin cookie:", err);
+    return NextResponse.json({
+      role: hasAdminCookie ? "admin" : "public",
+      token: null,
+      isPublic: !hasAdminCookie
+    });
   }
 
   if (!session || !session.email) {
-    return NextResponse.json({ role: "public", token: null, isPublic: true });
+    return NextResponse.json({
+      role: hasAdminCookie ? "admin" : "public",
+      token: null,
+      isPublic: !hasAdminCookie
+    });
   }
 
   const email = session.email;

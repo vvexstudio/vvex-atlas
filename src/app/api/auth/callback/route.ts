@@ -85,8 +85,8 @@ export async function GET(request: Request) {
 
     const sanitizedEmail = email.trim().toLowerCase();
 
-    // 3. Verify user email against Approved Emails / Personnel tab
-    const approved = await isEmailApproved(sanitizedEmail);
+    // 3. Verify user email against Approved Emails / Personnel tab or ADMIN_EMAILS
+    const approved = isAdminEmail(sanitizedEmail) || await isEmailApproved(sanitizedEmail);
 
     if (!approved) {
       console.warn(`Email ${sanitizedEmail} is not in crew list. Redirecting gracefully to Public View.`);

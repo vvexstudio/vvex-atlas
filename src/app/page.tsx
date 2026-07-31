@@ -12,8 +12,9 @@ export default async function Home() {
     cookieStore.get("portal_user_session")?.value ||
     cookieStore.get("portal_session")?.value;
   const userSession = sessionToken ? await verifySessionCookie(sessionToken) : null;
+  const hasAdminCookie = cookieStore.get("admin_access")?.value === "true";
 
-  let role = userSession?.role || "public";
+  let role = userSession?.role || (hasAdminCookie ? "admin" : "public");
   let userDepartments: string[] = userSession?.departments || [];
   let isActive = true;
 
