@@ -90,21 +90,24 @@ export const useStarredEvents = (userEmail?: string) => {
         ? starredIds.filter((id) => id !== eventId)
         : [...starredIds, eventId];
 
-      // Optimistic local state update
+      // 1. Optimistic local state update
       setStarredIds(newStarredIds);
 
-      // Save to appropriate storage
-      if (clientDb && escapedEmail) {
+      // Always save to localStorage for immediate client persistence
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newStarredIds));
+      } catch (e) {
+        console.warn("Failed to write starred status to localStorage:", e);
+      }
+
+      // 2. Save to Firebase RTDB ONLY if user is authenticated with active Firebase Auth user
+      if (clientDb && escapedEmail && clientAuth?.currentUser) {
         try {
           const itemRef = ref(clientDb, `user-data/${escapedEmail}/starred/${eventId}`);
           await set(itemRef, isCurrentlyStarred ? null : true);
-        } catch (err) {
-          console.error("Failed to write starred status to Firebase RTDB:", err);
-          // If RTDB write fails, save to localStorage as backup
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newStarredIds));
+        } catch (err: any) {
+          console.warn("Firebase RTDB starred write skipped (fallback to localStorage):", err?.message || err);
         }
-      } else {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newStarredIds));
       }
     },
     [starredIds, escapedEmail]
