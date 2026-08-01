@@ -7,8 +7,8 @@ const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 let privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
 if (privateKey) {
-  // Normalize newline formatting for private key strings in env files
-  privateKey = privateKey.replace(/\\n/g, "\n");
+  // Strip quotes if wrapped in quotes and normalize newline formatting
+  privateKey = privateKey.trim().replace(/^["']|["']$/g, "").replace(/\\n/g, "\n");
 }
 
 let appInitialized = false;
