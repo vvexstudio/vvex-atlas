@@ -732,65 +732,71 @@ export function EventApp({
           {/* eslint-disable-next-line @next/next/no-img-element -- static 26px brand mark, next/image is overkill */}
           <img src="/icon.png" alt="" className="banner-brand-mark" width={26} height={26} />
           <h1 className="legacy-banner-heading">The Portal</h1>
-          {appEnvironment === "PROD" ? (
-            <span
-              className="chip"
-              title="Production Database Environment (portal-map-app)"
-              style={{
-                backgroundColor: "rgba(16, 185, 129, 0.15)",
-                color: "#10b981",
-                border: "1px solid rgba(16, 185, 129, 0.35)",
-                fontWeight: 700,
-                fontSize: "0.68rem",
-                letterSpacing: "0.06em",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "5px",
-                padding: "2px 8px",
-                borderRadius: "12px",
-              }}
-            >
+          {(() => {
+            const isLive = typeof window !== "undefined" && !window.location.hostname.includes("localhost") && !window.location.hostname.includes("127.0.0.1");
+            const isProd = appEnvironment === "PROD" || (typeof window !== "undefined" && (window.location.hostname.includes("portal-map-app") || window.location.hostname.includes("portal-production")));
+            const badgeText = isProd ? (isLive ? "PROD (Live)" : "PROD (Local)") : (isLive ? "DEV (Live)" : "DEV (Local)");
+
+            return isProd ? (
               <span
+                className="chip"
+                title="Production Database Environment (portal-map-app)"
                 style={{
-                  width: "6px",
-                  height: "6px",
-                  borderRadius: "50%",
-                  backgroundColor: "#10b981",
-                  boxShadow: "0 0 6px #10b981",
+                  backgroundColor: "rgba(16, 185, 129, 0.15)",
+                  color: "#10b981",
+                  border: "1px solid rgba(16, 185, 129, 0.35)",
+                  fontWeight: 700,
+                  fontSize: "0.68rem",
+                  letterSpacing: "0.06em",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  padding: "2px 8px",
+                  borderRadius: "12px",
                 }}
-              />
-              {typeof window !== "undefined" && !window.location.hostname.includes("localhost") && !window.location.hostname.includes("127.0.0.1") ? "PROD (Live)" : "PROD (Local)"}
-            </span>
-          ) : (
-            <span
-              className="chip"
-              title="Development Environment (portal-dev)"
-              style={{
-                backgroundColor: "rgba(245, 158, 11, 0.15)",
-                color: "#f59e0b",
-                border: "1px solid rgba(245, 158, 11, 0.35)",
-                fontWeight: 700,
-                fontSize: "0.68rem",
-                letterSpacing: "0.06em",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "5px",
-                padding: "2px 8px",
-                borderRadius: "12px",
-              }}
-            >
+              >
+                <span
+                  style={{
+                    width: "6px",
+                    height: "6px",
+                    borderRadius: "50%",
+                    backgroundColor: "#10b981",
+                    boxShadow: "0 0 6px #10b981",
+                  }}
+                />
+                {badgeText}
+              </span>
+            ) : (
               <span
+                className="chip"
+                title="Development Environment (portal-dev)"
                 style={{
-                  width: "6px",
-                  height: "6px",
-                  borderRadius: "50%",
-                  backgroundColor: "#f59e0b",
-                  boxShadow: "0 0 6px #f59e0b",
+                  backgroundColor: "rgba(245, 158, 11, 0.15)",
+                  color: "#f59e0b",
+                  border: "1px solid rgba(245, 158, 11, 0.35)",
+                  fontWeight: 700,
+                  fontSize: "0.68rem",
+                  letterSpacing: "0.06em",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  padding: "2px 8px",
+                  borderRadius: "12px",
                 }}
-              />
-              DEV (Local)
-            </span>
-          )}
+              >
+                <span
+                  style={{
+                    width: "6px",
+                    height: "6px",
+                    borderRadius: "50%",
+                    backgroundColor: "#f59e0b",
+                    boxShadow: "0 0 6px #f59e0b",
+                  }}
+                />
+                {badgeText}
+              </span>
+            );
+          })()}
           <span className="chip chip-accent eyebrow eyebrow-accent">
             PDT • Black Rock City
           </span>

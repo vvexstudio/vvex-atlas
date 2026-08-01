@@ -21,65 +21,71 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="admin-brand">
             <img src="/icon.png" alt="" width={26} height={26} className="admin-brand-logo" />
             <h2 className="admin-brand-title">The Portal — Admin</h2>
-            {typeof window !== "undefined" && !window.location.hostname.includes("localhost") && !window.location.hostname.includes("127.0.0.1") ? (
-              <span
-                className="chip"
-                title="Production Environment (portal-production / portal-map-app)"
-                style={{
-                  backgroundColor: "rgba(16, 185, 129, 0.15)",
-                  color: "#10b981",
-                  border: "1px solid rgba(16, 185, 129, 0.35)",
-                  fontWeight: 700,
-                  fontSize: "0.68rem",
-                  letterSpacing: "0.06em",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "5px",
-                  padding: "2px 8px",
-                  borderRadius: "12px",
-                }}
-              >
+            {(() => {
+              const isLive = typeof window !== "undefined" && !window.location.hostname.includes("localhost") && !window.location.hostname.includes("127.0.0.1");
+              const isProd = typeof window !== "undefined" && (window.location.hostname.includes("portal-map-app") || window.location.hostname.includes("portal-production"));
+              const badgeText = isProd ? (isLive ? "PROD (Live)" : "PROD (Local)") : (isLive ? "DEV (Live)" : "DEV (Local)");
+
+              return isProd ? (
                 <span
+                  className="chip"
+                  title="Production Environment (portal-production / portal-map-app)"
                   style={{
-                    width: "6px",
-                    height: "6px",
-                    borderRadius: "50%",
-                    backgroundColor: "#10b981",
-                    boxShadow: "0 0 6px #10b981",
+                    backgroundColor: "rgba(16, 185, 129, 0.15)",
+                    color: "#10b981",
+                    border: "1px solid rgba(16, 185, 129, 0.35)",
+                    fontWeight: 700,
+                    fontSize: "0.68rem",
+                    letterSpacing: "0.06em",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    padding: "2px 8px",
+                    borderRadius: "12px",
                   }}
-                />
-                PROD (Live)
-              </span>
-            ) : (
-              <span
-                className="chip"
-                title="Local Environment"
-                style={{
-                  backgroundColor: "rgba(245, 158, 11, 0.15)",
-                  color: "#f59e0b",
-                  border: "1px solid rgba(245, 158, 11, 0.35)",
-                  fontWeight: 700,
-                  fontSize: "0.68rem",
-                  letterSpacing: "0.06em",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "5px",
-                  padding: "2px 8px",
-                  borderRadius: "12px",
-                }}
-              >
+                >
+                  <span
+                    style={{
+                      width: "6px",
+                      height: "6px",
+                      borderRadius: "50%",
+                      backgroundColor: "#10b981",
+                      boxShadow: "0 0 6px #10b981",
+                    }}
+                  />
+                  {badgeText}
+                </span>
+              ) : (
                 <span
+                  className="chip"
+                  title="Development Environment (portal-dev)"
                   style={{
-                    width: "6px",
-                    height: "6px",
-                    borderRadius: "50%",
-                    backgroundColor: "#f59e0b",
-                    boxShadow: "0 0 6px #f59e0b",
+                    backgroundColor: "rgba(245, 158, 11, 0.15)",
+                    color: "#f59e0b",
+                    border: "1px solid rgba(245, 158, 11, 0.35)",
+                    fontWeight: 700,
+                    fontSize: "0.68rem",
+                    letterSpacing: "0.06em",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    padding: "2px 8px",
+                    borderRadius: "12px",
                   }}
-                />
-                DEV (Local)
-              </span>
-            )}
+                >
+                  <span
+                    style={{
+                      width: "6px",
+                      height: "6px",
+                      borderRadius: "50%",
+                      backgroundColor: "#f59e0b",
+                      boxShadow: "0 0 6px #f59e0b",
+                    }}
+                  />
+                  {badgeText}
+                </span>
+              );
+            })()}
           </div>
           <nav className="admin-nav">
             {NAV_TABS.map((tab) => {
