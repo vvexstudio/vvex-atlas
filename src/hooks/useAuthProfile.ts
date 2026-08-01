@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { signInWithCustomToken } from "firebase/auth";
+import { signInWithCustomToken, signOut } from "firebase/auth";
 import { clientAuth } from "@/lib/firebase-client";
 
 export interface UserSession {
@@ -11,10 +11,17 @@ export interface UserSession {
 }
 
 export const useAuthProfile = (initialSession?: UserSession) => {
-  const [userSession] = useState<UserSession | undefined>(initialSession);
+  const [userSession, setUserSession] = useState<UserSession | undefined>(initialSession);
   const [role, setRole] = useState<string>(initialSession?.role || "public");
   const [departments, setDepartments] = useState<string[]>(initialSession?.departments || []);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Synchronize state dynamically whenever initialSession updates
+  useEffect(() => {
+    setUserSession(initialSession);
+    if (initialSession?.role) setRole(initialSession.role);
+    if (initialSession?.departments) setDepartments(initialSession.departments);
+  }, [initialSession]);
 
   useEffect(() => {
     const auth = clientAuth;
@@ -29,6 +36,9 @@ export const useAuthProfile = (initialSession?: UserSession) => {
         const tokenRes = await fetch("/api/auth/firebase-token");
         if (!tokenRes.ok) {
           console.log(`Public or guest mode (Status ${tokenRes.status}). Using public role.`);
+          if (auth?.currentUser) {
+            await signOut(auth);
+          }
           setRole(initialSession?.role || "public");
           setDepartments(initialSession?.departments || []);
           setIsLoading(false);
@@ -40,6 +50,10 @@ export const useAuthProfile = (initialSession?: UserSession) => {
         if (Array.isArray(data.departments)) setDepartments(data.departments);
 
         if (data.token && auth) {
+          // If current signed-in Firebase user does not match session email, sign out first
+          if (auth.currentUser && auth.currentUser.email !== initialSession?.email) {
+            await signOut(auth);
+          }
           await signInWithCustomToken(auth, data.token);
           console.log(`Signed in to Firebase with custom claims. Role: ${data.role}`);
         }
@@ -53,7 +67,7 @@ export const useAuthProfile = (initialSession?: UserSession) => {
     }
 
     authenticate();
-  }, []);
+  }, [initialSession]);
 
   return { userSession, role, departments, isLoading };
 };

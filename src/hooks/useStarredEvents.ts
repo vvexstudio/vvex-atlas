@@ -16,31 +16,12 @@ function escapeEmail(email: string): string {
 export const useStarredEvents = (userEmail?: string) => {
   const [starredIds, setStarredIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeEmail, setActiveEmail] = useState<string | undefined>(userEmail);
+
+  // Always prioritize verified userEmail from server session over cached client Auth
+  const activeEmail = userEmail || (clientAuth?.currentUser?.email ?? undefined);
 
   // Escaped email for database path
   const escapedEmail = activeEmail ? escapeEmail(activeEmail) : undefined;
-
-  // Listen to Firebase Auth state change to sync active user session
-  useEffect(() => {
-    const auth = clientAuth;
-    if (!auth) {
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 0);
-      return;
-    }
-
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user && user.email) {
-        setActiveEmail(user.email);
-      } else {
-        setActiveEmail(userEmail);
-      }
-    });
-
-    return () => unsubscribe();
-  }, [userEmail]);
 
   // Real-time synchronization from database or localStorage fallback
   useEffect(() => {

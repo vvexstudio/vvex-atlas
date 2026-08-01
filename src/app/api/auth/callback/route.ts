@@ -157,7 +157,11 @@ export async function GET(request: Request) {
     cookieStore.set("portal_session", sessionCookieVal, cookieOpts);
 
     console.log(`Access granted: ${email} successfully logged in`);
-    return NextResponse.redirect(new URL(state, origin));
+    const response = NextResponse.redirect(new URL(state, origin));
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    response.headers.set("Pragma", "no-cache");
+    response.headers.set("Expires", "0");
+    return response;
   } catch (err) {
     console.error("OAuth callback exception:", err);
     return NextResponse.redirect(new URL("/login?error=callback-exception", origin));
