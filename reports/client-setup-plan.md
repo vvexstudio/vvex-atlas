@@ -249,7 +249,7 @@ During this setup, you will generate and collect the following keys to populate 
 
 ### Phase 5: Hosting Deployment & Environment Variables
 
-- [ ] **Step 5.1: Configure Repository & Production Branch**
+- [x] **Step 5.1: Configure Repository & Production Branch**
   - Canonical Vendor Repo: `portal-dev` (remains primary single source of truth).
   - Production Branch: Create/rename release branch to `portal-production`.
   - Set branch protection rules on `portal-production` requiring review/approval before merging or pushing.

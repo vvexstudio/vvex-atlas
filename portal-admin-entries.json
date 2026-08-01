@@ -15,6 +15,22 @@
       "lat": 40.79426292754904,
       "lng": -119.21431059257839,
       "hasLocation": true
+    },
+    {
+      "id": "admin-60b337b8-ec7c-44e6-b484-6c2c5060fa34",
+      "name": "test pin 3",
+      "artist": "",
+      "locationInternal": "40.790916, -119.211907",
+      "projectType": "installation",
+      "abridgedProjectText": "",
+      "day": "fri",
+      "startTime": "",
+      "endTime": "",
+      "hasSchedule": false,
+      "permanence": "",
+      "lat": 40.790916423437615,
+      "lng": -119.21190733332833,
+      "hasLocation": true
     }
   ]
 }
