@@ -4,12 +4,16 @@ import { getDatabase } from "firebase-admin/database";
 
 const projectId = process.env.FIREBASE_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-let privateKey = process.env.FIREBASE_PRIVATE_KEY;
-
-if (privateKey) {
-  // Strip quotes if wrapped in quotes and normalize newline formatting
-  privateKey = privateKey.trim().replace(/^["']|["']$/g, "").replace(/\\n/g, "\n");
+function formatPrivateKey(key?: string): string | undefined {
+  if (!key) return undefined;
+  let formatted = key.trim();
+  if ((formatted.startsWith('"') && formatted.endsWith('"')) || (formatted.startsWith("'") && formatted.endsWith("'"))) {
+    formatted = formatted.substring(1, formatted.length - 1);
+  }
+  return formatted.replace(/\\n/g, "\n").replace(/\r/g, "");
 }
+
+const privateKey = formatPrivateKey(process.env.FIREBASE_PRIVATE_KEY);
 
 let appInitialized = false;
 
@@ -26,8 +30,11 @@ if (getApps().length === 0) {
       });
       appInitialized = true;
       console.log("Firebase Admin SDK successfully initialized.");
-    } catch (error) {
-      console.error("Failed to initialize Firebase Admin SDK:", error);
+    } catch (error: any) {
+      console.warn(
+        "Firebase Admin SDK initialization skipped (invalid or placeholder credentials):",
+        error?.message || error
+      );
     }
   } else {
     console.warn(

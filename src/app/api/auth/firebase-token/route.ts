@@ -51,13 +51,11 @@ export async function GET() {
 
   // 2. Fallback check: if Firebase SDK is not configured
   if (!adminAuth || !adminDb) {
-    console.warn("Firebase Admin SDK is not initialized. Returning mock token for development.");
-    // In local development, if Firebase isn't fully configured yet, we can return a mock status
     return NextResponse.json({ 
-      error: "Firebase Admin configuration missing",
-      isDevFallback: true,
-      mockToken: "mock-development-token"
-    }, { status: 503 });
+      role: session.role || (hasAdminCookie ? "admin" : "public"),
+      token: null,
+      isDevFallback: true
+    });
   }
 
   try {

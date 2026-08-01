@@ -2,6 +2,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { Department, FestivalEvent, Venue } from "@/types/festival";
 import {
+  getParsedSheetData,
   getParsedSheetDataFromPublicCsv,
   getSpreadsheetWithFormatting,
   parseSheetDataWithColors,
@@ -154,67 +155,30 @@ export async function getFestivalDataFromSheets(role: string = "public"): Promis
 
   if (hasCredentials) {
     try {
-      const fullSpreadsheet = await getSpreadsheetWithFormatting(spreadsheetId, [tabLocations, tabPersonnel, tabDepartments, tabRos]);
-      if (fullSpreadsheet && fullSpreadsheet.sheets) {
+      // Fetch grid formatting only for small metadata tabs (Locations, Personnel, Departments)
+      const formattingSpreadsheet = await getSpreadsheetWithFormatting(spreadsheetId, [
+        tabLocations,
+        tabPersonnel,
+        tabDepartments,
+      ]).catch(() => null);
+
+      if (formattingSpreadsheet && formattingSpreadsheet.sheets) {
         const findSheet = (name: string) =>
-          fullSpreadsheet.sheets.find((s: any) => s.properties?.title?.trim().toLowerCase() === name.trim().toLowerCase());
+          formattingSpreadsheet.sheets.find(
+            (s: any) => s.properties?.title?.trim().toLowerCase() === name.trim().toLowerCase()
+          );
 
         const locSheet = findSheet(tabLocations);
         const perSheet = findSheet(tabPersonnel);
         const depSheet = findSheet(tabDepartments);
-        const rosSheet = findSheet(tabRos);
 
-        if (locSheet) locationsData = parseSheetDataWithColors(fullSpreadsheet, tabLocations).data;
-        if (perSheet) personnelData = parseSheetDataWithColors(fullSpreadsheet, tabPersonnel).data;
-        if (depSheet) departmentsData = parseSheetDataWithColors(fullSpreadsheet, tabDepartments).data;
-
-        if (rosSheet) {
-          const parsedRos = parseSheetDataWithColors(fullSpreadsheet, tabRos);
-          rosData = parsedRos.data;
-          const rows = rosSheet.data?.[0]?.rowData || [];
-          if (rows.length > 1) {
-            let headerRowIndex = 0;
-            for (let i = 0; i < Math.min(rows.length, 10); i++) {
-              const rowVals = (rows[i].values || []).map((cell: any) =>
-                String(cell.userEnteredValue?.stringValue || cell.formattedValue || "").trim().toLowerCase()
-              );
-              const hasKnownHeader = rowVals.some((v: string) =>
-                ["action", "description", "location", "start day", "start", "end time"].includes(v)
-              );
-              if (hasKnownHeader) {
-                headerRowIndex = i;
-                break;
-              }
-            }
-            const headers = (rows[headerRowIndex]?.values || []).map((cell: any) =>
-              String(cell.userEnteredValue?.stringValue || cell.formattedValue || "").trim()
-            );
-            rosData = rows.slice(headerRowIndex + 1).map((row: any) => {
-              const item: Record<string, any> = {};
-              headers.forEach((header: string, index: number) => {
-                if (header) {
-                  const cell = row.values?.[index];
-                  let val = "";
-                  if (cell) {
-                    if (cell.userEnteredValue?.stringValue !== undefined) val = cell.userEnteredValue.stringValue;
-                    else if (cell.userEnteredValue?.numberValue !== undefined) val = cell.userEnteredValue.numberValue;
-                    else if (cell.userEnteredValue?.boolValue !== undefined) val = cell.userEnteredValue.boolValue;
-                    else val = cell.formattedValue || "";
-                  }
-                  item[header] = val;
-                }
-              });
-              return item;
-            }).filter((item: any) => {
-              const cleanRow: Record<string, any> = {};
-              for (const [k, v] of Object.entries(item)) {
-                cleanRow[k.trim()] = v;
-              }
-              return cleanRow["Action"] || cleanRow["Description"] || cleanRow["Location"];
-            });
-          }
-        }
+        if (locSheet) locationsData = parseSheetDataWithColors(formattingSpreadsheet, tabLocations).data;
+        if (perSheet) personnelData = parseSheetDataWithColors(formattingSpreadsheet, tabPersonnel).data;
+        if (depSheet) departmentsData = parseSheetDataWithColors(formattingSpreadsheet, tabDepartments).data;
       }
+
+      // Fetch ROS values directly without giant grid formatting payload to avoid stack overflow
+      rosData = await getParsedSheetData(spreadsheetId, tabRos).catch(() => []);
       sourceLabel = `Google Sheet ${spreadsheetId.substring(0, 8)}... (OAuth)`;
     } catch {
       return getFestivalDataFromCsv();
