@@ -732,10 +732,10 @@ export function EventApp({
           {/* eslint-disable-next-line @next/next/no-img-element -- static 26px brand mark, next/image is overkill */}
           <img src="/icon.png" alt="" className="banner-brand-mark" width={26} height={26} />
           <h1 className="legacy-banner-heading">The Portal</h1>
-          {appEnvironment === "PROD" || (typeof window !== "undefined" && window.location.hostname.includes("portal-map-app")) ? (
+          {appEnvironment === "PROD" ? (
             <span
               className="chip"
-              title="Production Environment (portal-production / portal-map-app)"
+              title="Production Database Environment (portal-map-app)"
               style={{
                 backgroundColor: "rgba(16, 185, 129, 0.15)",
                 color: "#10b981",
@@ -759,7 +759,7 @@ export function EventApp({
                   boxShadow: "0 0 6px #10b981",
                 }}
               />
-              PROD
+              {typeof window !== "undefined" && !window.location.hostname.includes("localhost") && !window.location.hostname.includes("127.0.0.1") ? "PROD (Live)" : "PROD (Local)"}
             </span>
           ) : (
             <span
@@ -788,7 +788,7 @@ export function EventApp({
                   boxShadow: "0 0 6px #f59e0b",
                 }}
               />
-              DEV
+              DEV (Local)
             </span>
           )}
           <span className="chip chip-accent eyebrow eyebrow-accent">

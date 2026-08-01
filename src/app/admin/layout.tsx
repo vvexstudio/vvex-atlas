@@ -21,7 +21,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="admin-brand">
             <img src="/icon.png" alt="" width={26} height={26} className="admin-brand-logo" />
             <h2 className="admin-brand-title">The Portal — Admin</h2>
-            {typeof window !== "undefined" && window.location.hostname.includes("portal-map-app") ? (
+            {typeof window !== "undefined" && !window.location.hostname.includes("localhost") && !window.location.hostname.includes("127.0.0.1") ? (
               <span
                 className="chip"
                 title="Production Environment (portal-production / portal-map-app)"
@@ -48,12 +48,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     boxShadow: "0 0 6px #10b981",
                   }}
                 />
-                PROD
+                PROD (Live)
               </span>
             ) : (
               <span
                 className="chip"
-                title="Development Environment (portal-dev)"
+                title="Local Environment"
                 style={{
                   backgroundColor: "rgba(245, 158, 11, 0.15)",
                   color: "#f59e0b",
@@ -77,7 +77,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     boxShadow: "0 0 6px #f59e0b",
                   }}
                 />
-                DEV
+                DEV (Local)
               </span>
             )}
           </div>
