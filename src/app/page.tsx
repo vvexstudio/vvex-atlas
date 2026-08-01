@@ -63,6 +63,8 @@ export default async function Home() {
   }
 
   const { venues, events, personnel, departments, colors, sourceLabel, debug } = await getFestivalData(role);
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || "";
+  const appEnvironment: "PROD" | "DEV" = projectId.includes("portal-map-app") ? "PROD" : "DEV";
 
   return (
     <EventApp
@@ -72,6 +74,7 @@ export default async function Home() {
       departments={departments}
       colors={colors}
       dataSourceLabel={sourceLabel}
+      appEnvironment={appEnvironment}
       debug={debug}
       userSession={userSession ? {
         email: userSession.email,
