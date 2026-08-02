@@ -288,7 +288,7 @@ function processOnboardingInvites(startRow) {
                 executeWithRetry(() => Calendar.Acl.insert({
                   role: "reader",
                   scope: { type: "group", value: groupEmail }
-                }, calendarId));
+                }, calendarId, { sendNotifications: false }));
               } catch (calErr) {
                 Logger.log("Could not set calendar ACL for group: " + calErr);
               }
@@ -1310,7 +1310,7 @@ function provisionMissingCalendarsAndGroups(ss) {
           Calendar.Acl.insert({
             role: "reader",
             scope: { type: "group", value: groupEmail }
-          }, calId);
+          }, calId, { sendNotifications: false });
         }
       } catch (aclErr) {
         Logger.log("❌ Failed to set calendar ACL for group " + groupEmail + ": " + aclErr);
@@ -1331,7 +1331,7 @@ function provisionMissingCalendarsAndGroups(ss) {
           Calendar.Acl.insert({
             role: "reader",
             scope: { type: "default" }
-          }, calId);
+          }, calId, { sendNotifications: false });
         }
       } catch (aclErr) {
         Logger.log("Notice setting default calendar ACL: " + aclErr);
@@ -1541,7 +1541,7 @@ function grantUserCalendarAccess(targetEmail) {
       executeWithRetry(() => Calendar.Acl.insert({
         role: "reader",
         scope: { type: "user", value: targetEmail }
-      }, calId));
+      }, calId, { sendNotifications: false }));
       
       // 2. Count events in calendar
       const cal = CalendarApp.getCalendarById(calId);
@@ -1581,7 +1581,7 @@ function makeCalendarsReadableToExternalCrew() {
       Calendar.Acl.insert({
         role: "reader",
         scope: { type: "default" }
-      }, calId);
+      }, calId, { sendNotifications: false });
       Logger.log("✓ Set public/external read access for [" + dept + "] (" + calId + ")");
     } catch (e) {
       Logger.log("Notice for [" + dept + "] (" + calId + "): " + e.message);
