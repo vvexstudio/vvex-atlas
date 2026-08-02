@@ -8,6 +8,7 @@
 const CONFIG = {
   FIREBASE_DB_URL: PropertiesService.getScriptProperties().getProperty("FIREBASE_DB_URL") || "",
   APP_URL: PropertiesService.getScriptProperties().getProperty("APP_URL") || "http://localhost:3000",
+  SENDER_EMAIL: PropertiesService.getScriptProperties().getProperty("SENDER_EMAIL") || "",
   SPREADSHEET_ID: "",
 };
 
@@ -292,6 +293,7 @@ function processOnboardingInvites(startRow) {
                 Logger.log("Could not set calendar ACL for group: " + calErr);
               }
             }
+
             updateInviteProgress(sheet, rowNum, inviteStatusColIdx, step2Pattern);
           }
 
@@ -327,14 +329,29 @@ function processOnboardingInvites(startRow) {
           let htmlBody = "";
           let calendarSectionHtml = "";
           if (isAdmin) {
-            // Build calendar subscription buttons for admins (compact inline list to prevent clutter)
-            let calendarLinksHtml = calendarKeys.filter(d => d.toLowerCase() !== "all" && d.toLowerCase() !== "all departments" && d.toLowerCase() !== "public").map(dept => {
-              const calId = deptCalMap[dept.toLowerCase()];
-              if (!calId) return "";
-              const cid = encodeURIComponent(calId);
-              const link = "https://calendar.google.com/calendar/render?cid=" + cid;
-              return `<a href="${link}" style="color: #bc5c2d; text-decoration: underline; font-weight: bold; margin-right: 12px; display: inline-block;">${dept}</a>`;
-            }).filter(Boolean).join(" • ");
+            // Build calendar subscription buttons for admins (unique department list from Departments sheet)
+            const seenCalIds = new Set();
+            const deptSheet = ss.getSheetByName("Departments");
+            const deptRows = deptSheet ? readSheetToJson(deptSheet) : [];
+            let calendarLinksHtml = "";
+
+            if (deptRows.length > 0) {
+              calendarLinksHtml = deptRows.map(r => {
+                const nameKey = Object.keys(r).find(k => k.toLowerCase() === "department" || k.toLowerCase() === "name" || k.toLowerCase() === "dept");
+                const calKey = Object.keys(r).find(k => k.toLowerCase() === "google_calendar_id" || k.toLowerCase() === "calendar_id");
+                if (!nameKey || !calKey || !r[nameKey] || !r[calKey]) return "";
+                const rawName = String(r[nameKey]).trim();
+                const calId = String(r[calKey]).trim();
+                const lower = rawName.toLowerCase();
+                if (lower === "all" || lower === "all departments" || lower === "public" || !calId || calId.includes("PRIMARY_OR_DEPT") || seenCalIds.has(calId)) {
+                  return "";
+                }
+                seenCalIds.add(calId);
+                const cid = encodeURIComponent(calId);
+                const link = "https://calendar.google.com/calendar/render?cid=" + cid;
+                return `<a href="${link}" style="color: #bc5c2d; text-decoration: underline; font-weight: bold; margin-right: 12px; display: inline-block;">${rawName}</a>`;
+              }).filter(Boolean).join(" • ");
+            }
 
             calendarSectionHtml = `
               <p style="margin: 0 0 16px 0; font-size: 14px; line-height: 1.5; color: #50473d;">
@@ -395,16 +412,30 @@ function processOnboardingInvites(startRow) {
           }
 
           const subject = "Welcome to The Portal Map & Run of Show!";
+          const mailOptions = {
+            htmlBody: htmlBody,
+            name: "The Portal Production Team"
+          };
+          if (CONFIG.SENDER_EMAIL) {
+            try {
+              const aliases = GmailApp.getAliases();
+              if (aliases.indexOf(CONFIG.SENDER_EMAIL) !== -1 || CONFIG.SENDER_EMAIL === Session.getEffectiveUser().getEmail()) {
+                mailOptions.from = CONFIG.SENDER_EMAIL;
+              }
+            } catch (aliasErr) {
+              Logger.log("Alias check error: " + aliasErr);
+            }
+          }
+
           if (htmlBody) {
-            executeWithRetry(() => GmailApp.sendEmail(email, subject, "", {
-              htmlBody: htmlBody
-            }));
+            executeWithRetry(() => GmailApp.sendEmail(email, subject, "", mailOptions));
           } else {
             // Safe plain text fallback without spam-trigger links (failsafe only)
             executeWithRetry(() => GmailApp.sendEmail(
               email,
               subject,
-              "Welcome to The Portal!\n\nYou have been onboarded. You can access the event map and schedule once active."
+              "Welcome to The Portal!\n\nYou have been onboarded. You can access the event map and schedule once active.",
+              mailOptions
             ));
           }
           updateInviteProgress(sheet, rowNum, inviteStatusColIdx, step4Pattern);
@@ -889,24 +920,30 @@ function getWorkspaceDomain() {
  * Synchronizes events from the 'ROS by TIME' (or 'ROS') sheet into their respective Department Google Calendars
  * using procedural two-level hashing (semantic_key + content_hash) and atomic upsert/prune state machine.
  */
-function syncRosEventsToGoogleCalendars(ss) {
+function syncRosEventsToGoogleCalendars(ss, forceResync) {
   const syncStartTime = Date.now();
-  ss = ss || SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID || SpreadsheetApp.getActiveSpreadsheet().getId());
+  if (typeof ss === "boolean") {
+    forceResync = ss;
+    ss = null;
+  }
+  const realSs = (ss && typeof ss.getSheetByName === "function")
+    ? ss
+    : SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID || SpreadsheetApp.getActiveSpreadsheet().getId());
   
   // 1. Build map of department name -> google_calendar_id from Departments tab
-  const deptCalMap = getDepartmentCalendarMap(ss);
+  const deptCalMap = getDepartmentCalendarMap(realSs);
   const calendarKeys = Object.keys(deptCalMap);
   if (calendarKeys.length === 0) {
     Logger.log("No valid Google Calendar IDs found.");
     return;
   }
 
-  // 2. Fetch existing sync metadata registry from Firebase RTDB
+  // 2. Fetch existing sync metadata registry from Firebase RTDB (or bypass if forceResync is true)
   const metadataPath = "crew-data/metadata/calendar-events";
-  const metadata = readFromFirebase(metadataPath) || {};
+  const metadata = forceResync ? {} : (readFromFirebase(metadataPath) || {});
 
   // 3. Read ROS events
-  const rosSheet = ss.getSheetByName("ROS by TIME") || ss.getSheetByName("ROS");
+  const rosSheet = realSs.getSheetByName("ROS by TIME") || realSs.getSheetByName("ROS");
   if (!rosSheet) return;
   const rosEvents = readSheetToJson(rosSheet);
 
@@ -928,9 +965,9 @@ function syncRosEventsToGoogleCalendars(ss) {
     const lowerTitle = title.toLowerCase();
     if (lowerTitle.includes("sunrise") || lowerTitle.includes("sunset")) return;
 
-    const startDateVal = row["start_day"] || row["start_date"] || row["date"];
-    const startTimeVal = row["start"];
-    const endTimeVal = row["end_time"] || row["end"];
+    const startDateVal = row["start_day"] || row["start_date"] || row["date"] || row["day"] || row["start_day_date"];
+    const startTimeVal = row["start"] || row["start_time"] || row["time"];
+    const endTimeVal = row["end_time"] || row["end"] || row["finish"] || row["end_time_val"];
 
     let isAllDay = false;
     let isTbd = false;
@@ -962,8 +999,8 @@ function syncRosEventsToGoogleCalendars(ss) {
       }
     }
 
-    const locationName = String(row["solaris_ros_location"] || row["location"] || "").trim();
-    const leadDept = String(row["lead_dept"] || row["department"] || row["lead_department"] || "").trim();
+    const locationName = String(row["solaris_ros_location"] || row["location"] || row["venue"] || row["place"] || "").trim();
+    const leadDept = String(row["lead_dept"] || row["department"] || row["lead_department"] || row["dept"] || "").trim();
     const support1 = String(row["support_dept_1"] || "").trim();
     const support2 = String(row["support_dept_2"] || "").trim();
     const fohBoh = String(row["foh_boh"] || "").trim();
@@ -1015,8 +1052,10 @@ function syncRosEventsToGoogleCalendars(ss) {
     }
 
     const existingEntry = metadata[semanticKey];
+    const existingGcalIds = (existingEntry && existingEntry.gcal_event_ids) || {};
+    const allTargetCalsPresent = Array.from(targetCalIds).every(calId => !!existingGcalIds[escapeFirebaseKey(calId)]);
 
-    if (existingEntry && existingEntry.content_hash === contentHash) {
+    if (existingEntry && existingEntry.content_hash === contentHash && allTargetCalsPresent) {
       // Unchanged Row: Skip Google Calendar API calls
       unchangedCount++;
     } else if (existingEntry) {
@@ -1113,6 +1152,24 @@ function syncRosEventsToGoogleCalendars(ss) {
 }
 
 /**
+ * Force re-sync all ROS events to Google Calendars, ignoring cached metadata.
+ * Use this when switching spreadsheets, resetting calendars, or provisioning prod calendars.
+ */
+function forceSyncRosEventsToGoogleCalendars() {
+  const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID || SpreadsheetApp.getActiveSpreadsheet().getId());
+  syncRosEventsToGoogleCalendars(ss, true);
+}
+
+/**
+ * Clears the cached calendar sync metadata registry in Firebase RTDB.
+ * Call this when changing spreadsheets or resetting calendar sync state.
+ */
+function resetCalendarSyncMetadata() {
+  writeToFirebase("crew-data/metadata/calendar-events", {});
+  Logger.log("✓ Cleared Firebase calendar event metadata registry.");
+}
+
+/**
  * Helper to parse ROS start/end dates and times into JavaScript Date objects.
  */
 function parseRosDateTime(dateVal, timeVal) {
@@ -1177,8 +1234,10 @@ function provisionMissingCalendarsAndGroups(ss) {
   if (lastRow < 2) return;
 
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(normalizeHeader);
-  const deptColIdx = headers.indexOf("department") + 1;
-  const calColIdx = headers.indexOf("google_calendar_id") + 1;
+  let deptColIdx = headers.indexOf("department") + 1;
+  if (!deptColIdx) deptColIdx = headers.findIndex(h => h === "dept" || h === "name" || h === "department_name" || h === "dept_id") + 1;
+  let calColIdx = headers.indexOf("google_calendar_id") + 1;
+  if (!calColIdx) calColIdx = headers.findIndex(h => h === "calendar_id" || h === "gcal_id" || h.includes("calendar")) + 1;
 
   if (!deptColIdx || !calColIdx) return;
 
@@ -1258,25 +1317,24 @@ function provisionMissingCalendarsAndGroups(ss) {
       }
     }
 
-    // 3a. Grant "all-departments" group read access to calendar
+    // 3b. Grant "default" (public/external link) read access so external @gmail.com users see event details
     if (calId) {
-      const allDeptsGroupEmail = "all-departments@" + domain;
       try {
         const aclList = Calendar.Acl.list(calId);
         let aclExists = false;
         if (aclList && aclList.items) {
-          aclExists = aclList.items.some(rule => rule.scope && rule.scope.type === "group" && rule.scope.value === allDeptsGroupEmail);
+          aclExists = aclList.items.some(rule => rule.scope && rule.scope.type === "default");
         }
 
         if (!aclExists) {
-          Logger.log("Granting group " + allDeptsGroupEmail + " access to calendar " + calId);
+          Logger.log("Granting default external read access to calendar " + calId);
           Calendar.Acl.insert({
             role: "reader",
-            scope: { type: "group", value: allDeptsGroupEmail }
+            scope: { type: "default" }
           }, calId);
         }
       } catch (aclErr) {
-        Logger.log("❌ Failed to set calendar ACL for group " + allDeptsGroupEmail + ": " + aclErr);
+        Logger.log("Notice setting default calendar ACL: " + aclErr);
       }
     }
   }
@@ -1299,12 +1357,30 @@ function getDepartmentCalendarMap(ss) {
   deptData.forEach(row => {
     const nameKey = Object.keys(row).find(k => k.toLowerCase() === "department" || k.toLowerCase() === "name" || k.toLowerCase() === "dept" || k.toLowerCase() === "dept_id");
     const calKey = Object.keys(row).find(k => k.toLowerCase() === "google_calendar_id" || k.toLowerCase() === "calendar_id");
+    const aliasKey = Object.keys(row).find(k => k.toLowerCase() === "aliases" || k.toLowerCase() === "alias");
 
     if (nameKey && calKey && row[nameKey] && row[calKey]) {
       const deptName = String(row[nameKey]).trim().toLowerCase();
       const calId = String(row[calKey]).trim();
       if (deptName && calId && !calId.includes("PRIMARY_OR_DEPT")) {
         deptCalMap[deptName] = calId;
+
+        // Add simplified alphanumeric key (e.g. "heavy equipment (wonderbros)" -> "heavyequipmentwonderbros")
+        const simpleName = deptName.replace(/[^a-z0-9]/g, "");
+        if (simpleName) deptCalMap[simpleName] = calId;
+
+        // Add alias keys if provided in sheet
+        if (aliasKey && row[aliasKey]) {
+          const aliases = String(row[aliasKey]).split(/[,|]/);
+          aliases.forEach(alias => {
+            const cleanAlias = alias.trim().toLowerCase();
+            if (cleanAlias) {
+              deptCalMap[cleanAlias] = calId;
+              const simpleAlias = cleanAlias.replace(/[^a-z0-9]/g, "");
+              if (simpleAlias) deptCalMap[simpleAlias] = calId;
+            }
+          });
+        }
       }
     }
   });
@@ -1359,5 +1435,159 @@ function allowExternalMembers(groupEmail) {
   } catch (err) {
     Logger.log("❌ Failed to allow external members for " + groupEmail + ": " + err);
   }
+}
+
+/**
+ * DIAGNOSTIC VERIFIER: Checks all department calendar IDs, permissions, ROS sheet structure, and department mappings.
+ * Select and run this function in Google Apps Script to verify your setup!
+ */
+function verifyCalendarLinksAndSetup() {
+  const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID || SpreadsheetApp.getActiveSpreadsheet().getId());
+  Logger.log("=== STARTING DIAGNOSTIC SETUP VERIFICATION ===");
+  
+  // 1. Check Departments Sheet
+  const deptCalMap = getDepartmentCalendarMap(ss);
+  const deptKeys = Object.keys(deptCalMap);
+  Logger.log("1. Departments Sheet: Found " + deptKeys.length + " calendar mappings.");
+  
+  const verifiedCals = new Set();
+  deptKeys.forEach(dept => {
+    const calId = deptCalMap[dept];
+    if (verifiedCals.has(calId)) return;
+    verifiedCals.add(calId);
+    try {
+      const cal = CalendarApp.getCalendarById(calId);
+      if (cal) {
+        Logger.log("  ✓ Department [" + dept + "] Calendar (" + calId + "): Accessible (Name: " + cal.getName() + ")");
+      } else {
+        Logger.log("  ❌ Department [" + dept + "] Calendar (" + calId + "): INACCESSIBLE OR NOT FOUND.");
+      }
+    } catch (e) {
+      Logger.log("  ❌ Department [" + dept + "] Calendar (" + calId + "): ERROR ACCESSING - " + e.message);
+    }
+  });
+
+  // 2. Check ROS Sheet
+  const rosSheet = ss.getSheetByName("ROS by TIME") || ss.getSheetByName("ROS");
+  if (!rosSheet) {
+    Logger.log("2. ROS Sheet: ❌ NEITHER 'ROS by TIME' nor 'ROS' TAB WAS FOUND IN SPREADSHEET!");
+    return;
+  }
+  const rosEvents = readSheetToJson(rosSheet);
+  Logger.log("2. ROS Sheet [" + rosSheet.getName() + "]: Found " + rosEvents.length + " total rows.");
+
+  if (rosEvents.length > 0) {
+    const sample = rosEvents[0];
+    Logger.log("  Sample Row Keys: " + Object.keys(sample).join(", "));
+  }
+
+  Logger.log("=== DIAGNOSTIC VERIFICATION COMPLETE ===");
+}
+
+/**
+ * UTILITY: Cleans up duplicate / orphaned test calendars owned by your Google Account.
+ * Compares all owned calendars against active google_calendar_ids in the Departments sheet,
+ * and deletes old test calendars to remove sidebar clutter.
+ */
+function purgeDuplicateCalendarsForAdmin() {
+  const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID || SpreadsheetApp.getActiveSpreadsheet().getId());
+  const deptCalMap = getDepartmentCalendarMap(ss);
+  const activeCalIds = new Set(Object.values(deptCalMap));
+
+  const calendars = CalendarApp.getOwnedCalendars();
+  let deletedCount = 0;
+
+  calendars.forEach(cal => {
+    const name = cal.getName();
+    const id = cal.getId();
+    if (name.startsWith("Portal: ") && !activeCalIds.has(id)) {
+      Logger.log("Deleting orphaned duplicate calendar: " + name + " (" + id + ")");
+      try {
+        cal.deleteCalendar();
+        deletedCount++;
+      } catch (e) {
+        Logger.log("Could not delete " + name + ": " + e);
+      }
+    }
+  });
+
+  Logger.log("✓ Purged " + deletedCount + " duplicate/orphaned Portal calendars from account.");
+}
+
+/**
+ * UTILITY: Explicitly grants direct read access to a specific email (e.g. "juliavved@gmail.com")
+ * across all active department calendars, and logs the event count inside each calendar.
+ */
+function grantUserCalendarAccess(targetEmail) {
+  targetEmail = targetEmail || "juliavved@gmail.com";
+  const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID || SpreadsheetApp.getActiveSpreadsheet().getId());
+  const deptCalMap = getDepartmentCalendarMap(ss);
+  const deptKeys = Object.keys(deptCalMap);
+
+  Logger.log("=== GRANTING CALENDAR ACCESS FOR: " + targetEmail + " ===");
+
+  const startRange = new Date(2026, 7, 1);
+  const endRange = new Date(2026, 8, 30);
+
+  const processedCals = new Set();
+
+  deptKeys.forEach(dept => {
+    const calId = deptCalMap[dept];
+    if (!calId || processedCals.has(calId)) return;
+    processedCals.add(calId);
+
+    try {
+      // 1. Grant direct user ACL rule
+      executeWithRetry(() => Calendar.Acl.insert({
+        role: "reader",
+        scope: { type: "user", value: targetEmail }
+      }, calId));
+      
+      // 2. Count events in calendar
+      const cal = CalendarApp.getCalendarById(calId);
+      let eventCount = 0;
+      if (cal) {
+        eventCount = cal.getEvents(startRange, endRange).length;
+      }
+
+      Logger.log("✓ Granted access to [" + dept + "] (" + calId + "): " + eventCount + " events found in August 2026.");
+    } catch (e) {
+      Logger.log("❌ Failed for [" + dept + "] (" + calId + "): " + e.message);
+    }
+  });
+
+  Logger.log("=== ACCESS GRANT COMPLETE FOR " + targetEmail + " ===");
+}
+
+/**
+ * UTILITY: Sets secondary calendar ACL scope to 'default' (reader) so external crew members (@gmail.com)
+ * can see all event cards and details when subscribing.
+ */
+function makeCalendarsReadableToExternalCrew() {
+  const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID || SpreadsheetApp.getActiveSpreadsheet().getId());
+  const deptCalMap = getDepartmentCalendarMap(ss);
+  const deptKeys = Object.keys(deptCalMap);
+
+  Logger.log("=== ENABLING EXTERNAL EVENT READABILITY ===");
+
+  const processedCals = new Set();
+
+  deptKeys.forEach(dept => {
+    const calId = deptCalMap[dept];
+    if (!calId || processedCals.has(calId)) return;
+    processedCals.add(calId);
+
+    try {
+      Calendar.Acl.insert({
+        role: "reader",
+        scope: { type: "default" }
+      }, calId);
+      Logger.log("✓ Set public/external read access for [" + dept + "] (" + calId + ")");
+    } catch (e) {
+      Logger.log("Notice for [" + dept + "] (" + calId + "): " + e.message);
+    }
+  });
+
+  Logger.log("=== EXTERNAL READABILITY UPDATE COMPLETE ===");
 }
 
