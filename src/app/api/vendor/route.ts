@@ -45,15 +45,24 @@ export async function GET(request: NextRequest) {
     .map((q) => q.toLowerCase().trim())
     .filter(Boolean);
 
-  const isAllDepts = targetQueries.some((q) => {
-    const clean = q.replace(/[^a-z0-9]/g, "");
-    return (
-      clean === "all" ||
-      clean === "alldepartments" ||
-      clean.startsWith("alldepartments") ||
-      q === "*"
-    );
-  });
+  const isAllDepts =
+    targetQueries.some((q) => {
+      const clean = q.replace(/[^a-z0-9]/g, "");
+      return (
+        clean === "all" ||
+        clean === "alldepartments" ||
+        clean.startsWith("alldepartments") ||
+        q === "*" ||
+        q === "everyone" ||
+        q === "master" ||
+        q === "inclusive"
+      );
+    }) ||
+    (Array.isArray((vendorScope as any).departments) &&
+      (vendorScope as any).departments.some((d: string) => {
+        const clean = String(d || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        return clean === "all" || clean === "alldepartments" || clean === "*";
+      }));
 
   const matchingEvents = festivalData.events.filter((e) => {
     if (isAllDepts) return true;
@@ -101,7 +110,7 @@ export async function GET(request: NextRequest) {
   });
 
   return NextResponse.json({
-    vendorName: vendorScope.vendorName || token,
+    vendorName: isAllDepts ? "All Departments" : (vendorScope.vendorName || token),
     timezone: "America/Los_Angeles (PDT)",
     eventCount: matchingEvents.length,
     events: matchingEvents,

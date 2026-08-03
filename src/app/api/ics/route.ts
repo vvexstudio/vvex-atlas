@@ -87,7 +87,10 @@ export async function GET(request: NextRequest) {
         clean === "all" ||
         clean === "alldepartments" ||
         clean.startsWith("alldepartments") ||
-        q === "*"
+        q === "*" ||
+        q === "everyone" ||
+        q === "master" ||
+        q === "inclusive"
       );
     });
 
@@ -135,13 +138,22 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  const isAllDeptsFeed = !tokenDeptScope || tokenDeptScope.split(",").some((q) => {
+    const clean = q.toLowerCase().replace(/[^a-z0-9]/g, "");
+    return clean === "all" || clean === "alldepartments" || clean === "*" || clean === "everyone" || clean === "master" || clean === "inclusive";
+  });
+
+  const calName = isAllDeptsFeed
+    ? "The Portal - Master Schedule (All Departments)"
+    : `The Portal - ${tokenDeptScope} Schedule`;
+
   const icsLines: string[] = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "PRODID:-//The Portal//Black Rock City Schedule//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
-    "X-WR-CALNAME:The Portal - Run of Show (PDT)",
+    `X-WR-CALNAME:${calName}`,
     "X-WR-TIMEZONE:America/Los_Angeles",
     "BEGIN:VTIMEZONE",
     "TZID:America/Los_Angeles",

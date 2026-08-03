@@ -56,4 +56,30 @@ describe("ICS Calendar Feed Formatter", () => {
     expect(parseTimeToIcalFormat("2026-08-24", "14:30")).toBe("20260824T143000");
     expect(parseTimeToIcalFormat("2026-08-24", "TBD")).toBe("20260824T090000");
   });
+
+  it("should correctly identify 'All Departments' wildcard tokens for inclusive master feeds", () => {
+    function isAllDeptsToken(token: string): boolean {
+      const targetQueries = token.split(",").map((d) => d.toLowerCase().trim()).filter(Boolean);
+      return targetQueries.some((q) => {
+        const clean = q.replace(/[^a-z0-9]/g, "");
+        return (
+          clean === "all" ||
+          clean === "alldepartments" ||
+          clean.startsWith("alldepartments") ||
+          q === "*" ||
+          q === "everyone" ||
+          q === "master" ||
+          q === "inclusive"
+        );
+      });
+    }
+
+    expect(isAllDeptsToken("All Departments")).toBe(true);
+    expect(isAllDeptsToken("alldepartments")).toBe(true);
+    expect(isAllDeptsToken("all_departments")).toBe(true);
+    expect(isAllDeptsToken("*")).toBe(true);
+    expect(isAllDeptsToken("everyone")).toBe(true);
+    expect(isAllDeptsToken("master")).toBe(true);
+    expect(isAllDeptsToken("Catering,Lighting")).toBe(false);
+  });
 });

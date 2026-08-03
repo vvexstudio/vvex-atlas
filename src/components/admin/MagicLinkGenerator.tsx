@@ -63,18 +63,41 @@ export function MagicLinkGenerator({ compact = false }: MagicLinkGeneratorProps)
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const isAllDeptsSelected =
+    selectedDepts.includes("All Departments") ||
+    (departments.length > 0 && selectedDepts.length === departments.length);
+
   const toggleDepartment = (dept: string) => {
-    if (selectedDepts.includes(dept)) {
-      setSelectedDepts(selectedDepts.filter((d) => d !== dept));
+    if (dept === "All Departments") {
+      if (isAllDeptsSelected) {
+        setSelectedDepts([]);
+      } else {
+        setSelectedDepts(["All Departments"]);
+      }
+      return;
+    }
+
+    const withoutAll = selectedDepts.filter((d) => d !== "All Departments");
+    let updated: string[];
+    if (withoutAll.includes(dept)) {
+      updated = withoutAll.filter((d) => d !== dept);
     } else {
-      setSelectedDepts([...selectedDepts, dept]);
+      updated = [...withoutAll, dept];
+    }
+
+    if (departments.length > 0 && updated.length === departments.length) {
+      setSelectedDepts(["All Departments"]);
+    } else {
+      setSelectedDepts(updated);
     }
   };
 
-  const handleSelectAll = () => setSelectedDepts([...departments]);
+  const handleSelectAll = () => setSelectedDepts(["All Departments"]);
   const handleClearAll = () => setSelectedDepts([]);
 
-  const activeDeptKeyword = customToken.trim() || selectedDepts.join(",");
+  const activeDeptKeyword =
+    customToken.trim() ||
+    (isAllDeptsSelected ? "All Departments" : selectedDepts.join(","));
   const magicLinkUrl = `${activeOrigin}/vendor?token=${encodeURIComponent(activeDeptKeyword)}`;
   const icsFeedUrl = `${activeOrigin}/api/ics?token=demo-token&dept=${encodeURIComponent(activeDeptKeyword)}`;
   const secureMagicUrl = secureToken ? `${activeOrigin}/vendor?token=${secureToken}` : "";
@@ -90,8 +113,8 @@ export function MagicLinkGenerator({ compact = false }: MagicLinkGeneratorProps)
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           token,
-          vendorName: activeDeptKeyword,
-          departments: selectedDepts,
+          vendorName: isAllDeptsSelected ? "All Departments" : activeDeptKeyword,
+          departments: isAllDeptsSelected ? ["All Departments"] : selectedDepts,
         }),
       });
     } catch (e) {
@@ -111,8 +134,8 @@ export function MagicLinkGenerator({ compact = false }: MagicLinkGeneratorProps)
     const summaryText =
       selectedDepts.length === 0
         ? "Select Departments..."
-        : selectedDepts.length === departments.length
-        ? "All Departments Selected"
+        : isAllDeptsSelected
+        ? "All Departments Selected (Inclusive Feed — All Events)"
         : `${selectedDepts.length} Department${selectedDepts.length > 1 ? "s" : ""} Selected`;
 
     return (
@@ -138,13 +161,31 @@ export function MagicLinkGenerator({ compact = false }: MagicLinkGeneratorProps)
             </div>
 
             <div className="admin-multiselect-list">
+              <label
+                className="admin-multiselect-item"
+                style={{
+                  fontWeight: 600,
+                  color: isAllDeptsSelected ? "var(--accent, #f97316)" : "inherit",
+                  borderBottom: "1px solid var(--border-subtle, rgba(255,255,255,0.08))",
+                  paddingBottom: "6px",
+                  marginBottom: "4px",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={isAllDeptsSelected}
+                  onChange={() => toggleDepartment("All Departments")}
+                />
+                <span>✨ All Departments (Inclusive Feed — All Events)</span>
+              </label>
+
               {departments.length === 0 ? (
                 <div style={{ padding: "8px 12px", fontSize: "0.85rem", color: "var(--muted)" }}>
                   Loading departments from sheet...
                 </div>
               ) : (
                 departments.map((dept) => {
-                  const isChecked = selectedDepts.includes(dept);
+                  const isChecked = isAllDeptsSelected || selectedDepts.includes(dept);
                   return (
                     <label key={dept} className="admin-multiselect-item">
                       <input
@@ -164,18 +205,31 @@ export function MagicLinkGenerator({ compact = false }: MagicLinkGeneratorProps)
         {/* Selected Chips */}
         {selectedDepts.length > 0 && !customToken.trim() && (
           <div className="admin-chips-row">
-            {selectedDepts.map((d) => (
-              <span key={d} className="chip chip-accent" style={{ fontSize: "0.75rem", padding: "2px 6px" }}>
-                {d}
+            {isAllDeptsSelected ? (
+              <span className="chip chip-accent" style={{ fontSize: "0.75rem", padding: "2px 6px" }}>
+                ✨ All Departments (Inclusive Feed)
                 <button
                   type="button"
-                  onClick={() => toggleDepartment(d)}
+                  onClick={handleClearAll}
                   style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", marginLeft: "4px" }}
                 >
                   &times;
                 </button>
               </span>
-            ))}
+            ) : (
+              selectedDepts.map((d) => (
+                <span key={d} className="chip chip-accent" style={{ fontSize: "0.75rem", padding: "2px 6px" }}>
+                  {d}
+                  <button
+                    type="button"
+                    onClick={() => toggleDepartment(d)}
+                    style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", marginLeft: "4px" }}
+                  >
+                    &times;
+                  </button>
+                </span>
+              ))
+            )}
           </div>
         )}
       </div>
