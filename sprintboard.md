@@ -215,6 +215,8 @@ Tracked here so we know what to stand up vs. what the client owns. Env var names
 ## 10. Session Log
 > Append newest at top. Format: `YYYY-MM-DD — who — what changed / decided / discovered`.
 
+- **2026-08-03 — agent — Fixed Apple Calendar (.ics) import error in `src/app/api/ics/route.ts` and `src/lib/__tests__/ics.test.ts`. Added RFC 5545-compliant 24-hour timestamp parser (`parseTimeToIcalFormat`) and text escaper (`escapeIcalText`), converting 12-hour AM/PM string formats (`"10:00 AM"`, `"2:30 PM"`) into standard `YYYYMMDDTHHMMSS` timestamps (`20260824T100000`, `20260824T143000`). Merged and pushed to `main` and `portal-production`. Verified 32/32 Vitest unit tests and Next.js 16 build passing.**
+
 - **2026-08-03 — agent — Fixed RTDB sync reset issue on vendor magic links in `src/hooks/useEventData.ts` and `src/components/event/EventApp.tsx`. Added `skipRtdbSync: !!vendorScope` flag so client-side Realtime Database listeners (`/public-data`) do not overwrite the token-scoped vendor schedule dataset with general public data on page mount. Verified 31/31 Vitest unit tests and Next.js 16 build passing.**
 
 - **2026-08-03 — agent — Resolved vendor token event matching across `/api/vendor` and `/api/ics`. Implemented smart wildcard detection for "All Departments" tokens, bidirectional substring matching (`q.includes(eDept)` and `eDept.includes(q)`), and tokenized word matching across `department`, `leadPointPerson`, `title`, `description`, `host`, `scheduleCategory`, `action`, and `locationName`. Verified 31/31 Vitest unit tests and Next.js 16 build passing.**
