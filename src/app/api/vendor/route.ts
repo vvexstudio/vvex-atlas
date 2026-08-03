@@ -31,13 +31,26 @@ export async function GET(request: NextRequest) {
   }
 
   const festivalData = await getFestivalData("public");
-  const targetQuery = (vendorScope.vendorName || vendorScope.department || token).toLowerCase().trim();
+  
+  // Extract search terms (handles array or comma-separated multi-department queries)
+  let rawQueryStrings: string[] = [];
+  if (Array.isArray((vendorScope as any).departments) && (vendorScope as any).departments.length > 0) {
+    rawQueryStrings = (vendorScope as any).departments;
+  } else {
+    const rawTarget = vendorScope.department || vendorScope.vendorName || token;
+    rawQueryStrings = rawTarget.split(",");
+  }
+
+  const targetQueries = rawQueryStrings
+    .map((q) => q.toLowerCase().trim())
+    .filter(Boolean);
 
   const matchingEvents = festivalData.events.filter((e) => {
-    const deptMatch = e.department ? e.department.toLowerCase().includes(targetQuery) : false;
-    const leadMatch = e.leadPointPerson ? e.leadPointPerson.toLowerCase().includes(targetQuery) : false;
-    const titleMatch = e.title ? e.title.toLowerCase().includes(targetQuery) : false;
-    return deptMatch || leadMatch || titleMatch;
+    const eDept = e.department ? e.department.toLowerCase() : "";
+    const eLead = e.leadPointPerson ? e.leadPointPerson.toLowerCase() : "";
+    const eTitle = e.title ? e.title.toLowerCase() : "";
+
+    return targetQueries.some((q) => eDept.includes(q) || eLead.includes(q) || eTitle.includes(q));
   });
 
   return NextResponse.json({

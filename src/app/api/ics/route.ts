@@ -7,14 +7,19 @@ export async function GET(request: NextRequest) {
   const token = searchParams.get("token");
   const departmentFilter = searchParams.get("dept");
 
+  let tokenDeptScope: string | null = departmentFilter;
+
   if (token) {
     if (adminDb) {
       try {
-        const tokenSnapshot = await adminDb.ref(`crew-data/tokens/${token}`).once("value");
+        const tokenSnapshot = await adminDb.ref(`crew-data/vendor-tokens/${token}`).once("value");
         if (tokenSnapshot.exists()) {
           const tokenData = tokenSnapshot.val();
           if (tokenData.revoked) {
             return new NextResponse("Calendar subscription token has been revoked.", { status: 410 });
+          }
+          if (tokenData.department || tokenData.departments) {
+            tokenDeptScope = Array.isArray(tokenData.departments) ? tokenData.departments.join(",") : tokenData.department;
           }
         }
       } catch (e) {
@@ -26,11 +31,13 @@ export async function GET(request: NextRequest) {
   const festivalData = await getFestivalData("public");
   let events = festivalData.events;
 
-  if (departmentFilter) {
-    const cleanDept = departmentFilter.toLowerCase().trim();
-    events = events.filter((e) =>
-      e.department ? e.department.toLowerCase().includes(cleanDept) : false
-    );
+  if (tokenDeptScope) {
+    const depts = tokenDeptScope.split(",").map((d) => d.toLowerCase().trim()).filter(Boolean);
+    events = events.filter((e) => {
+      if (!e.department) return false;
+      const eDept = e.department.toLowerCase();
+      return depts.some((d) => eDept.includes(d));
+    });
   }
 
   const icsLines: string[] = [

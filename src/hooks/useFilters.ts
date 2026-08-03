@@ -61,6 +61,7 @@ export const useFilters = ({ events, venues, mapCenter }: UseFiltersProps) => {
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
   const [startTimeFilter, setStartTimeFilter] = useState("");
   const [endTimeFilter, setEndTimeFilter] = useState("");
+  const [hideUnscheduled, setHideUnscheduled] = useState(true);
 
   // Dynamic Options for dropdown filters
   const locationOptions = useMemo(() => {
@@ -106,6 +107,11 @@ export const useFilters = ({ events, venues, mapCenter }: UseFiltersProps) => {
     const filterEnd = endTimeFilter ? new Date(endTimeFilter).getTime() : Infinity;
 
     return events.filter((event) => {
+      // 0. Hide Unscheduled (Date TBD) Filter
+      if (hideUnscheduled && (!event.scheduleDate || event.scheduleDate === "Date TBD")) {
+        return false;
+      }
+
       // 1. Text Search Query
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
@@ -120,8 +126,12 @@ export const useFilters = ({ events, venues, mapCenter }: UseFiltersProps) => {
       }
 
       // 2. Location Dropdown Filter
-      if (selectedLocations.length > 0 && (!event.locationName || !selectedLocations.includes(event.locationName))) {
-        return false;
+      if (selectedLocations.length > 0) {
+        if (!event.locationName) return false;
+        const matchesLoc = selectedLocations.some(
+          (loc) => loc.toLowerCase().trim() === event.locationName!.toLowerCase().trim()
+        );
+        if (!matchesLoc) return false;
       }
 
       // 3. Action Dropdown Filter
@@ -156,7 +166,7 @@ export const useFilters = ({ events, venues, mapCenter }: UseFiltersProps) => {
 
       return true;
     });
-  }, [events, searchQuery, selectedLocations, selectedActions, selectedDepartments, selectedLeads, startTimeFilter, endTimeFilter]);
+  }, [events, searchQuery, selectedLocations, selectedActions, selectedDepartments, selectedLeads, startTimeFilter, endTimeFilter, hideUnscheduled]);
 
   // Sort Filtered Events Chronologically
   const filteredAndSortedEvents = useMemo(() => {
@@ -378,8 +388,9 @@ export const useFilters = ({ events, venues, mapCenter }: UseFiltersProps) => {
     count += selectedLeads.length;
     if (startTimeFilter) count += 1;
     if (endTimeFilter) count += 1;
+    if (!hideUnscheduled) count += 1;
     return count;
-  }, [searchQuery, selectedLocations, selectedActions, selectedDepartments, selectedLeads, startTimeFilter, endTimeFilter]);
+  }, [searchQuery, selectedLocations, selectedActions, selectedDepartments, selectedLeads, startTimeFilter, endTimeFilter, hideUnscheduled]);
 
   return {
     searchQuery,
@@ -396,6 +407,8 @@ export const useFilters = ({ events, venues, mapCenter }: UseFiltersProps) => {
     setStartTimeFilter,
     endTimeFilter,
     setEndTimeFilter,
+    hideUnscheduled,
+    setHideUnscheduled,
     locationOptions,
     actionOptions,
     departmentOptions,

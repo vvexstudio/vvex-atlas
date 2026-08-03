@@ -150,7 +150,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               const totalGridWidth = numCols === 0 ? "100%" : `max(100%, ${70 + numCols * columnWidthScale}px)`;
 
               return (
-                <div key={dateGroup.date} className="calendar-day-section" style={{ width: "100%", minWidth: totalGridWidth }}>
+                <div key={dateGroup.date} data-date={dateGroup.date} className="calendar-day-section" style={{ width: "100%", minWidth: totalGridWidth }}>
                   {/* Sticky Date/Day Banner */}
                   <div className="calendar-day-header">
                     <span className="sticky-date-label">{dateGroup.dateLabel}</span>

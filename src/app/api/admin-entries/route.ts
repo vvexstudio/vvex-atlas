@@ -9,26 +9,11 @@ import {
 } from "@/lib/admin-entries";
 import type { UpsertInput } from "@/lib/admin-entries";
 import type { AdminEntry } from "@/types/admin-entry";
-import { verifySessionCookie, isAdminEmail } from "@/lib/auth";
+import { isRequestAdminAuthorized } from "@/lib/auth";
 
 async function isAuthorized(password?: string): Promise<boolean> {
   const cookieStore = await cookies();
-  
-  // 1. Password cookie check
-  const hasAdminCookie = cookieStore.get("admin_access")?.value === "true";
-  if (hasAdminCookie) return true;
-
-  // 2. Google OAuth session check
-  const sessionToken = cookieStore.get("portal_user_session")?.value;
-  if (sessionToken) {
-    const session = await verifySessionCookie(sessionToken);
-    if (session && isAdminEmail(session.email)) {
-      return true;
-    }
-  }
-
-  // 3. Password param check
-  return Boolean(password && password === process.env.ADMIN_PASSWORD);
+  return isRequestAdminAuthorized(cookieStore, password);
 }
 
 export async function GET() {

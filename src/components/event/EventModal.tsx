@@ -9,6 +9,9 @@ interface EventModalProps {
   isStarred?: (id: string) => boolean;
   onToggleStar?: (id: string) => void;
   onShowOnMap?: (venueId: string) => void;
+  onShowOnCalendar?: (event: FestivalEvent) => void;
+  onShowOnSchedule?: (event: FestivalEvent) => void;
+  currentTab?: "schedule" | "calendar" | "map" | "now-next";
   venues?: Venue[];
 }
 
@@ -19,6 +22,9 @@ export const EventModal: React.FC<EventModalProps> = ({
   isStarred,
   onToggleStar,
   onShowOnMap,
+  onShowOnCalendar,
+  onShowOnSchedule,
+  currentTab = "schedule",
   venues = []
 }) => {
   if (!modalEvent) return null;
@@ -121,6 +127,33 @@ export const EventModal: React.FC<EventModalProps> = ({
               >
                 <Icon name="map" size={14} /> Show on Map
               </button>
+            )}
+            {currentTab === "calendar" ? (
+              onShowOnSchedule && (
+                <button
+                  type="button"
+                  className="modal-action-btn show-on-schedule-btn"
+                  onClick={() => {
+                    onShowOnSchedule(modalEvent);
+                    onClose();
+                  }}
+                >
+                  <Icon name="clipboard" size={14} /> Show on Schedule
+                </button>
+              )
+            ) : (
+              onShowOnCalendar && (
+                <button
+                  type="button"
+                  className="modal-action-btn show-on-calendar-btn"
+                  onClick={() => {
+                    onShowOnCalendar(modalEvent);
+                    onClose();
+                  }}
+                >
+                  <Icon name="calendar" size={14} /> Show on Calendar
+                </button>
+              )
             )}
           </div>
         </div>

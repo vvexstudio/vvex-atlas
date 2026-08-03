@@ -241,6 +241,8 @@ export function EventApp({
     setStartTimeFilter,
     endTimeFilter,
     setEndTimeFilter,
+    hideUnscheduled,
+    setHideUnscheduled,
     locationOptions,
     actionOptions,
     departmentOptions,
@@ -572,47 +574,304 @@ export function EventApp({
 
 
   const calendarScrollContainerRef = useRef<HTMLDivElement>(null);
+  const lastViewingDateRef = useRef<string | null>(null);
+  const lastViewingOffsetRef = useRef<number>(0);
+  const isFilterScrollRestoreRef = useRef(false);
+  const isInitialFilterMountRef = useRef(true);
+  const calendarAutoScrollDoneRef = useRef(false);
+  const scheduleAutoScrollDoneRef = useRef(false);
 
   useEffect(() => {
-    if (mainTab !== "calendar" || availableDates.length === 0) return;
-    
-    // Find target date to focus: selectedDay or today fallback
-    const targetDate = selectedDay || (availableDates.some(d => d.date === effectiveDateStr) ? effectiveDateStr : availableDates[0].date);
-    
-    const dayEvents = filteredEvents.filter(
-      (e) => e.scheduleDate === targetDate && timeToMinutes(e.startTime) !== -1
-    );
-    
-    if (dayEvents.length > 0) {
-      let scrollOffset = 60;
-      const earliestStart = Math.min(...dayEvents.map((e) => timeToMinutes(e.startTime)));
-      
-      const currentMinutes = currentTime ? currentTime.getHours() * 60 + currentTime.getMinutes() : -1;
-      const isTargetToday = targetDate === effectiveDateStr;
-      
-      if (isTargetToday && currentMinutes !== -1) {
-        const hoursArray = Array.from({ length: 24 }, (_, i) => i);
-        const activeHours = hideEmptyHours ? getActiveHoursForDay(dayEvents) : hoursArray;
-        const activeCurrent = hideEmptyHours
-          ? getActiveMinuteOffset(currentMinutes, activeHours)
-          : currentMinutes;
-        // Center on the line (scroll minus 2 hours for context)
-        scrollOffset = (Math.max(0, activeCurrent - 120) / 60) * hourHeightScale;
-      } else {
-        if (hideEmptyHours) {
-          const activeHours = getActiveHoursForDay(dayEvents);
-          const activeStart = getActiveMinuteOffset(earliestStart, activeHours);
-          scrollOffset = (Math.max(0, activeStart - 60) / 60) * hourHeightScale;
-        } else {
-          scrollOffset = (Math.max(0, earliestStart - 60) / 60) * hourHeightScale;
-        }
+    if (selectedDay) {
+      lastViewingDateRef.current = selectedDay;
+      lastViewingOffsetRef.current = 0;
+    }
+  }, [selectedDay]);
+
+  // Helper to find date match between target (e.g. YYYY-MM-DD or dateStr) and available dates
+  const findMatchingDateString = (targetDateStr: string, availableDateStrings: string[]): string | null => {
+    if (!targetDateStr || availableDateStrings.length === 0) return null;
+    if (availableDateStrings.includes(targetDateStr)) return targetDateStr;
+
+    const parseToKey = (str: string): string | null => {
+      if (!str || str === "Date TBD") return null;
+      const ymdMatch = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+      if (ymdMatch) {
+        const m = String(ymdMatch[2]).padStart(2, "0");
+        const d = String(ymdMatch[3]).padStart(2, "0");
+        return `${ymdMatch[1]}-${m}-${d}`;
       }
-      
-      if (calendarScrollContainerRef.current) {
-        calendarScrollContainerRef.current.scrollTop = scrollOffset + 60;
+      const parsed = new Date(str);
+      if (!isNaN(parsed.getTime())) {
+        const y = parsed.getFullYear();
+        const m = String(parsed.getMonth() + 1).padStart(2, "0");
+        const d = String(parsed.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+      }
+      return null;
+    };
+
+    const targetKey = parseToKey(targetDateStr);
+    if (!targetKey) return null;
+
+    for (const dateItem of availableDateStrings) {
+      const itemKey = parseToKey(dateItem);
+      if (itemKey && itemKey === targetKey) {
+        return dateItem;
       }
     }
-  }, [mainTab, availableDates, filteredEvents, hourHeightScale, hideEmptyHours, selectedDay, effectiveDateStr, currentTime]);
+
+    return null;
+  };
+
+  // Helper to determine active viewing date section near top of viewport
+  const getActiveViewingDate = (container: HTMLElement | null): { date: string; offsetInDay: number } | null => {
+    if (!container) return null;
+    const dayEls = Array.from(container.querySelectorAll<HTMLElement>("[data-date]"));
+    if (dayEls.length === 0) return null;
+
+    const containerRect = container.getBoundingClientRect();
+    let bestEl: HTMLElement | null = null;
+    let minDistance = Infinity;
+
+    for (const el of dayEls) {
+      const rect = el.getBoundingClientRect();
+      const relativeTop = rect.top - containerRect.top;
+      const relativeBottom = rect.bottom - containerRect.top;
+
+      if (relativeTop <= 150 && relativeBottom > 0) {
+        bestEl = el;
+        break;
+      }
+
+      const dist = Math.abs(relativeTop);
+      if (dist < minDistance) {
+        minDistance = dist;
+        bestEl = el;
+      }
+    }
+
+    if (!bestEl) return null;
+    const date = bestEl.getAttribute("data-date");
+    if (!date) return null;
+
+    const offsetInDay = container.scrollTop - bestEl.offsetTop;
+    return { date, offsetInDay };
+  };
+
+  // Helper to find closest date in available dates array
+  const findClosestDate = (prevDate: string, availableDates: string[]): string => {
+    if (availableDates.length === 0) return prevDate;
+    if (availableDates.includes(prevDate)) return prevDate;
+    if (prevDate === "Date TBD") return availableDates[0];
+
+    const parseDateStr = (dStr: string) => {
+      if (!dStr || dStr === "Date TBD") return NaN;
+      const parts = dStr.split("-").map(Number);
+      if (parts.length === 3 && !parts.some(Number.isNaN)) {
+        return new Date(parts[0], parts[1] - 1, parts[2]).getTime();
+      }
+      const parsed = new Date(dStr).getTime();
+      return Number.isNaN(parsed) ? NaN : parsed;
+    };
+
+    const targetTime = parseDateStr(prevDate);
+    if (Number.isNaN(targetTime)) return availableDates[0];
+
+    let closest = availableDates[0];
+    let minDiff = Infinity;
+
+    for (const d of availableDates) {
+      const t = parseDateStr(d);
+      if (!Number.isNaN(t)) {
+        const diff = Math.abs(t - targetTime);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closest = d;
+        }
+      }
+    }
+
+    return closest;
+  };
+
+  // Passive scroll listener to update active viewing date and offset
+  useEffect(() => {
+    const scheduleContainer = mainContentRef.current;
+    const calendarContainer = calendarScrollContainerRef.current;
+
+    const handleScrollUpdate = (container: HTMLElement | null) => {
+      if (!container || isFilterScrollRestoreRef.current || isProgrammaticScrollRef.current) return;
+      const view = getActiveViewingDate(container);
+      if (view) {
+        lastViewingDateRef.current = view.date;
+        lastViewingOffsetRef.current = view.offsetInDay;
+      }
+    };
+
+    const onScheduleScroll = () => handleScrollUpdate(scheduleContainer);
+    const onCalendarScroll = () => handleScrollUpdate(calendarContainer);
+
+    if (scheduleContainer && mainTab === "schedule") {
+      scheduleContainer.addEventListener("scroll", onScheduleScroll, { passive: true });
+    }
+    if (calendarContainer && mainTab === "calendar") {
+      calendarContainer.addEventListener("scroll", onCalendarScroll, { passive: true });
+    }
+
+    return () => {
+      if (scheduleContainer) scheduleContainer.removeEventListener("scroll", onScheduleScroll);
+      if (calendarContainer) calendarContainer.removeEventListener("scroll", onCalendarScroll);
+    };
+  }, [mainTab]);
+
+  // Preserve scroll position / viewing date when filters change
+  useEffect(() => {
+    if (isInitialFilterMountRef.current) {
+      isInitialFilterMountRef.current = false;
+      return;
+    }
+
+    const prevDate = lastViewingDateRef.current;
+    if (!prevDate) return;
+
+    const containerEl = mainTab === "schedule"
+      ? mainContentRef.current
+      : mainTab === "calendar"
+      ? calendarScrollContainerRef.current
+      : null;
+
+    if (!containerEl) return;
+
+    const availableDatesList = dayFilteredGroupedEvents.map((g) => g.date);
+    if (availableDatesList.length === 0) return;
+
+    const targetDate = findClosestDate(prevDate, availableDatesList);
+    const targetEl = containerEl.querySelector<HTMLElement>(`[data-date="${CSS.escape(targetDate)}"]`);
+
+    if (targetEl) {
+      isFilterScrollRestoreRef.current = true;
+      const targetOffset = targetDate === prevDate ? (lastViewingOffsetRef.current || 0) : 0;
+      const desiredScroll = Math.max(0, targetEl.offsetTop + Math.max(0, targetOffset));
+
+      if (mainTab === "schedule" && mainContentRef.current) {
+        mainContentRef.current.scrollTop = desiredScroll;
+      } else if (mainTab === "calendar" && calendarScrollContainerRef.current) {
+        calendarScrollContainerRef.current.scrollTop = desiredScroll;
+      }
+
+      setTimeout(() => {
+        isFilterScrollRestoreRef.current = false;
+      }, 50);
+    }
+  }, [
+    searchQuery,
+    selectedLocations,
+    selectedActions,
+    selectedDepartments,
+    selectedLeads,
+    startTimeFilter,
+    endTimeFilter,
+    hideUnscheduled,
+    isMyScheduleOnly,
+    dayFilteredGroupedEvents,
+    mainTab,
+  ]);
+
+  // Unified Tab Switch & View Focus Effect (preserves active viewing date between schedule <-> calendar)
+  useEffect(() => {
+    if (mainTab !== "schedule" && mainTab !== "calendar") return;
+
+    const availableDateStrings = mainTab === "schedule"
+      ? dayFilteredGroupedEvents.map((g) => g.date)
+      : availableDates.map((d) => d.date);
+
+    if (availableDateStrings.length === 0) return;
+
+    const prevDate = lastViewingDateRef.current;
+    let targetDate: string;
+
+    if (prevDate) {
+      const matchedPrev = findMatchingDateString(prevDate, availableDateStrings);
+      targetDate = matchedPrev || findClosestDate(prevDate, availableDateStrings);
+    } else if (selectedDay) {
+      const matchedSelected = findMatchingDateString(selectedDay, availableDateStrings);
+      targetDate = matchedSelected || findClosestDate(selectedDay, availableDateStrings);
+    } else {
+      const matchedEffective = findMatchingDateString(effectiveDateStr, availableDateStrings);
+      targetDate = matchedEffective || availableDateStrings[0];
+    }
+
+    const timer = setTimeout(() => {
+      const containerEl = mainTab === "schedule"
+        ? mainContentRef.current
+        : calendarScrollContainerRef.current;
+
+      if (!containerEl) return;
+
+      const targetEl = containerEl.querySelector<HTMLElement>(`[data-date="${CSS.escape(targetDate)}"]`);
+      if (!targetEl) return;
+
+      isProgrammaticScrollRef.current = true;
+      isFilterScrollRestoreRef.current = true;
+
+      if (mainTab === "schedule") {
+        containerEl.scrollTop = targetEl.offsetTop;
+      } else if (mainTab === "calendar") {
+        const dayEvents = filteredEvents.filter(
+          (e) => (e.scheduleDate === targetDate || (effectiveDateStr && e.scheduleDate === effectiveDateStr)) && timeToMinutes(e.startTime) !== -1
+        );
+
+        let scrollOffset = 60;
+        if (dayEvents.length > 0) {
+          const earliestStart = Math.min(...dayEvents.map((e) => timeToMinutes(e.startTime)));
+          const currentMinutes = currentTime ? currentTime.getHours() * 60 + currentTime.getMinutes() : -1;
+          const isTargetToday = targetDate === effectiveDateStr || findMatchingDateString(effectiveDateStr, [targetDate]) !== null;
+
+          if (isTargetToday && currentMinutes !== -1) {
+            const hoursArray = Array.from({ length: 24 }, (_, i) => i);
+            const activeHours = hideEmptyHours ? getActiveHoursForDay(dayEvents) : hoursArray;
+            const activeCurrent = hideEmptyHours
+              ? getActiveMinuteOffset(currentMinutes, activeHours)
+              : currentMinutes;
+            scrollOffset = (Math.max(0, activeCurrent - 120) / 60) * hourHeightScale;
+          } else {
+            if (hideEmptyHours) {
+              const activeHours = getActiveHoursForDay(dayEvents);
+              const activeStart = getActiveMinuteOffset(earliestStart, activeHours);
+              scrollOffset = (Math.max(0, activeStart - 60) / 60) * hourHeightScale;
+            } else {
+              scrollOffset = (Math.max(0, earliestStart - 60) / 60) * hourHeightScale;
+            }
+          }
+        }
+
+        const baseTop = targetEl.offsetTop;
+        const targetOffset = prevDate && prevDate === targetDate && lastViewingOffsetRef.current > 0
+          ? lastViewingOffsetRef.current
+          : scrollOffset + 60;
+
+        containerEl.scrollTop = baseTop + targetOffset;
+      }
+
+      setTimeout(() => {
+        isProgrammaticScrollRef.current = false;
+        isFilterScrollRestoreRef.current = false;
+      }, 150);
+    }, 40);
+
+    return () => clearTimeout(timer);
+  }, [
+    mainTab,
+    selectedDay,
+    effectiveDateStr,
+    dayFilteredGroupedEvents,
+    availableDates,
+    filteredEvents,
+    hourHeightScale,
+    hideEmptyHours,
+    currentTime,
+  ]);
 
 
   // Prevent body scroll when mobile drawers are open
@@ -645,6 +904,8 @@ export function EventApp({
         setStartTimeFilter={setStartTimeFilter}
         endTimeFilter={endTimeFilter}
         setEndTimeFilter={setEndTimeFilter}
+        hideUnscheduled={hideUnscheduled}
+        setHideUnscheduled={setHideUnscheduled}
         locationOptions={locationOptions}
         actionOptions={actionOptions}
         departmentOptions={departmentOptions}
@@ -732,7 +993,7 @@ export function EventApp({
           {/* eslint-disable-next-line @next/next/no-img-element -- static 26px brand mark, next/image is overkill */}
           <img src="/icon.png" alt="" className="banner-brand-mark" width={26} height={26} />
           <h1 className="legacy-banner-heading">The Portal</h1>
-          {(() => {
+          {role === "admin" && (() => {
             const isLive = typeof window !== "undefined" && !window.location.hostname.includes("localhost") && !window.location.hostname.includes("127.0.0.1");
             const isProd = appEnvironment === "PROD" || (typeof window !== "undefined" && (window.location.hostname.includes("portal-map-app") || window.location.hostname.includes("portal-production")));
             const badgeText = isProd ? (isLive ? "PROD (Live)" : "PROD (Local)") : (isLive ? "DEV (Live)" : "DEV (Local)");
@@ -800,95 +1061,97 @@ export function EventApp({
           <span className="chip chip-accent eyebrow eyebrow-accent">
             PDT • Black Rock City
           </span>
-          {sourceLabel && (
-            <span className="banner-source-label" title="Data connection mode">({sourceLabel})</span>
-          )}
         </div>
-        <div className="legacy-banner-actions">
-          {userSession ? (
-            <div className="user-profile-section">
-              {userSession.picture ? (
-                <img
-                  src={userSession.picture}
-                  alt={userSession.name || userSession.email}
-                  referrerPolicy="no-referrer"
-                  style={{ width: "30px", height: "30px", borderRadius: "50%", border: "1.5px solid var(--accent)" }}
-                />
-              ) : (
-                <div
-                  style={{
-                    width: "30px",
-                    height: "30px",
-                    borderRadius: "50%",
-                    backgroundColor: "var(--accent)",
-                    color: "var(--accent-ink)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: "bold",
-                    fontSize: "0.8rem",
-                    border: "1.5px solid var(--line)",
-                  }}
-                >
-                  {(userSession.name || userSession.email)[0].toUpperCase()}
-                </div>
-              )}
-              <div className="user-profile-info" style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                  <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--ink)", lineHeight: "1.2" }}>
-                    {userSession.name || userSession.email.split("@")[0]}
-                  </span>
-                  <span
+        <div className="legacy-banner-right-wrapper">
+          <div className="legacy-banner-actions">
+            {userSession ? (
+              <div className="user-profile-section">
+                {userSession.picture ? (
+                  <img
+                    src={userSession.picture}
+                    alt={userSession.name || userSession.email}
+                    referrerPolicy="no-referrer"
+                    style={{ width: "30px", height: "30px", borderRadius: "50%", border: "1.5px solid var(--accent)" }}
+                  />
+                ) : (
+                  <div
                     style={{
-                      fontSize: "0.68rem",
-                      fontWeight: 700,
-                      padding: "2px 8px",
-                      borderRadius: "12px",
-                      backgroundColor: activeRoleBadge.isHighlight ? "var(--accent, #f97316)" : "var(--line, rgba(255,255,255,0.15))",
-                      color: activeRoleBadge.isHighlight ? "#ffffff" : "var(--muted)",
-                      display: "inline-flex",
+                      width: "30px",
+                      height: "30px",
+                      borderRadius: "50%",
+                      backgroundColor: "var(--accent)",
+                      color: "var(--accent-ink)",
+                      display: "flex",
                       alignItems: "center",
-                      gap: "4px",
-                      whiteSpace: "nowrap",
+                      justifyContent: "center",
+                      fontWeight: "bold",
+                      fontSize: "0.8rem",
+                      border: "1.5px solid var(--line)",
                     }}
                   >
-                    <Icon name={activeRoleBadge.icon} size={11} />
-                    {activeRoleBadge.text}
+                    {(userSession.name || userSession.email)[0].toUpperCase()}
+                  </div>
+                )}
+                <div className="user-profile-info" style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                    <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--ink)", lineHeight: "1.2" }}>
+                      {userSession.name || userSession.email.split("@")[0]}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "0.68rem",
+                        fontWeight: 700,
+                        padding: "2px 8px",
+                        borderRadius: "12px",
+                        backgroundColor: activeRoleBadge.isHighlight ? "var(--accent, #f97316)" : "var(--line, rgba(255,255,255,0.15))",
+                        color: activeRoleBadge.isHighlight ? "#ffffff" : "var(--muted)",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      <Icon name={activeRoleBadge.icon} size={11} />
+                      {activeRoleBadge.text}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: "0.65rem", color: "var(--muted)" }}>
+                    {userSession.email}
                   </span>
                 </div>
-                <span style={{ fontSize: "0.65rem", color: "var(--muted)" }}>
-                  {userSession.email}
-                </span>
+                {role === "admin" && (
+                  <Link
+                    href="/admin"
+                    className="btn btn-ghost btn-sm"
+                    style={{ marginRight: "0.5rem" }}
+                  >
+                    <Icon name="settings" size={12} /> Admin Panel
+                  </Link>
+                )}
+                <a href="/api/auth/logout" className="btn btn-danger btn-sm">
+                  <Icon name="logout" size={12} /> Logout
+                </a>
               </div>
-              {role === "admin" && (
-                <Link
-                  href="/admin"
-                  className="btn btn-ghost btn-sm"
-                  style={{ marginRight: "0.5rem" }}
-                >
-                  <Icon name="settings" size={12} /> Admin Panel
+            ) : (
+              <div className="user-profile-section">
+                <Link href="/login" className="btn btn-primary btn-sm" style={{ fontWeight: 600, padding: "0.4rem 0.8rem" }}>
+                  <Icon name="user" size={12} /> Login to Crew Portal
                 </Link>
-              )}
-              <a href="/api/auth/logout" className="btn btn-danger btn-sm">
-                <Icon name="logout" size={12} /> Logout
-              </a>
-            </div>
-          ) : (
-            <div className="user-profile-section">
-              <Link href="/login" className="btn btn-primary btn-sm" style={{ fontWeight: 600, padding: "0.4rem 0.8rem" }}>
-                <Icon name="user" size={12} /> Login to Crew Portal
-              </Link>
-            </div>
+              </div>
+            )}
+            <button
+              type="button"
+              className="legacy-theme-switch"
+              onClick={cycleTheme}
+              title={`Theme: ${theme} — click to switch`}
+              aria-label={`Current theme ${theme}. Switch to ${theme === "letterpress" ? "noir" : theme === "noir" ? "dusk" : "letterpress"}`}
+            >
+              <Icon name={theme === "letterpress" ? "sun" : theme === "noir" ? "moon" : "sparkles"} size={16} />
+            </button>
+          </div>
+          {role === "admin" && sourceLabel && (
+            <span className="banner-source-label" title="Data connection mode">({sourceLabel})</span>
           )}
-          <button
-            type="button"
-            className="legacy-theme-switch"
-            onClick={cycleTheme}
-            title={`Theme: ${theme} — click to switch`}
-            aria-label={`Current theme ${theme}. Switch to ${theme === "letterpress" ? "noir" : theme === "noir" ? "dusk" : "letterpress"}`}
-          >
-            <Icon name={theme === "letterpress" ? "sun" : theme === "noir" ? "moon" : "sparkles"} size={16} />
-          </button>
         </div>
       </header>
 
@@ -1062,6 +1325,10 @@ export function EventApp({
                   getColorStyle={getColorStyle}
                   activeCategories={activeCategories.length > 0 ? activeCategories : categoriesList}
                   isDarkMode={isDarkMode}
+                  currentTime={currentTime}
+                  effectiveDateStr={effectiveDateStr}
+                  hideUnscheduled={hideUnscheduled}
+                  setModalEvent={setModalEvent}
                 />
                 <Legend
                   categories={categoriesList}
@@ -1209,7 +1476,7 @@ export function EventApp({
       )}
 
       {/* Debug Footer info */}
-      {!!debug && (
+      {role === "admin" && !!debug && (
         <footer className="portal-debug-footer font-mono">
           Loaded {events.length} events from ROS. Locations: {venues.length}. Contacts: {personnel.length}. Depts: {departments.length}.
         </footer>
@@ -1223,9 +1490,29 @@ export function EventApp({
         getColorStyle={getColorStyle}
         isStarred={isStarred}
         onToggleStar={toggleStar}
+        currentTab={mainTab}
         onShowOnMap={(venueId) => {
           setFocusedVenueId(venueId);
           setMainTab("map");
+        }}
+        onShowOnCalendar={(evt) => {
+          if (evt.locationName) {
+            setSelectedLocations([evt.locationName]);
+          }
+          if (evt.scheduleDate && evt.scheduleDate !== "Date TBD") {
+            setSelectedDay(evt.scheduleDate);
+          }
+          setMainTab("calendar");
+        }}
+        onShowOnSchedule={(evt) => {
+          if (evt.locationName) {
+            setSelectedLocations([evt.locationName]);
+          }
+          if (evt.scheduleDate && evt.scheduleDate !== "Date TBD") {
+            setSelectedDay(evt.scheduleDate);
+          }
+          setMainTab("schedule");
+          handleRunningScheduleEventClick(evt);
         }}
         venues={venues}
       />

@@ -7,7 +7,13 @@
 
 const CONFIG = {
   FIREBASE_DB_URL: PropertiesService.getScriptProperties().getProperty("FIREBASE_DB_URL") || "",
-  APP_URL: PropertiesService.getScriptProperties().getProperty("APP_URL") || "http://localhost:3000",
+  get APP_URL() {
+    let rawUrl = (PropertiesService.getScriptProperties().getProperty("APP_URL") || "http://localhost:3000").trim();
+    if (rawUrl && !rawUrl.startsWith("http://") && !rawUrl.startsWith("https://")) {
+      return "https://" + rawUrl;
+    }
+    return rawUrl;
+  },
   SENDER_EMAIL: PropertiesService.getScriptProperties().getProperty("SENDER_EMAIL") || "",
   SPREADSHEET_ID: "",
 };

@@ -213,12 +213,14 @@ export function createVenueFromNewSheetRow(row: any): Venue {
   const address = asString(getRowValue(row, ["Address", "Street Address", "Location Address", "location_address", "address"]));
   const description = asString(getRowValue(row, ["Description", "notes", "notes_internal", "description"]));
   const permanence = asString(getRowValue(row, ["Category", "category", "Permanence", "permanence", "Type", "type", "foh_boh_default", "label"])) || "Standard";
+  const aliases = asString(getRowValue(row, ["Aliases", "aliases", "Alias", "alias"]));
 
   const venueName = name || (row && typeof row === "object" && row.name ? String(row.name) : "Unnamed Location");
 
   return {
     id: slugify(venueName),
     name: venueName,
+    aliases: aliases || undefined,
     label: permanence,
     mapLabel: venueName,
     shortDescription: description || "Imported location",
@@ -235,15 +237,59 @@ export function createVenueFromNewSheetRow(row: any): Venue {
   };
 }
 
-export function createEventFromSheetRow(row: any, venuesById: Map<string, Venue>, index: number): FestivalEvent {
+function getLookupKeys(str: string): string[] {
+  if (!str) return [];
+  const lower = str.toLowerCase().trim();
+  const slug = slugify(str);
+  const compact = lower.replace(/[^a-z0-9]/g, "");
+  const keys = new Set<string>();
+  if (lower) keys.add(lower);
+  if (slug) keys.add(slug);
+  if (compact) keys.add(compact);
+  return [...keys];
+}
+
+function registerLookupTarget<T>(map: Map<string, T>, target: T, names: string[]) {
+  names.forEach((name) => {
+    getLookupKeys(name).forEach((key) => {
+      if (!map.has(key)) {
+        map.set(key, target);
+      }
+    });
+  });
+}
+
+function findLookupTarget<T>(map: Map<string, T> | undefined, query: string): T | undefined {
+  if (!map || !query) return undefined;
+  for (const key of getLookupKeys(query)) {
+    const val = map.get(key);
+    if (val !== undefined) return val;
+  }
+  return undefined;
+}
+
+export function createEventFromSheetRow(
+  row: any,
+  venuesById: Map<string, Venue>,
+  index: number,
+  departmentsLookup?: Map<string, string>,
+  personnelLookup?: Map<string, string>,
+  actionsLookup?: Map<string, string>
+): FestivalEvent {
   if (row && typeof row === "object" && "id" in row && "title" in row && "startTime" in row) {
     return row as FestivalEvent;
   }
 
-  const action = asString(getRowValue(row, ["Action", "action"]));
-  const description = asString(getRowValue(row, ["Description", "description"]));
-  const locationName = asString(getRowValue(row, ["SOLARIS ROS Location", "Location", "location_name", "location"])) || "TBD";
+  const rawAction = asString(getRowValue(row, ["Action", "action"]));
+  const action = findLookupTarget(actionsLookup, rawAction) || rawAction;
   
+  const description = asString(getRowValue(row, ["Description", "description"]));
+  const rawLocName = asString(getRowValue(row, ["SOLARIS ROS Location", "Location", "location_name", "location"])) || "TBD";
+  
+  const matchedVenue = findLookupTarget(venuesById, rawLocName);
+  const venueId = matchedVenue ? matchedVenue.id : slugify(rawLocName);
+  const locationName = matchedVenue ? matchedVenue.name : rawLocName;
+
   const title = description.split(/\n|\/\//)[0].trim() || action || "Scheduled Event";
 
   const dateVal = getRowValue(row, ["Start Day", "start_day", "date", "start_date"]);
@@ -258,13 +304,14 @@ export function createEventFromSheetRow(row: any, venuesById: Map<string, Venue>
   const endMinutes = excelTimeToMinutes(endVal);
   const endStr = endMinutes !== null ? formatMinutes(endMinutes) : asString(endVal) || "TBD";
 
-  const venueId = slugify(locationName);
-  const venue = venuesById.get(venueId) || venuesById.get(locationName.toLowerCase().trim());
-
   const projectTypes = parseEventTypes(`${action} ${description}`);
 
-  const leadDept = asString(getRowValue(row, ["Department", "department", "lead_dept", "lead_department"]));
-  const leadPerson = asString(getRowValue(row, ["Lead Point Person", "lead_point_person", "lead"]));
+  const rawLeadDept = asString(getRowValue(row, ["Department", "department", "lead_dept", "lead_department"]));
+  const leadDept = findLookupTarget(departmentsLookup, rawLeadDept) || rawLeadDept;
+
+  const rawLeadPerson = asString(getRowValue(row, ["Lead Point Person", "lead_point_person", "lead"]));
+  const leadPerson = findLookupTarget(personnelLookup, rawLeadPerson) || rawLeadPerson;
+
   const eventId = asString(getRowValue(row, ["event_id", "id"]));
   const eventType = asString(getRowValue(row, ["event_type", "type"]));
 
@@ -280,9 +327,9 @@ export function createEventFromSheetRow(row: any, venuesById: Map<string, Venue>
     type: (eventType || projectTypes[0] || "community") as any,
     projectTypes: projectTypes.length > 1 ? projectTypes : undefined,
     thumbnailUrl: DEFAULT_THUMBNAIL,
-    lat: venue?.lat,
-    lng: venue?.lng,
-    hasLocation: !!venue?.hasLocation,
+    lat: matchedVenue?.lat,
+    lng: matchedVenue?.lng,
+    hasLocation: !!matchedVenue?.hasLocation,
     source: "schedule",
     scheduleDate: dateStr,
     scheduleCategory: action || undefined,
@@ -297,7 +344,8 @@ export function parseSpreadsheetData(
   locationsData: any[],
   rosData: any[],
   personnelData: any[],
-  departmentsData: any[]
+  departmentsData: any[],
+  actionsData: any[] = []
 ): {
   venues: Venue[];
   events: FestivalEvent[];
@@ -320,9 +368,38 @@ export function parseSpreadsheetData(
 
   const venuesById = new Map<string, Venue>();
   venues.forEach((venue) => {
-    venuesById.set(venue.id, venue);
-    venuesById.set(venue.name.toLowerCase().trim(), venue);
-    venuesById.set(slugify(venue.name), venue);
+    const aliasList = venue.aliases ? String(venue.aliases).split(/[,|]/).map(a => a.trim()).filter(Boolean) : [];
+    registerLookupTarget(venuesById, venue, [venue.id, venue.name, ...aliasList]);
+  });
+
+  // Department Alias Resolution Map
+  const departmentsLookup = new Map<string, string>();
+  departmentsData.forEach((row) => {
+    const canonicalName = asString(getRowValue(row, ["Department", "department", "name", "dept", "dept_id"]));
+    if (!canonicalName) return;
+    const aliases = getRowValue(row, ["Aliases", "aliases", "Alias", "alias"]);
+    const aliasList = aliases ? String(aliases).split(/[,|]/).map(a => a.trim()).filter(Boolean) : [];
+    registerLookupTarget(departmentsLookup, canonicalName, [canonicalName, ...aliasList]);
+  });
+
+  // Personnel Alias Resolution Map
+  const personnelLookup = new Map<string, string>();
+  personnelData.forEach((row) => {
+    const canonicalName = asString(getRowValue(row, ["Name", "name", "personnel_name"]));
+    if (!canonicalName) return;
+    const aliases = getRowValue(row, ["Aliases", "aliases", "Alias", "alias"]);
+    const aliasList = aliases ? String(aliases).split(/[,|]/).map(a => a.trim()).filter(Boolean) : [];
+    registerLookupTarget(personnelLookup, canonicalName, [canonicalName, ...aliasList]);
+  });
+
+  // Actions Alias Resolution Map
+  const actionsLookup = new Map<string, string>();
+  actionsData.forEach((row) => {
+    const canonicalAction = asString(getRowValue(row, ["Action", "action", "Name", "name"]));
+    if (!canonicalAction) return;
+    const aliases = getRowValue(row, ["Aliases", "aliases", "Alias", "alias"]);
+    const aliasList = aliases ? String(aliases).split(/[,|]/).map(a => a.trim()).filter(Boolean) : [];
+    registerLookupTarget(actionsLookup, canonicalAction, [canonicalAction, ...aliasList]);
   });
 
   validRows.forEach((row) => {
@@ -354,7 +431,9 @@ export function parseSpreadsheetData(
     }
   });
 
-  const events = validRows.map((row, idx) => createEventFromSheetRow(row, venuesById, idx));
+  const events = validRows.map((row, idx) =>
+    createEventFromSheetRow(row, venuesById, idx, departmentsLookup, personnelLookup, actionsLookup)
+  );
 
   events.sort((a, b) => {
     const dateDelta = (a.scheduleDate || "").localeCompare(b.scheduleDate || "");

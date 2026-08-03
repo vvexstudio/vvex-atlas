@@ -23,18 +23,20 @@ export async function proxy(request: NextRequest) {
     request.cookies.get("portal_session")?.value;
   const session = sessionToken ? await verifySessionCookie(sessionToken) : null;
 
-  // 3. Handle admin routes protection (requires admin password cookie or admin role)
-  if (pathname.startsWith("/admin")) {
-    const hasAdminAccess = request.cookies.get("admin_access")?.value === "true";
-    const hasOAuthAdminAccess = session ? (session.role === "admin" || isAdminEmail(session.email)) : false;
-    const isAuthorized = hasAdminAccess || hasOAuthAdminAccess;
+  const hasAdminAccessCookie = request.cookies.get("admin_access")?.value === "true";
+  const hasOAuthAdminAccess = session ? (session.role === "admin" || isAdminEmail(session.email)) : false;
+  const isAuthorizedAdmin = hasAdminAccessCookie || hasOAuthAdminAccess;
 
-    if (!isAuthorized && pathname !== "/admin/login") {
-      return NextResponse.redirect(new URL("/admin/login", request.url));
+  // 3. Handle admin routes protection
+  if (pathname.startsWith("/admin")) {
+    // If user is already an authorized admin and navigates to /admin/login, redirect straight to /admin
+    if (isAuthorizedAdmin && pathname === "/admin/login") {
+      return NextResponse.redirect(new URL("/admin", request.url));
     }
 
-    if (isAuthorized && pathname === "/admin/login") {
-      return NextResponse.redirect(new URL("/admin", request.url));
+    // If user is accessing /admin or /admin/* without admin authorization, redirect to /admin/login
+    if (!isAuthorizedAdmin && pathname !== "/admin/login") {
+      return NextResponse.redirect(new URL("/admin/login", request.url));
     }
 
     return NextResponse.next();
@@ -50,14 +52,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api/auth (OAuth routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - icon.png (shortcut icon)
-     */
     "/((?!api/auth|_next/static|_next/image|favicon.ico|icon.png).*)",
   ],
 };
