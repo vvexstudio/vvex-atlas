@@ -77,7 +77,7 @@ const getCountdownLabel = (event: FestivalEvent, currentTime: Date): string | nu
 };
 
 const getDayCountdownLabel = (dateGroup: DateGroup, currentTime: Date): string | null => {
-  let rawDate = dateGroup.events.find(e => e.scheduleDate && e.scheduleDate !== "Date TBD")?.scheduleDate || dateGroup.date;
+  const rawDate = dateGroup.events.find(e => e.scheduleDate && e.scheduleDate !== "Date TBD")?.scheduleDate || dateGroup.date;
   if (!rawDate) return null;
 
   let y: number, m: number, d: number;
