@@ -198,4 +198,67 @@ describe("useFilters - event filtering semantics", () => {
     expect(hookResult.filteredEvents).toHaveLength(1);
     expect(hookResult.filteredEvents[0].id).toBe("e3");
   });
+
+  it("should hide date-unassigned TBD events by default and show them when toggled off", () => {
+    const unscheduledEvents: FestivalEvent[] = [
+      {
+        id: "scheduled-1",
+        title: "Scheduled Show",
+        startTime: "10:00",
+        endTime: "11:00",
+        day: "sun",
+        scheduleDate: "2026-08-23",
+        hasLocation: false,
+        venueId: "",
+        locationName: "",
+        department: "Production",
+        source: "schedule",
+        thumbnailUrl: "",
+      },
+      {
+        id: "unscheduled-1",
+        title: "TBD Planning Session",
+        startTime: "TBD",
+        endTime: "TBD",
+        day: "sun",
+        scheduleDate: "Date TBD",
+        hasLocation: false,
+        venueId: "",
+        locationName: "",
+        department: "Production",
+        source: "schedule",
+        thumbnailUrl: "",
+      },
+      {
+        id: "date-assigned-time-tbd",
+        title: "All-Day Production Load-in",
+        startTime: "TBD",
+        endTime: "TBD",
+        day: "sun",
+        scheduleDate: "2026-08-23",
+        hasLocation: false,
+        venueId: "",
+        locationName: "",
+        department: "Production",
+        source: "schedule",
+        thumbnailUrl: "",
+      },
+    ];
+
+    act(() => {
+      const root = createRoot(container!);
+      root.render(<TestWrapper events={unscheduledEvents} venues={mockVenues} />);
+    });
+
+    // Default: hideUnscheduled is true -> date-unassigned event is hidden, date-assigned items (even time TBD) remain
+    expect(hookResult.hideUnscheduled).toBe(true);
+    expect(hookResult.filteredEvents.map((e: FestivalEvent) => e.id)).toEqual(["scheduled-1", "date-assigned-time-tbd"]);
+
+    // Toggle hideUnscheduled to false -> all events shown
+    act(() => {
+      hookResult.setHideUnscheduled(false);
+    });
+    expect(hookResult.filteredEvents).toHaveLength(3);
+    expect(hookResult.filteredEvents.map((e: FestivalEvent) => e.id)).toContain("unscheduled-1");
+  });
 });

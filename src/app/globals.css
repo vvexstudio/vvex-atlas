@@ -62,6 +62,7 @@
   --gradient-color-2: rgba(168, 126, 63, 0.18);
   --gradient-start: #f5ead2;
   --gradient-end: #e3d3b6;
+  color-scheme: light;
 }
 
 body.portal-dark {
@@ -94,6 +95,7 @@ body.portal-dark {
   --gradient-color-2: rgba(217, 142, 74, 0.06);
   --gradient-start: #1b1712;
   --gradient-end: #16130f;
+  color-scheme: dark;
 }
 
 body.portal-dusk {
@@ -127,6 +129,7 @@ body.portal-dusk {
   --gradient-color-2: rgba(224, 132, 155, 0.06);
   --gradient-start: #241419;
   --gradient-end: #201318;
+  color-scheme: dark;
 }
 
 html,
@@ -151,6 +154,42 @@ body {
   box-sizing: border-box;
   padding: 0;
   margin: 0;
+}
+
+input,
+select,
+textarea {
+  color: var(--ink);
+  background-color: var(--surface-raised);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted);
+  opacity: 0.75;
+}
+
+select option {
+  background-color: var(--surface-raised);
+  color: var(--ink);
+}
+
+input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+input::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+input[type="search"]::-webkit-search-cancel-button {
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+input[type="search"]::-webkit-search-cancel-button:hover {
+  opacity: 1;
 }
 
 a {
@@ -263,9 +302,22 @@ body.portal-dark .banner-brand-mark {
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   background: var(--surface-raised);
+  color: var(--ink);
   padding: 6px 8px;
   font: inherit;
   font-size: var(--text-sm);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.legacy-search:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.legacy-search::placeholder {
+  color: var(--muted);
+  opacity: 0.7;
 }
 
 .legacy-shell {
@@ -697,6 +749,19 @@ body.portal-dark .banner-brand-mark {
   border-bottom: 1px solid var(--line);
   border-top-left-radius: 7px;
   border-top-right-radius: 7px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.day-header-countdown-tag {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  letter-spacing: 0.03em;
 }
 .main-schedule-table-wrap {
   overflow-x: auto;
@@ -761,6 +826,13 @@ body.portal-dark .banner-brand-mark {
 
 .main-schedule-row:hover td.time-cell {
   background: var(--surface);
+}
+
+.mobile-only {
+  display: none;
+}
+.desktop-only {
+  display: table-cell;
 }
 
 .font-mono {
@@ -1351,12 +1423,7 @@ body.portal-dark .banner-brand-mark {
     grid-template-columns: 1fr;
   }
 
-  /* Prevent main schedule table columns from squishing on mobile/tablet viewports */
-  .main-schedule-table {
-    min-width: 750px;
-  }
-
-  /* Mobile schedule list to fully fill screen without gaps/margins */
+  /* Mobile Schedule List View optimization: Stack badges in 2 columns & scale description without horizontal scroll */
   .main-schedule-container {
     padding: 0 !important;
     gap: 16px;
@@ -1371,6 +1438,109 @@ body.portal-dark .banner-brand-mark {
   }
   .main-schedule-table-wrap {
     border-radius: 0 !important;
+    overflow-x: hidden !important;
+    width: 100% !important;
+  }
+  .main-schedule-table {
+    min-width: 0 !important;
+    width: 100% !important;
+    display: block !important;
+  }
+  .main-schedule-table thead {
+    display: none !important;
+  }
+  .main-schedule-table tbody {
+    display: block !important;
+    width: 100% !important;
+  }
+  .main-schedule-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: stretch !important;
+    padding: 12px 14px !important;
+    gap: 12px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    border-bottom: 1px solid var(--line) !important;
+  }
+  .main-schedule-table td {
+    border: none !important;
+  }
+  .main-schedule-table td.time-cell {
+    position: static !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    width: 64px !important;
+    min-width: 64px !important;
+    flex-shrink: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-self: stretch !important;
+  }
+
+  .schedule-time-box {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+    height: 100%;
+    line-height: 1.2;
+    padding: 1px 0;
+  }
+
+  .schedule-time-box .time-start {
+    font-size: var(--text-xs);
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .schedule-time-box .time-dash {
+    font-size: 10px;
+    opacity: 0.4;
+    margin: 2px 0;
+  }
+
+  .schedule-time-box .time-end {
+    font-size: var(--text-xs);
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .desktop-only {
+    display: none !important;
+  }
+  .mobile-details-cell.mobile-only {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    padding: 0 !important;
+    align-self: stretch !important;
+  }
+  .mobile-badges-row {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 4px 6px !important;
+    align-items: center !important;
+    margin-bottom: 8px !important;
+  }
+  .mobile-event-desc {
+    width: 100% !important;
+    margin-top: auto !important;
+    font-size: var(--text-xs);
+    line-height: 1.35;
+    color: var(--ink);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
   }
 }
 
@@ -2706,6 +2876,11 @@ body.portal-dark .banner-brand-mark {
   width: 100%;
 }
 
+.legend-search-input::placeholder {
+  color: var(--muted);
+  opacity: 0.7;
+}
+
 .legend-locations-list {
   display: flex;
   flex-direction: column;
@@ -2780,19 +2955,47 @@ body.portal-dark .banner-brand-mark {
 }
 
 /* 6. InfoWindow Layout & Linkages */
+.gm-style-iw-c {
+  background-color: var(--surface-raised) !important;
+  color: var(--ink) !important;
+  border-radius: var(--radius-md, 8px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+  border: 1px solid var(--line) !important;
+  padding: 12px 14px !important;
+}
+
+.gm-style-iw-tc::after {
+  background-color: var(--surface-raised) !important;
+}
+
+/* InfoWindow Close Button ("X") Theme Visibility Fix */
+button.gm-ui-hover-effect {
+  top: 6px !important;
+  right: 6px !important;
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--line) !important;
+  opacity: 0.9 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: background 0.15s ease, opacity 0.15s ease !important;
+}
+button.gm-ui-hover-effect:hover {
+  background: var(--line) !important;
+  opacity: 1 !important;
+}
+button.gm-ui-hover-effect span,
+button.gm-ui-hover-effect svg {
+  margin: 0 !important;
+  color: var(--ink) !important;
+  fill: var(--ink) !important;
+}
+
 .map-infowindow {
-  /* Google's InfoWindow chrome is always white — pin light-theme tokens
-     here so the content stays readable regardless of app theme. */
-  --ink: #1e1a16;
-  --muted: #63584c;
-  --line: rgba(56, 38, 17, 0.18);
-  --surface: #f7efdd;
-  --surface-raised: #fffdf3;
-  --accent: #bc5c2d;
-  --accent-strong: #9c4a20;
-  --accent-ink: #fffdf3;
-  --accent-soft: rgba(188, 92, 45, 0.14);
-  max-width: 250px;
+  max-width: 260px;
   color: var(--ink);
   font-family: var(--font-sans, var(--font-fallback-sans));
   display: flex;
@@ -2803,6 +3006,7 @@ body.portal-dark .banner-brand-mark {
   font-size: var(--text-base);
   font-weight: 700;
   margin: 0;
+  color: var(--ink);
 }
 .infowindow-address {
   font-size: var(--text-sm);
@@ -2816,42 +3020,71 @@ body.portal-dark .banner-brand-mark {
 .infowindow-category-badge {
   font-size: var(--text-xs);
   background: var(--surface);
-  padding: 1px 4px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  padding: 1px 6px;
   border-radius: var(--radius-sm);
   align-self: flex-start;
   font-weight: 600;
 }
 .infowindow-desc {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   margin: 0;
   color: var(--muted);
+  line-height: 1.35;
+}
+.infowindow-desc-toggle {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  padding: 0;
+  margin-left: 4px;
+  cursor: pointer;
+  text-decoration: underline;
 }
 .infowindow-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   margin-top: 4px;
 }
 .infowindow-btn {
-  flex: 1;
-  font-size: var(--text-xs);
+  flex: 1 1 calc(50% - 3px);
+  font-size: 0.7rem;
   font-weight: 700;
   padding: 5px 8px;
   border-radius: var(--radius-sm);
   text-align: center;
   text-decoration: none;
   cursor: pointer;
-  border: none;
+  border: 1px solid var(--line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 .directions-btn {
   background-color: var(--accent);
   color: var(--accent-ink) !important;
+  border-color: var(--accent);
 }
-.directions-btn:hover { background-color: var(--accent); }
+.directions-btn:hover { background-color: var(--accent-strong); }
 .filter-btn {
   background-color: var(--surface);
-  color: var(--muted);
+  color: var(--ink);
 }
-.filter-btn:hover { background-color: var(--surface); }
+.filter-btn:hover { background-color: var(--line); }
+.calendar-btn {
+  background-color: var(--accent-soft);
+  color: var(--accent-strong);
+}
+.calendar-btn:hover {
+  background-color: var(--accent);
+  color: var(--accent-ink);
+}
 .infowindow-events {
   border-top: 1px solid var(--line);
   padding-top: 6px;
@@ -2860,8 +3093,110 @@ body.portal-dark .banner-brand-mark {
 .infowindow-events h4 {
   font-size: var(--text-xs);
   font-weight: 700;
-  margin: 0 0 4px 0;
+  margin: 0 0 6px 0;
   color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Full Featured Next Event Card */
+.infowindow-next-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.infowindow-next-card:hover {
+  background: var(--surface-raised);
+  border-color: var(--accent);
+}
+.next-card-kicker {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.next-card-date-time {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.next-card-dot {
+  color: var(--muted);
+}
+.next-card-title {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 1px 0;
+  line-height: 1.25;
+}
+.next-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+.ev-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Inset Scrollable Section for Remaining Events */
+.infowindow-inset-section {
+  margin-top: 6px;
+}
+.inset-section-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+.infowindow-inset-scroll {
+  max-height: 150px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+}
+.inset-date-divider {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--accent);
+  background: var(--surface-raised);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--accent);
+  margin: 6px 0 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.inset-date-divider:first-child {
+  margin-top: 0;
 }
 .infowindow-event-list {
   list-style: none;
@@ -2869,16 +3204,32 @@ body.portal-dark .banner-brand-mark {
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 .infowindow-event-list li {
   font-size: var(--text-xs);
   display: flex;
-  gap: 4px;
+  align-items: center;
+  gap: 6px;
   line-height: 1.2;
+  padding: 3px 4px;
+  border-radius: var(--radius-sm);
+  transition: background 0.12s ease;
 }
-.ev-time { font-weight: 600; color: var(--muted); flex-shrink: 0; }
-.ev-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.infowindow-event-list li:hover {
+  background: var(--surface-raised);
+}
+.ev-date-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: rgba(188, 92, 45, 0.12);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+.ev-time { font-weight: 600; color: var(--muted); flex-shrink: 0; display: inline-flex; alignItems: center; gap: 2px; }
+.ev-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: var(--ink); }
 
 /* 7. Live Line & Countdown Tags */
 .calendar-live-time-line {

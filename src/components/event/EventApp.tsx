@@ -241,6 +241,8 @@ export function EventApp({
     setStartTimeFilter,
     endTimeFilter,
     setEndTimeFilter,
+    hideUnscheduled,
+    setHideUnscheduled,
     locationOptions,
     actionOptions,
     departmentOptions,
@@ -572,11 +574,176 @@ export function EventApp({
 
 
   const calendarScrollContainerRef = useRef<HTMLDivElement>(null);
+  const lastViewingDateRef = useRef<string | null>(null);
+  const lastViewingOffsetRef = useRef<number>(0);
+  const isFilterScrollRestoreRef = useRef(false);
+  const isInitialFilterMountRef = useRef(true);
+  const calendarAutoScrollDoneRef = useRef(false);
 
+  // Helper to determine active viewing date section near top of viewport
+  const getActiveViewingDate = (container: HTMLElement | null): { date: string; offsetInDay: number } | null => {
+    if (!container) return null;
+    const dayEls = Array.from(container.querySelectorAll<HTMLElement>("[data-date]"));
+    if (dayEls.length === 0) return null;
+
+    const containerRect = container.getBoundingClientRect();
+    let bestEl: HTMLElement | null = null;
+    let minDistance = Infinity;
+
+    for (const el of dayEls) {
+      const rect = el.getBoundingClientRect();
+      const relativeTop = rect.top - containerRect.top;
+      const relativeBottom = rect.bottom - containerRect.top;
+
+      if (relativeTop <= 150 && relativeBottom > 0) {
+        bestEl = el;
+        break;
+      }
+
+      const dist = Math.abs(relativeTop);
+      if (dist < minDistance) {
+        minDistance = dist;
+        bestEl = el;
+      }
+    }
+
+    if (!bestEl) return null;
+    const date = bestEl.getAttribute("data-date");
+    if (!date) return null;
+
+    const offsetInDay = container.scrollTop - bestEl.offsetTop;
+    return { date, offsetInDay };
+  };
+
+  // Helper to find closest date in available dates array
+  const findClosestDate = (prevDate: string, availableDates: string[]): string => {
+    if (availableDates.length === 0) return prevDate;
+    if (availableDates.includes(prevDate)) return prevDate;
+    if (prevDate === "Date TBD") return availableDates[0];
+
+    const parseDateStr = (dStr: string) => {
+      if (!dStr || dStr === "Date TBD") return NaN;
+      const parts = dStr.split("-").map(Number);
+      if (parts.length === 3 && !parts.some(Number.isNaN)) {
+        return new Date(parts[0], parts[1] - 1, parts[2]).getTime();
+      }
+      const parsed = new Date(dStr).getTime();
+      return Number.isNaN(parsed) ? NaN : parsed;
+    };
+
+    const targetTime = parseDateStr(prevDate);
+    if (Number.isNaN(targetTime)) return availableDates[0];
+
+    let closest = availableDates[0];
+    let minDiff = Infinity;
+
+    for (const d of availableDates) {
+      const t = parseDateStr(d);
+      if (!Number.isNaN(t)) {
+        const diff = Math.abs(t - targetTime);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closest = d;
+        }
+      }
+    }
+
+    return closest;
+  };
+
+  // Passive scroll listener to update active viewing date and offset
   useEffect(() => {
-    if (mainTab !== "calendar" || availableDates.length === 0) return;
+    const scheduleContainer = mainContentRef.current;
+    const calendarContainer = calendarScrollContainerRef.current;
+
+    const handleScrollUpdate = (container: HTMLElement | null) => {
+      if (!container || isFilterScrollRestoreRef.current || isProgrammaticScrollRef.current) return;
+      const view = getActiveViewingDate(container);
+      if (view) {
+        lastViewingDateRef.current = view.date;
+        lastViewingOffsetRef.current = view.offsetInDay;
+      }
+    };
+
+    const onScheduleScroll = () => handleScrollUpdate(scheduleContainer);
+    const onCalendarScroll = () => handleScrollUpdate(calendarContainer);
+
+    if (scheduleContainer && mainTab === "schedule") {
+      scheduleContainer.addEventListener("scroll", onScheduleScroll, { passive: true });
+    }
+    if (calendarContainer && mainTab === "calendar") {
+      calendarContainer.addEventListener("scroll", onCalendarScroll, { passive: true });
+    }
+
+    return () => {
+      if (scheduleContainer) scheduleContainer.removeEventListener("scroll", onScheduleScroll);
+      if (calendarContainer) calendarContainer.removeEventListener("scroll", onCalendarScroll);
+    };
+  }, [mainTab]);
+
+  // Preserve scroll position / viewing date when filters change
+  useEffect(() => {
+    if (isInitialFilterMountRef.current) {
+      isInitialFilterMountRef.current = false;
+      return;
+    }
+
+    const prevDate = lastViewingDateRef.current;
+    if (!prevDate) return;
+
+    const containerEl = mainTab === "schedule"
+      ? mainContentRef.current
+      : mainTab === "calendar"
+      ? calendarScrollContainerRef.current
+      : null;
+
+    if (!containerEl) return;
+
+    const availableDatesList = dayFilteredGroupedEvents.map((g) => g.date);
+    if (availableDatesList.length === 0) return;
+
+    const targetDate = findClosestDate(prevDate, availableDatesList);
+    const targetEl = containerEl.querySelector<HTMLElement>(`[data-date="${CSS.escape(targetDate)}"]`);
+
+    if (targetEl) {
+      isFilterScrollRestoreRef.current = true;
+      const targetOffset = targetDate === prevDate ? (lastViewingOffsetRef.current || 0) : 0;
+      const desiredScroll = Math.max(0, targetEl.offsetTop + Math.max(0, targetOffset));
+
+      if (mainTab === "schedule" && mainContentRef.current) {
+        mainContentRef.current.scrollTop = desiredScroll;
+      } else if (mainTab === "calendar" && calendarScrollContainerRef.current) {
+        calendarScrollContainerRef.current.scrollTop = desiredScroll;
+      }
+
+      setTimeout(() => {
+        isFilterScrollRestoreRef.current = false;
+      }, 50);
+    }
+  }, [
+    searchQuery,
+    selectedLocations,
+    selectedActions,
+    selectedDepartments,
+    selectedLeads,
+    startTimeFilter,
+    endTimeFilter,
+    hideUnscheduled,
+    isMyScheduleOnly,
+    dayFilteredGroupedEvents,
+    mainTab,
+  ]);
+
+  // Initial Calendar View Focus Effect
+  useEffect(() => {
+    if (mainTab !== "calendar" || availableDates.length === 0) {
+      calendarAutoScrollDoneRef.current = false;
+      return;
+    }
     
-    // Find target date to focus: selectedDay or today fallback
+    if (calendarAutoScrollDoneRef.current && !selectedDay) return;
+    calendarAutoScrollDoneRef.current = true;
+
     const targetDate = selectedDay || (availableDates.some(d => d.date === effectiveDateStr) ? effectiveDateStr : availableDates[0].date);
     
     const dayEvents = filteredEvents.filter(
@@ -596,7 +763,6 @@ export function EventApp({
         const activeCurrent = hideEmptyHours
           ? getActiveMinuteOffset(currentMinutes, activeHours)
           : currentMinutes;
-        // Center on the line (scroll minus 2 hours for context)
         scrollOffset = (Math.max(0, activeCurrent - 120) / 60) * hourHeightScale;
       } else {
         if (hideEmptyHours) {
@@ -609,7 +775,9 @@ export function EventApp({
       }
       
       if (calendarScrollContainerRef.current) {
-        calendarScrollContainerRef.current.scrollTop = scrollOffset + 60;
+        const dayEl = calendarScrollContainerRef.current.querySelector<HTMLElement>(`[data-date="${CSS.escape(targetDate)}"]`);
+        const baseTop = dayEl ? dayEl.offsetTop : 0;
+        calendarScrollContainerRef.current.scrollTop = baseTop + scrollOffset + 60;
       }
     }
   }, [mainTab, availableDates, filteredEvents, hourHeightScale, hideEmptyHours, selectedDay, effectiveDateStr, currentTime]);
@@ -645,6 +813,8 @@ export function EventApp({
         setStartTimeFilter={setStartTimeFilter}
         endTimeFilter={endTimeFilter}
         setEndTimeFilter={setEndTimeFilter}
+        hideUnscheduled={hideUnscheduled}
+        setHideUnscheduled={setHideUnscheduled}
         locationOptions={locationOptions}
         actionOptions={actionOptions}
         departmentOptions={departmentOptions}
@@ -732,7 +902,7 @@ export function EventApp({
           {/* eslint-disable-next-line @next/next/no-img-element -- static 26px brand mark, next/image is overkill */}
           <img src="/icon.png" alt="" className="banner-brand-mark" width={26} height={26} />
           <h1 className="legacy-banner-heading">The Portal</h1>
-          {(() => {
+          {role === "admin" && (() => {
             const isLive = typeof window !== "undefined" && !window.location.hostname.includes("localhost") && !window.location.hostname.includes("127.0.0.1");
             const isProd = appEnvironment === "PROD" || (typeof window !== "undefined" && (window.location.hostname.includes("portal-map-app") || window.location.hostname.includes("portal-production")));
             const badgeText = isProd ? (isLive ? "PROD (Live)" : "PROD (Local)") : (isLive ? "DEV (Live)" : "DEV (Local)");
@@ -800,7 +970,7 @@ export function EventApp({
           <span className="chip chip-accent eyebrow eyebrow-accent">
             PDT • Black Rock City
           </span>
-          {sourceLabel && (
+          {role === "admin" && sourceLabel && (
             <span className="banner-source-label" title="Data connection mode">({sourceLabel})</span>
           )}
         </div>
@@ -1062,6 +1232,10 @@ export function EventApp({
                   getColorStyle={getColorStyle}
                   activeCategories={activeCategories.length > 0 ? activeCategories : categoriesList}
                   isDarkMode={isDarkMode}
+                  currentTime={currentTime}
+                  effectiveDateStr={effectiveDateStr}
+                  hideUnscheduled={hideUnscheduled}
+                  setModalEvent={setModalEvent}
                 />
                 <Legend
                   categories={categoriesList}
@@ -1209,7 +1383,7 @@ export function EventApp({
       )}
 
       {/* Debug Footer info */}
-      {!!debug && (
+      {role === "admin" && !!debug && (
         <footer className="portal-debug-footer font-mono">
           Loaded {events.length} events from ROS. Locations: {venues.length}. Contacts: {personnel.length}. Depts: {departments.length}.
         </footer>
@@ -1223,9 +1397,29 @@ export function EventApp({
         getColorStyle={getColorStyle}
         isStarred={isStarred}
         onToggleStar={toggleStar}
+        currentTab={mainTab}
         onShowOnMap={(venueId) => {
           setFocusedVenueId(venueId);
           setMainTab("map");
+        }}
+        onShowOnCalendar={(evt) => {
+          if (evt.locationName) {
+            setSelectedLocations([evt.locationName]);
+          }
+          if (evt.scheduleDate && evt.scheduleDate !== "Date TBD") {
+            setSelectedDay(evt.scheduleDate);
+          }
+          setMainTab("calendar");
+        }}
+        onShowOnSchedule={(evt) => {
+          if (evt.locationName) {
+            setSelectedLocations([evt.locationName]);
+          }
+          if (evt.scheduleDate && evt.scheduleDate !== "Date TBD") {
+            setSelectedDay(evt.scheduleDate);
+          }
+          setMainTab("schedule");
+          handleRunningScheduleEventClick(evt);
         }}
         venues={venues}
       />

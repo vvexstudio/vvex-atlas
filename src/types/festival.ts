@@ -20,6 +20,7 @@ export type EventType =
 export type Venue = {
   id: string;
   name: string;
+  aliases?: string;
   label: string;
   mapLabel?: string;
   shortDescription: string;

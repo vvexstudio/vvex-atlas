@@ -1,23 +1,13 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { adminDb } from "@/lib/firebase-admin";
-import { verifySessionCookie, isAdminEmail } from "@/lib/auth";
+import { isRequestAdminAuthorized } from "@/lib/auth";
 import { getFestivalData } from "@/lib/festival-data";
 import { validateFestivalData } from "@/lib/schema-lint";
 
 async function isAuthorized(): Promise<boolean> {
   const cookieStore = await cookies();
-  const hasAdminCookie = cookieStore.get("admin_access")?.value === "true";
-  if (hasAdminCookie) return true;
-
-  const sessionToken = cookieStore.get("portal_user_session")?.value;
-  if (sessionToken) {
-    const session = await verifySessionCookie(sessionToken);
-    if (session && isAdminEmail(session.email)) {
-      return true;
-    }
-  }
-  return false;
+  return isRequestAdminAuthorized(cookieStore);
 }
 
 export async function GET() {

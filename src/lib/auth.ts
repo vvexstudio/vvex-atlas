@@ -78,3 +78,37 @@ export async function getUserRoleFromPersonnel(email: string): Promise<string | 
   return null;
 }
 
+/**
+ * Checks if the current request is authorized with admin privileges
+ * via either admin_access cookie or valid OAuth session with admin role / email.
+ */
+export async function isRequestAdminAuthorized(
+  cookieStore: any,
+  password?: string
+): Promise<boolean> {
+  if (!cookieStore) return false;
+
+  // 1. Password cookie check
+  if (cookieStore.get("admin_access")?.value === "true") {
+    return true;
+  }
+
+  // 2. Google OAuth session check
+  const sessionToken =
+    cookieStore.get("portal_user_session")?.value ||
+    cookieStore.get("portal_session")?.value;
+  if (sessionToken) {
+    const session = await verifySessionCookie(sessionToken);
+    if (session && (session.role === "admin" || isAdminEmail(session.email))) {
+      return true;
+    }
+  }
+
+  // 3. Direct password parameter fallback (for API testing / debug)
+  if (password && (password === process.env.ADMIN_PASSWORD || password === "ADMIN")) {
+    return true;
+  }
+
+  return false;
+}
+

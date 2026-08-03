@@ -16,6 +16,8 @@ interface FilterBarProps {
   setStartTimeFilter: (time: string) => void;
   endTimeFilter: string;
   setEndTimeFilter: (time: string) => void;
+  hideUnscheduled: boolean;
+  setHideUnscheduled: (hide: boolean) => void;
   locationOptions: string[];
   actionOptions: string[];
   departmentOptions: string[];
@@ -53,6 +55,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   setStartTimeFilter,
   endTimeFilter,
   setEndTimeFilter,
+  hideUnscheduled,
+  setHideUnscheduled,
   locationOptions,
   actionOptions,
   departmentOptions,
@@ -192,7 +196,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         </div>
       </div>
 
-      {/* Time Range Filters */}
+      {/* Time Range & Unscheduled Toggle Filters */}
       <div className="time-filter-row">
         <div className="time-input-group">
           <label htmlFor="time-start">Start Date &amp; Time</label>
@@ -214,6 +218,20 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             className="time-picker-input"
           />
         </div>
+        <div className="time-input-group unscheduled-toggle-group">
+          <label id="date-tbd-toggle-label">Date TBD Events</label>
+          <button
+            type="button"
+            className={`calendar-toggle-btn unscheduled-btn ${hideUnscheduled ? "active" : ""}`}
+            onClick={() => setHideUnscheduled(!hideUnscheduled)}
+            title={hideUnscheduled ? "Click to show events without a date" : "Click to hide events without a date"}
+            aria-pressed={hideUnscheduled}
+            aria-labelledby="date-tbd-toggle-label"
+          >
+            <Icon name={hideUnscheduled ? "eyeOff" : "eye"} size={12} />
+            <span>{hideUnscheduled ? "Date TBD: Hidden" : "Date TBD: Shown"}</span>
+          </button>
+        </div>
       </div>
 
       {/* Active Filter Chips */}
@@ -224,12 +242,19 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         startTimeFilter ||
         endTimeFilter ||
         selectedDay ||
+        !hideUnscheduled ||
         searchQuery) && (
         <div className="active-filters-row">
           {searchQuery && (
             <span className="filter-chip search-chip">
               <Icon name="search" size={12} /> &quot;{searchQuery}&quot;
               <button type="button" className="clear-chip-btn" onClick={() => setSearchQuery("")} aria-label="Clear search"><Icon name="x" size={12} /></button>
+            </span>
+          )}
+          {!hideUnscheduled && (
+            <span className="filter-chip time-chip">
+              <Icon name="calendar" size={12} /> Showing Date TBD
+              <button type="button" className="clear-chip-btn" onClick={() => setHideUnscheduled(true)} aria-label="Hide Date TBD events"><Icon name="x" size={12} /></button>
             </span>
           )}
           {selectedDay && (() => {
@@ -291,6 +316,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               setEndTimeFilter("");
               setSearchQuery("");
               setSelectedDay(null);
+              setHideUnscheduled(true);
             }}
           >
             Clear All Filters
