@@ -2,6 +2,50 @@ import { NextRequest, NextResponse } from "next/server";
 import { getFestivalData } from "@/lib/festival-data";
 import { adminDb } from "@/lib/firebase-admin";
 
+function parseTimeToIcalFormat(dateStr: string | undefined, timeStr: string | undefined, defaultHour = 9): string {
+  const dateFormatted = (dateStr || "2026-08-24").replace(/[^0-9]/g, "");
+  const baseDate = dateFormatted.length === 8 ? dateFormatted : "20260824";
+
+  if (!timeStr || timeStr.trim().toUpperCase() === "TBD") {
+    const h = String(defaultHour).padStart(2, "0");
+    return `${baseDate}T${h}0000`;
+  }
+
+  const compact = timeStr.trim().toLowerCase();
+  const match = compact.match(/^(\d{1,2})(?::(\d{2}))?(?::(\d{2}))?\s*([ap]m|m)?$/);
+  
+  if (!match) {
+    const h = String(defaultHour).padStart(2, "0");
+    return `${baseDate}T${h}0000`;
+  }
+
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2] || "0", 10);
+  const seconds = parseInt(match[3] || "0", 10);
+  const ampm = match[4];
+
+  if (ampm === "pm" && hours < 12) {
+    hours += 12;
+  } else if ((ampm === "am" || ampm === "m") && hours === 12) {
+    hours = 0;
+  }
+
+  const hh = String(hours).padStart(2, "0");
+  const mm = String(minutes).padStart(2, "0");
+  const ss = String(seconds).padStart(2, "0");
+
+  return `${baseDate}T${hh}${mm}${ss}`;
+}
+
+function escapeIcalText(str: string): string {
+  if (!str) return "";
+  return str
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\r?\n/g, "\\n");
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const token = searchParams.get("token");
@@ -120,17 +164,18 @@ export async function GET(request: NextRequest) {
   ];
 
   events.forEach((e) => {
-    if (!e.startTime) return;
-    const dateFormatted = (e.scheduleDate || "2026-08-24").replace(/-/g, "");
-    const startTimeClean = e.startTime.replace(":", "") + "00";
-    const endTimeClean = (e.endTime ? e.endTime.replace(":", "") : e.startTime.replace(":", "")) + "00";
+    const dtStart = parseTimeToIcalFormat(e.scheduleDate, e.startTime, 9);
+    const dtEnd = parseTimeToIcalFormat(
+      e.scheduleDate,
+      e.endTime || e.startTime,
+      10
+    );
 
-    const dtStart = `${dateFormatted}T${startTimeClean}`;
-    const dtEnd = `${dateFormatted}T${endTimeClean}`;
-
-    const summary = (e.title || "Portal Event").replace(/\n/g, " ");
-    const location = (e.locationName || "Black Rock City").replace(/\n/g, " ");
-    const description = (e.description || `Department: ${e.department || "General"}`).replace(/\n/g, "\\n");
+    const summary = escapeIcalText(e.title || "Portal Event");
+    const location = escapeIcalText(e.locationName || "Black Rock City");
+    const description = escapeIcalText(
+      e.description || (e.department ? `Department: ${e.department}` : "The Portal Schedule")
+    );
 
     icsLines.push(
       "BEGIN:VEVENT",
