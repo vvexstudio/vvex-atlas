@@ -99,8 +99,15 @@ export async function isRequestAdminAuthorized(
     cookieStore.get("portal_session")?.value;
   if (sessionToken) {
     const session = await verifySessionCookie(sessionToken);
-    if (session && (session.role === "admin" || isAdminEmail(session.email))) {
-      return true;
+    if (session?.email) {
+      if (session.role === "admin" || isAdminEmail(session.email)) {
+        return true;
+      }
+      // Check Personnel sheet if role was not directly stored as admin in session token
+      const sheetRole = await getUserRoleFromPersonnel(session.email);
+      if (sheetRole === "admin") {
+        return true;
+      }
     }
   }
 

@@ -28,16 +28,67 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const festivalData = await getFestivalData("public");
+  const festivalData = await getFestivalData("crew");
   let events = festivalData.events;
 
   if (tokenDeptScope) {
-    const depts = tokenDeptScope.split(",").map((d) => d.toLowerCase().trim()).filter(Boolean);
-    events = events.filter((e) => {
-      if (!e.department) return false;
-      const eDept = e.department.toLowerCase();
-      return depts.some((d) => eDept.includes(d));
+    const targetQueries = tokenDeptScope
+      .split(",")
+      .map((d) => d.toLowerCase().trim())
+      .filter(Boolean);
+
+    const isAllDepts = targetQueries.some((q) => {
+      const clean = q.replace(/[^a-z0-9]/g, "");
+      return (
+        clean === "all" ||
+        clean === "alldepartments" ||
+        clean.startsWith("alldepartments") ||
+        q === "*"
+      );
     });
+
+    if (!isAllDepts) {
+      events = events.filter((e) => {
+        const eDept = (e.department || "").toLowerCase();
+        const eLead = (e.leadPointPerson || "").toLowerCase();
+        const eTitle = (e.title || "").toLowerCase();
+        const eDesc = (e.description || "").toLowerCase();
+        const eHost = (e.host || "").toLowerCase();
+        const eCategory = (e.scheduleCategory || "").toLowerCase();
+        const eAction = ((e as any).action || "").toLowerCase();
+        const eLocation = (e.locationName || "").toLowerCase();
+
+        return targetQueries.some((q) => {
+          if (!q) return false;
+
+          if (eDept && (eDept.includes(q) || q.includes(eDept))) return true;
+          if (eLead && (eLead.includes(q) || q.includes(eLead))) return true;
+          if (eTitle && (eTitle.includes(q) || q.includes(eTitle))) return true;
+          if (eDesc && eDesc.includes(q)) return true;
+          if (eHost && (eHost.includes(q) || q.includes(eHost))) return true;
+          if (eCategory && (eCategory.includes(q) || q.includes(eCategory))) return true;
+          if (eAction && (eAction.includes(q) || q.includes(eAction))) return true;
+          if (eLocation && (eLocation.includes(q) || q.includes(eLocation))) return true;
+
+          const queryWords = q.split(/[^a-z0-9]+/i).filter((w) => w.length > 2);
+          if (queryWords.length > 0) {
+            return queryWords.some(
+              (w) =>
+                eDept.includes(w) ||
+                eLead.includes(w) ||
+                eTitle.includes(w) ||
+                eDesc.includes(w) ||
+                eHost.includes(w) ||
+                eCategory.includes(w) ||
+                eAction.includes(w) ||
+                eLocation.includes(w)
+            );
+          }
+
+          return false;
+        });
+      });
+    }
   }
 
   const icsLines: string[] = [

@@ -13,12 +13,15 @@ interface InitialData {
   personnel?: unknown[];
   departments?: Department[];
   dataSourceLabel?: string;
+  skipRtdbSync?: boolean;
 }
 
 export const useEventData = (role: string | null, initialData: InitialData) => {
   const activeRole = role || "public";
   const [venues, setVenues] = useState<Venue[]>(initialData.venues);
-  const [events, setEvents] = useState<FestivalEvent[]>(filterEventsByRole(initialData.events, activeRole));
+  const [events, setEvents] = useState<FestivalEvent[]>(
+    initialData.skipRtdbSync ? initialData.events : filterEventsByRole(initialData.events, activeRole)
+  );
   const [personnel, setPersonnel] = useState<unknown[]>(initialData.personnel || []);
   const [departments, setDepartments] = useState<Department[]>(initialData.departments || []);
   const [sourceLabel, setSourceLabel] = useState(initialData.dataSourceLabel || "Static Init");
@@ -69,8 +72,12 @@ export const useEventData = (role: string | null, initialData: InitialData) => {
       return;
     }
 
-    if (!db || !role) {
-      console.log("Firebase DB or user role is unavailable. Using local/static data.");
+    if (!db || !role || initialData.skipRtdbSync) {
+      if (initialData.skipRtdbSync) {
+        console.log("Firebase DB sync skipped for vendor-scoped data.");
+      } else {
+        console.log("Firebase DB or user role is unavailable. Using local/static data.");
+      }
       return;
     }
 

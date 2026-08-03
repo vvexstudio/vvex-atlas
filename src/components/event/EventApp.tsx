@@ -93,6 +93,10 @@ type EventAppProps = {
     role?: string;
     departments?: string[];
   };
+  vendorScope?: {
+    vendorName: string;
+    token: string;
+  };
 };
 
 export function EventApp({
@@ -105,6 +109,7 @@ export function EventApp({
   appEnvironment,
   debug,
   userSession: initialUserSession,
+  vendorScope,
 }: EventAppProps) {
   // 1. Auth Hook
   const { userSession, role, departments: userDepartments } = useAuthProfile(initialUserSession);
@@ -116,6 +121,7 @@ export function EventApp({
     personnel: initialPersonnel,
     departments: initialDepartments,
     dataSourceLabel,
+    skipRtdbSync: !!vendorScope,
   });
 
   // 2b. Starred Personal Agenda Hook
@@ -1058,11 +1064,43 @@ export function EventApp({
               </span>
             );
           })()}
-          <span className="chip chip-accent eyebrow eyebrow-accent">
-            PDT • Black Rock City
-          </span>
+          {vendorScope ? (
+            <span
+              className="chip"
+              title="Vendor Scoped View"
+              style={{
+                backgroundColor: "rgba(249, 115, 22, 0.15)",
+                color: "var(--accent, #f97316)",
+                border: "1px solid rgba(249, 115, 22, 0.35)",
+                fontWeight: 700,
+                fontSize: "0.75rem",
+                letterSpacing: "0.04em",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+                padding: "3px 10px",
+                borderRadius: "12px",
+              }}
+            >
+              <Icon name="key" size={12} />
+              Vendor Pass: {vendorScope.vendorName}
+            </span>
+          ) : (
+            <span className="chip chip-accent eyebrow eyebrow-accent">
+              PDT • Black Rock City
+            </span>
+          )}
         </div>
         <div className="legacy-banner-right-wrapper">
+          {vendorScope && (
+            <a
+              href={`/api/ics?token=${encodeURIComponent(vendorScope.token)}`}
+              className="btn btn-primary btn-sm"
+              style={{ marginRight: "8px", textDecoration: "none" }}
+            >
+              <Icon name="calendar" size={14} /> Subscribe to Calendar (.ics)
+            </a>
+          )}
           <div className="legacy-banner-actions">
             {userSession ? (
               <div className="user-profile-section">
