@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const festivalData = await getFestivalData("public");
+  const festivalData = await getFestivalData("crew");
   
   // Extract search terms (handles array or comma-separated multi-department queries)
   let rawQueryStrings: string[] = [];
@@ -45,12 +45,59 @@ export async function GET(request: NextRequest) {
     .map((q) => q.toLowerCase().trim())
     .filter(Boolean);
 
-  const matchingEvents = festivalData.events.filter((e) => {
-    const eDept = e.department ? e.department.toLowerCase() : "";
-    const eLead = e.leadPointPerson ? e.leadPointPerson.toLowerCase() : "";
-    const eTitle = e.title ? e.title.toLowerCase() : "";
+  const isAllDepts = targetQueries.some((q) => {
+    const clean = q.replace(/[^a-z0-9]/g, "");
+    return (
+      clean === "all" ||
+      clean === "alldepartments" ||
+      clean.startsWith("alldepartments") ||
+      q === "*"
+    );
+  });
 
-    return targetQueries.some((q) => eDept.includes(q) || eLead.includes(q) || eTitle.includes(q));
+  const matchingEvents = festivalData.events.filter((e) => {
+    if (isAllDepts) return true;
+
+    const eDept = (e.department || "").toLowerCase();
+    const eLead = (e.leadPointPerson || "").toLowerCase();
+    const eTitle = (e.title || "").toLowerCase();
+    const eDesc = (e.description || "").toLowerCase();
+    const eHost = (e.host || "").toLowerCase();
+    const eCategory = (e.scheduleCategory || "").toLowerCase();
+    const eAction = ((e as any).action || "").toLowerCase();
+    const eLocation = (e.locationName || "").toLowerCase();
+
+    return targetQueries.some((q) => {
+      if (!q) return false;
+
+      // 1. Direct or inverse substring matches
+      if (eDept && (eDept.includes(q) || q.includes(eDept))) return true;
+      if (eLead && (eLead.includes(q) || q.includes(eLead))) return true;
+      if (eTitle && (eTitle.includes(q) || q.includes(eTitle))) return true;
+      if (eDesc && eDesc.includes(q)) return true;
+      if (eHost && (eHost.includes(q) || q.includes(eHost))) return true;
+      if (eCategory && (eCategory.includes(q) || q.includes(eCategory))) return true;
+      if (eAction && (eAction.includes(q) || q.includes(eAction))) return true;
+      if (eLocation && (eLocation.includes(q) || q.includes(eLocation))) return true;
+
+      // 2. Tokenized word matching for multi-word queries like "Heavy Equipment (WonderBros)"
+      const queryWords = q.split(/[^a-z0-9]+/i).filter((w) => w.length > 2);
+      if (queryWords.length > 0) {
+        return queryWords.some(
+          (w) =>
+            eDept.includes(w) ||
+            eLead.includes(w) ||
+            eTitle.includes(w) ||
+            eDesc.includes(w) ||
+            eHost.includes(w) ||
+            eCategory.includes(w) ||
+            eAction.includes(w) ||
+            eLocation.includes(w)
+        );
+      }
+
+      return false;
+    });
   });
 
   return NextResponse.json({
@@ -58,5 +105,10 @@ export async function GET(request: NextRequest) {
     timezone: "America/Los_Angeles (PDT)",
     eventCount: matchingEvents.length,
     events: matchingEvents,
+    venues: festivalData.venues || [],
+    departments: festivalData.departments || [],
+    personnel: festivalData.personnel || [],
+    colors: festivalData.colors || {},
+    dataSourceLabel: festivalData.sourceLabel,
   });
 }

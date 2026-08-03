@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import type { FestivalEvent } from "@/types/festival";
+import type { FestivalEvent, Venue, Department } from "@/types/festival";
+import { EventApp } from "@/components/event/EventApp";
 import { Icon } from "@/components/ui/icons";
 
 interface VendorData {
@@ -9,6 +10,11 @@ interface VendorData {
   timezone: string;
   eventCount: number;
   events: FestivalEvent[];
+  venues: Venue[];
+  departments: Department[];
+  personnel: unknown[];
+  colors: Record<string, Record<string, { bg: string; fg: string }>>;
+  dataSourceLabel: string;
 }
 
 export default function VendorSchedulePage({
@@ -37,7 +43,7 @@ export default function VendorSchedulePage({
           if (res.status === 410) {
             throw new Error("This vendor access link has been revoked.");
           }
-          throw new Error(`Failed to load schedule (Status ${res.status})`);
+          throw new Error(`Failed to load vendor schedule (Status ${res.status})`);
         }
         const json = await res.json();
         setData(json);
@@ -53,8 +59,22 @@ export default function VendorSchedulePage({
 
   if (isLoading) {
     return (
-      <div style={{ padding: "3rem 1.5rem", textAlign: "center", color: "var(--muted)" }}>
-        Loading vendor schedule...
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "70vh",
+          gap: "16px",
+          color: "var(--muted)",
+          fontFamily: "var(--font-sans)",
+        }}
+      >
+        <div className="banner-brand-mark" style={{ animation: "pulse 1.5s infinite" }}>
+          <img src="/icon.png" alt="" width={36} height={36} />
+        </div>
+        <div style={{ fontSize: "1rem", fontWeight: 600 }}>Loading Vendor Schedule...</div>
       </div>
     );
   }
@@ -64,15 +84,21 @@ export default function VendorSchedulePage({
       <div
         style={{
           padding: "2rem",
-          maxWidth: "500px",
-          margin: "3rem auto",
-          backgroundColor: "var(--danger-soft)",
-          border: "1px solid var(--danger)",
-          borderRadius: "var(--radius-md)",
-          color: "var(--danger)",
+          maxWidth: "520px",
+          margin: "4rem auto",
+          backgroundColor: "var(--surface)",
+          border: "1px solid var(--danger, #ef4444)",
+          borderRadius: "var(--radius-lg, 12px)",
+          color: "var(--ink)",
+          textAlign: "center",
+          boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
         }}
       >
-        <strong>Access Error:</strong> {error}
+        <div style={{ color: "var(--danger, #ef4444)", marginBottom: "8px" }}>
+          <Icon name="xCircle" size={32} />
+        </div>
+        <h2 style={{ margin: "0 0 8px 0", fontSize: "1.2rem", fontWeight: 700 }}>Access Restricted</h2>
+        <p style={{ margin: 0, fontSize: "0.9rem", color: "var(--muted)" }}>{error}</p>
       </div>
     );
   }
@@ -80,77 +106,18 @@ export default function VendorSchedulePage({
   if (!data) return null;
 
   return (
-    <div style={{ maxWidth: "650px", margin: "0 auto", padding: "1.5rem 1rem", color: "var(--ink)" }}>
-      {/* Header Banner */}
-      <header
-        style={{
-          background: "var(--ink)",
-          color: "var(--bg)",
-          padding: "1.25rem",
-          borderRadius: "var(--radius-lg)",
-          marginBottom: "1.5rem",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <h1 style={{ fontSize: "var(--text-xl)", margin: 0, fontWeight: 700, fontFamily: "var(--font-display)" }}>
-            The Portal — Vendor View
-          </h1>
-          <span className="chip chip-neutral">{data.timezone}</span>
-        </div>
-        <p style={{ margin: "0.5rem 0 0 0", fontSize: "var(--text-sm)", color: "var(--bg)", opacity: 0.75 }}>
-          Assigned Shifts for <strong>{data.vendorName}</strong> ({data.eventCount} events)
-        </p>
-        <div style={{ marginTop: "1rem" }}>
-          <a className="btn btn-primary btn-sm" href={`/api/ics?token=${encodeURIComponent(token || "")}`}>
-            <Icon name="calendar" size={14} /> Subscribe to Calendar (.ics)
-          </a>
-        </div>
-      </header>
-
-      {/* Schedule List */}
-      {data.events.length === 0 ? (
-        <div
-          style={{
-            padding: "2rem",
-            textAlign: "center",
-            background: "var(--surface)",
-            borderRadius: "var(--radius-md)",
-            color: "var(--muted)",
-          }}
-        >
-          No scheduled shifts found for vendor token.
-        </div>
-      ) : (
-        <div style={{ display: "grid", gap: "1rem" }}>
-          {data.events.map((event) => (
-            <div key={event.id} className="card" style={{ padding: "1rem 1.25rem" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "0.4rem" }}>
-                <h3 style={{ margin: 0, fontSize: "var(--text-md)", fontWeight: 600 }}>{event.title}</h3>
-                <span className="chip chip-accent mono">
-                  {event.startTime}{event.endTime ? ` - ${event.endTime}` : ""}
-                </span>
-              </div>
-              <div
-                style={{
-                  fontSize: "var(--text-sm)",
-                  color: "var(--muted)",
-                  marginBottom: "0.25rem",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.35rem",
-                }}
-              >
-                <Icon name="mapPin" size={12} /> <strong>Location:</strong> {event.locationName || "Black Rock City"}
-              </div>
-              {event.description && (
-                <p style={{ margin: "0.5rem 0 0 0", fontSize: "var(--text-sm)", color: "var(--muted)", lineHeight: 1.4 }}>
-                  {event.description}
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+    <EventApp
+      venues={data.venues}
+      events={data.events}
+      personnel={data.personnel}
+      departments={data.departments}
+      colors={data.colors}
+      dataSourceLabel={data.dataSourceLabel}
+      appEnvironment="PROD"
+      vendorScope={{
+        vendorName: data.vendorName,
+        token: token || "",
+      }}
+    />
   );
 }

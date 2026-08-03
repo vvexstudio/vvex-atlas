@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifySessionCookie, isAdminEmail } from "@/lib/auth-cookie";
+import { getUserRoleFromPersonnel } from "@/lib/auth";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -24,7 +25,19 @@ export async function proxy(request: NextRequest) {
   const session = sessionToken ? await verifySessionCookie(sessionToken) : null;
 
   const hasAdminAccessCookie = request.cookies.get("admin_access")?.value === "true";
-  const hasOAuthAdminAccess = session ? (session.role === "admin" || isAdminEmail(session.email)) : false;
+
+  let hasOAuthAdminAccess = false;
+  if (session?.email) {
+    if (session.role === "admin" || isAdminEmail(session.email)) {
+      hasOAuthAdminAccess = true;
+    } else {
+      const sheetRole = await getUserRoleFromPersonnel(session.email);
+      if (sheetRole === "admin") {
+        hasOAuthAdminAccess = true;
+      }
+    }
+  }
+
   const isAuthorizedAdmin = hasAdminAccessCookie || hasOAuthAdminAccess;
 
   // 3. Handle admin routes protection
