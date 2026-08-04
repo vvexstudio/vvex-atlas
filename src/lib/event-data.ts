@@ -112,20 +112,24 @@ export async function getFestivalDataFromRtdb(role: string = "public"): Promise<
         const adminEntriesList = Object.values(adminEntriesMap) as AdminEntry[];
         const merged = mergeAdminEntries(mapped.venues, mapped.events, adminEntriesList);
 
-        return {
-          venues: merged.venues,
-          events: merged.events,
-          personnel: mapped.personnel,
-          departments: mapped.departments,
-          colors: {},
-          sourceLabel: `Firebase RTDB (/${nodePath})`,
-          debug: {
-            totalRows: rosData.length,
-            confirmedRows: merged.events.length,
-            matchedRows: merged.events.filter(e => e.hasLocation).length,
-            unmatchedLocations: [...new Set(merged.events.filter(e => !e.hasLocation).map(e => e.locationName || ""))].filter(Boolean)
-          }
-        };
+        if (merged.events.length > 0) {
+          return {
+            venues: merged.venues,
+            events: merged.events,
+            personnel: mapped.personnel,
+            departments: mapped.departments,
+            colors: {},
+            sourceLabel: `Firebase RTDB (/${nodePath})`,
+            debug: {
+              totalRows: rosData.length,
+              confirmedRows: merged.events.length,
+              matchedRows: merged.events.filter((e) => e.hasLocation).length,
+              unmatchedLocations: [
+                ...new Set(merged.events.filter((e) => !e.hasLocation).map((e) => e.locationName || "")),
+              ].filter(Boolean),
+            },
+          };
+        }
       }
     } catch (e) {
       console.warn("Failed to read from RTDB, falling back...", e);
