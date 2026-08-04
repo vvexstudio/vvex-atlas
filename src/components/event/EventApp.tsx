@@ -140,27 +140,10 @@ export function EventApp({
   const [isTimeSimulated, setIsTimeSimulated] = useState(false);
   const [effectiveDateStr, setEffectiveDateStr] = useState("");
 
-  const getEffectiveTime = (evtList: FestivalEvent[]) => {
+  const getEffectiveTime = (_evtList: FestivalEvent[]) => {
     const now = new Date();
-    const eventDates = evtList.map(e => e.scheduleDate).filter(Boolean) as string[];
-    if (eventDates.length === 0) return { time: now, isSimulated: false, dateStr: "" };
-
-    const sortedDates = [...new Set(eventDates)].sort();
-    const startDateStr = sortedDates[0];
-    const endDateStr = sortedDates[sortedDates.length - 1];
-
-    const start = new Date(`${startDateStr}T00:00:00`);
-    const end = new Date(`${endDateStr}T23:59:59`);
-
-    if (now >= start && now <= end) {
-      return { time: now, isSimulated: false, dateStr: now.toISOString().split("T")[0] };
-    }
-
-    // Fall back to simulated time: first day of event, keeping current HH:MM:SS
-    const simulatedTime = new Date(now);
-    const [y, m, d] = startDateStr.split("-").map(Number);
-    simulatedTime.setFullYear(y, m - 1, d);
-    return { time: simulatedTime, isSimulated: true, dateStr: startDateStr };
+    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    return { time: now, isSimulated: false, dateStr };
   };
 
   useEffect(() => {
