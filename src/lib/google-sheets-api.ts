@@ -101,22 +101,51 @@ export async function getParsedSheetData<T extends Record<string, any>>(
   spreadsheetId: string,
   tabName: string
 ): Promise<T[]> {
-  const range = tabName === "ROS by TIME" ? `${tabName}!A2:Z` : `${tabName}!A1:Z`;
-  const rows = await getSpreadsheetValues(spreadsheetId, range);
+  let matchedTabName = tabName;
+  try {
+    const availableSheets = await getSpreadsheetSheets(spreadsheetId);
+    const found = availableSheets.find(
+      (title) => title.trim().toLowerCase() === tabName.trim().toLowerCase()
+    );
+    if (found) {
+      matchedTabName = found;
+    }
+  } catch (err) {
+    console.warn(`Failed to resolve sheet tab titles list for '${tabName}':`, err);
+  }
+
+  const rows = await getSpreadsheetValues(spreadsheetId, `${matchedTabName}!A1:Z`);
   if (rows.length === 0) return [];
 
-  const headers = rows[0].map(h => String(h).trim());
-  const dataRows = rows.slice(1);
+  // Auto-detect header row index within first 10 rows
+  let headerRowIndex = 0;
+  for (let i = 0; i < Math.min(rows.length, 10); i++) {
+    const rowVals = (rows[i] || []).map((cell: any) =>
+      String(cell || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "")
+    );
+    const hasKnownHeader = rowVals.some((v: string) =>
+      ["startday", "action", "location", "loaction", "department", "leaddept", "description", "start"].includes(v)
+    );
+    if (hasKnownHeader) {
+      headerRowIndex = i;
+      break;
+    }
+  }
 
-  return dataRows.map((row) => {
-    const item: Record<string, any> = {};
-    headers.forEach((header, index) => {
-      if (header) {
-        item[header] = row[index] !== undefined ? row[index] : "";
-      }
-    });
-    return item as T;
-  });
+  const headers = (rows[headerRowIndex] || []).map((h: any) => String(h || "").trim());
+  const dataRows = rows.slice(headerRowIndex + 1);
+
+  return dataRows
+    .map((row) => {
+      const item: Record<string, any> = {};
+      headers.forEach((header, index) => {
+        if (header) {
+          item[header] = row[index] !== undefined ? row[index] : "";
+        }
+      });
+      return item as T;
+    })
+    .filter((item) => Object.values(item).some((val) => val !== "" && val !== undefined));
 }
 
 /**

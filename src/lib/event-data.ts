@@ -136,11 +136,11 @@ export async function getFestivalDataFromRtdb(role: string = "public"): Promise<
 
 export async function getFestivalDataFromSheets(role: string = "public"): Promise<FestivalDataResult> {
   const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "1rpmzT4_6NlAOSryN86ROv3mv1Jf4ydColAlk6MrY1zw";
-  const tabLocations = process.env.GOOGLE_SHEETS_TAB_LOCATIONS || "Locations";
-  const tabPersonnel = process.env.GOOGLE_SHEETS_TAB_PERSONNEL || "Personnel";
-  const tabDepartments = process.env.GOOGLE_SHEETS_TAB_DEPARTMENTS || "Departments";
-  const tabActions = process.env.GOOGLE_SHEETS_TAB_ACTIONS || "Actions";
-  const tabRos = process.env.GOOGLE_SHEETS_TAB_ROS || "ROS by TIME";
+  const tabLocations = process.env.GOOGLE_SHEETS_TAB_LOCATIONS || process.env.SHEETS_TAB_LOCATIONS || "Locations";
+  const tabPersonnel = process.env.GOOGLE_SHEETS_TAB_PERSONNEL || process.env.SHEETS_TAB_PERSONNEL || "Personnel";
+  const tabDepartments = process.env.GOOGLE_SHEETS_TAB_DEPARTMENTS || process.env.SHEETS_TAB_DEPARTMENTS || "Departments";
+  const tabActions = process.env.GOOGLE_SHEETS_TAB_ACTIONS || process.env.SHEETS_TAB_ACTIONS || "Actions";
+  const tabRos = process.env.GOOGLE_SHEETS_TAB_ROS || process.env.SHEETS_TAB_ROS || "ROS by TIME";
 
   let locationsData: any[] = [];
   let personnelData: any[] = [];

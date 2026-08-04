@@ -284,7 +284,7 @@ export function createEventFromSheetRow(
   const action = findLookupTarget(actionsLookup, rawAction) || rawAction;
   
   const description = asString(getRowValue(row, ["Description", "description"]));
-  const rawLocName = asString(getRowValue(row, ["SOLARIS ROS Location", "Location", "location_name", "location"])) || "TBD";
+  const rawLocName = asString(getRowValue(row, ["SOLARIS ROS Location", "Location", "Loaction", "location_name", "location"])) || "TBD";
   
   const matchedVenue = findLookupTarget(venuesById, rawLocName);
   const venueId = matchedVenue ? matchedVenue.id : slugify(rawLocName);
@@ -306,10 +306,10 @@ export function createEventFromSheetRow(
 
   const projectTypes = parseEventTypes(`${action} ${description}`);
 
-  const rawLeadDept = asString(getRowValue(row, ["Department", "department", "lead_dept", "lead_department"]));
+  const rawLeadDept = asString(getRowValue(row, ["Department", "department", "Lead Dept", "lead_dept", "lead_department"]));
   const leadDept = findLookupTarget(departmentsLookup, rawLeadDept) || rawLeadDept;
 
-  const rawLeadPerson = asString(getRowValue(row, ["Lead Point Person", "lead_point_person", "lead"]));
+  const rawLeadPerson = asString(getRowValue(row, ["Lead Point Person", "lead_point_person", "Lead Person", "lead_person", "lead"]));
   const leadPerson = findLookupTarget(personnelLookup, rawLeadPerson) || rawLeadPerson;
 
   const eventId = asString(getRowValue(row, ["event_id", "id"]));
