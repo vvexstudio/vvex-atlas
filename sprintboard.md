@@ -215,6 +215,8 @@ Tracked here so we know what to stand up vs. what the client owns. Env var names
 ## 10. Session Log
 > Append newest at top. Format: `YYYY-MM-DD — who — what changed / decided / discovered`.
 
+- **2026-08-04 — agent — Optimized `useAuthProfile.ts` dependency arrays to use primitive values (`initialSession?.email`, `initialSession?.role`) instead of inline object references. Eliminated redundant `GET /api/auth/firebase-token` requests on component re-renders. Verified 33/33 Vitest unit tests and Next.js 16 build passing.**
+
 - **2026-08-04 — agent — Reverted temporary 0-event RTDB fallback check in `src/lib/event-data.ts` to ensure authentic Firebase RTDB state reporting without masking sync status. Verified Google Sheet tab title matching (`ROS by Time ` with trailing spaces), header row auto-detection (Row 1, 2, or 3), and column aliases (`Loaction`, `Lead Dept`, `Lead Person`). Verified 33/33 Vitest unit tests and Next.js 16 build passing. Pushes restricted per explicit user instruction.**
 
 - **2026-08-03 — agent — Enabled inclusive 'All Departments' master schedule magic links and iCal calendar subscriptions in `MagicLinkGenerator.tsx`, `/api/vendor`, `/api/ics`, and `ics.test.ts`. Selecting 'All Departments' generates a single magic link (`/vendor?token=All%20Departments`) and iCal subscription feed (`/api/ics?token=...&dept=All%20Departments`) scoped to all schedule events across all departments without filtering. Added inclusive token wildcard detection (`all`, `alldepartments`, `*`, `everyone`, `master`, `inclusive`) and dynamic calendar title formatting (`The Portal - Master Schedule (All Departments)`). Verified 33/33 Vitest unit tests, clean lint checks, and Next.js 16 build passing.**

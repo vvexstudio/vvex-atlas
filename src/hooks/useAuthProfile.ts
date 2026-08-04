@@ -21,7 +21,7 @@ export const useAuthProfile = (initialSession?: UserSession) => {
     setUserSession(initialSession);
     if (initialSession?.role) setRole(initialSession.role);
     if (initialSession?.departments) setDepartments(initialSession.departments);
-  }, [initialSession]);
+  }, [initialSession?.email, initialSession?.role, initialSession?.departments?.join(",")]);
 
   useEffect(() => {
     const auth = clientAuth;
@@ -67,7 +67,7 @@ export const useAuthProfile = (initialSession?: UserSession) => {
     }
 
     authenticate();
-  }, [initialSession]);
+  }, [initialSession?.email, initialSession?.role]);
 
   return { userSession, role, departments, isLoading };
 };
