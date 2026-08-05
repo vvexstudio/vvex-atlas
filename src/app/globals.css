@@ -2072,6 +2072,25 @@ body.portal-dark .banner-brand-mark {
   gap: 3px;
 }
 
+@media (max-width: 768px) {
+  .calendar-event-card {
+    padding: 2px 4px 2px 4px;
+    font-size: 10px;
+  }
+  .calendar-event-card .event-card-time {
+    font-size: 9.5px;
+    margin-bottom: 1px;
+  }
+  .calendar-event-card .event-card-title {
+    font-size: 10.5px;
+    line-height: 1.15;
+    margin-bottom: 1px;
+  }
+  .calendar-event-card .event-card-meta {
+    font-size: 9px;
+  }
+}
+
 /* Detail Modal Overlay */
 .portal-modal-overlay {
   position: fixed;
@@ -2084,7 +2103,7 @@ body.portal-dark .banner-brand-mark {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 999;
+  z-index: 10000;
   animation: fade-in 0.2s ease-out;
 }
 
@@ -2095,12 +2114,16 @@ body.portal-dark .banner-brand-mark {
 
 .portal-modal-card {
   width: 500px;
-  max-width: 90%;
+  max-width: 90vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
   background: var(--surface-raised);
   border: 2px solid var(--ink);
   border-radius: var(--radius-md);
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  z-index: 10001;
   animation: slide-up 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -2115,6 +2138,7 @@ body.portal-dark .banner-brand-mark {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .modal-title {
@@ -2141,6 +2165,9 @@ body.portal-dark .banner-brand-mark {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  overflow-y: auto;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
 }
 
 .modal-info-row {
@@ -2970,9 +2997,37 @@ body.portal-dark .banner-brand-mark {
   background-color: var(--surface-raised) !important;
   color: var(--ink) !important;
   border-radius: var(--radius-md, 8px) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
   border: 1px solid var(--line) !important;
   padding: 12px 14px !important;
+  max-height: 80vh !important;
+  overflow: hidden !important;
+}
+
+.gm-style-iw-d {
+  background-color: transparent !important;
+  color: var(--ink) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  max-height: calc(80vh - 24px) !important;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+  padding-right: 4px !important;
+}
+
+.gm-style-iw-d::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+  background-color: transparent !important;
+}
+
+.gm-style-iw-d::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.gm-style-iw-d::-webkit-scrollbar-thumb {
+  background: var(--line) !important;
+  border-radius: 4px;
 }
 
 .gm-style-iw-tc::after {

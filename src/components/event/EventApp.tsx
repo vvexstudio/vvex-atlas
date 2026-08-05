@@ -131,6 +131,7 @@ export function EventApp({
   const [isMyScheduleOnly, setIsMyScheduleOnly] = useState(false);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [focusedVenueId, setFocusedVenueId] = useState<string | null>(null);
+  const [isLegendCollapsed, setIsLegendCollapsed] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
   const prevEventsRef = useRef<FestivalEvent[]>([]);
@@ -1366,6 +1367,8 @@ export function EventApp({
                   events={events}
                   focusedVenueId={focusedVenueId}
                   onSelectVenue={(id) => setFocusedVenueId(id)}
+                  isCollapsed={isLegendCollapsed}
+                  setIsCollapsed={setIsLegendCollapsed}
                 />
               </div>
             )}
@@ -1515,6 +1518,8 @@ export function EventApp({
         onShowOnMap={(venueId) => {
           setFocusedVenueId(venueId);
           setMainTab("map");
+          setModalEvent(null);
+          setIsLegendCollapsed(true);
         }}
         onShowOnCalendar={(evt) => {
           if (evt.locationName) {

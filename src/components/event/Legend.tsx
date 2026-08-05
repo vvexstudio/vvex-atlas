@@ -11,6 +11,8 @@ interface LegendProps {
   events?: FestivalEvent[];
   focusedVenueId?: string | null;
   onSelectVenue?: (venueId: string) => void;
+  isCollapsed?: boolean;
+  setIsCollapsed?: (collapsed: boolean) => void;
 }
 
 export const Legend: React.FC<LegendProps> = ({
@@ -22,8 +24,12 @@ export const Legend: React.FC<LegendProps> = ({
   events = [],
   focusedVenueId,
   onSelectVenue,
+  isCollapsed: controlledIsCollapsed,
+  setIsCollapsed: controlledSetIsCollapsed,
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [internalIsCollapsed, setInternalIsCollapsed] = useState(false);
+  const isCollapsed = controlledIsCollapsed !== undefined ? controlledIsCollapsed : internalIsCollapsed;
+  const setIsCollapsed = controlledSetIsCollapsed || setInternalIsCollapsed;
   const [activeTab, setActiveTab] = useState<"locations" | "categories">("locations");
   const [search, setSearch] = useState("");
 
@@ -130,7 +136,12 @@ export const Legend: React.FC<LegendProps> = ({
                         key={venue.id}
                         type="button"
                         className={`legend-location-item ${isSelected ? "selected" : ""}`}
-                        onClick={() => onSelectVenue?.(venue.id)}
+                        onClick={() => {
+                          onSelectVenue?.(venue.id);
+                          if (typeof window !== "undefined" && window.innerWidth <= 768) {
+                            setIsCollapsed(true);
+                          }
+                        }}
                       >
                         <span
                           className="legend-color-dot"

@@ -84,6 +84,17 @@ const getActiveMinuteOffset = (t: number, activeHours: number[]): number => {
 
 const hoursArray = Array.from({ length: 24 }, (_, i) => i);
 
+const formatCardTime = (start?: string, end?: string): string => {
+  if (!start) return "";
+  const cleanStart = start.replace(/\s*TBD\s*/gi, "").trim();
+  const cleanEnd = end ? end.replace(/\s*TBD\s*/gi, "").trim() : "";
+  if (!cleanStart && !cleanEnd) return "TBD";
+  if (!cleanEnd || cleanEnd === cleanStart) {
+    return cleanStart || start;
+  }
+  return `${cleanStart} – ${cleanEnd}`;
+};
+
 export const CalendarView: React.FC<CalendarViewProps> = ({
   groupedEventsByDate,
   hideEmptyHours,
@@ -479,13 +490,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                 >
                                   <div className="card-inner">
                                     <div className="event-card-time">
-                                      {event.startTime} – {event.endTime}
+                                      {formatCardTime(event.startTime, event.endTime)}
                                     </div>
                                     <div className="event-card-title">{cleanTitle}</div>
-                                    <div className="event-card-meta">
-                                      {event.locationName && <span className="meta-loc"><Icon name="mapPin" size={12} /> {event.locationName}</span>}
-                                      {event.leadPointPerson && <span className="meta-lead"><Icon name="user" size={12} /> {event.leadPointPerson}</span>}
-                                    </div>
                                   </div>
                                 </div>
                               );
@@ -546,13 +553,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                  >
                                   <div className="card-inner">
                                     <div className="event-card-time">
-                                      {event.startTime} – {event.endTime}
+                                      {formatCardTime(event.startTime, event.endTime)}
                                     </div>
                                     <div className="event-card-title">{cleanTitle}</div>
-                                    <div className="event-card-meta">
-                                      {event.department && <span className="meta-dept"><Icon name="building" size={12} /> {event.department}</span>}
-                                      {event.leadPointPerson && <span className="meta-lead"><Icon name="user" size={12} /> {event.leadPointPerson}</span>}
-                                    </div>
                                   </div>
                                 </div>
                               );

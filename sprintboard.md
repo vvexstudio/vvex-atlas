@@ -215,6 +215,8 @@ Tracked here so we know what to stand up vs. what the client owns. Env var names
 ## 10. Session Log
 > Append newest at top. Format: `YYYY-MM-DD — who — what changed / decided / discovered`.
 
+- **2026-08-04 — agent — Updated `onShowOnMap` in `src/components/event/EventApp.tsx` and controlled collapse state in `src/components/event/Legend.tsx`: clicking 'Show on Map' from Schedule Grid or Spatial Calendar closes EventModal (`setModalEvent(null)`) and auto-collapses Map Explorer (`isLegendCollapsed = true`), ensuring the map pin and venue InfoWindow are completely unobstructed. Verified 33/33 Vitest unit tests and Next.js 16 build passing.**
+
 - **2026-08-04 — agent — Optimized `useAuthProfile.ts` dependency arrays to use primitive values (`initialSession?.email`, `initialSession?.role`) instead of inline object references. Eliminated redundant `GET /api/auth/firebase-token` requests on component re-renders. Verified 33/33 Vitest unit tests and Next.js 16 build passing.**
 
 - **2026-08-04 — agent — Reverted temporary 0-event RTDB fallback check in `src/lib/event-data.ts` to ensure authentic Firebase RTDB state reporting without masking sync status. Verified Google Sheet tab title matching (`ROS by Time ` with trailing spaces), header row auto-detection (Row 1, 2, or 3), and column aliases (`Loaction`, `Lead Dept`, `Lead Person`). Verified 33/33 Vitest unit tests and Next.js 16 build passing. Pushes restricted per explicit user instruction.**

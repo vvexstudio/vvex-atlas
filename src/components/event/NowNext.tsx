@@ -147,6 +147,7 @@ export const NowNext: React.FC<NowNextProps> = ({
   };
 
   const displayDateStr = currentTime.toLocaleDateString("en-US", {
+    timeZone: "America/Los_Angeles",
     weekday: "long",
     month: "short",
     day: "numeric",
@@ -161,6 +162,7 @@ export const NowNext: React.FC<NowNextProps> = ({
             <span className="clock-icon"><Icon name="clock" size={14} /></span>
             <span className="now-next-time">
               {currentTime.toLocaleTimeString("en-US", {
+                timeZone: "America/Los_Angeles",
                 hour: "2-digit",
                 minute: "2-digit",
                 second: "2-digit",
