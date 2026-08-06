@@ -103,7 +103,6 @@ export async function isRequestAdminAuthorized(
       if (session.role === "admin" || isAdminEmail(session.email)) {
         return true;
       }
-      // Check Personnel sheet if role was not directly stored as admin in session token
       const sheetRole = await getUserRoleFromPersonnel(session.email);
       if (sheetRole === "admin") {
         return true;
