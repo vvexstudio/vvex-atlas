@@ -11,7 +11,18 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { token, vendorName, departments } = body;
+    const {
+      token,
+      vendorName,
+      departments,
+      eventIds,
+      locations,
+      startDate,
+      endDate,
+      startTime,
+      endTime,
+      keyword,
+    } = body;
 
     if (!token) {
       return NextResponse.json({ error: "Missing token" }, { status: 400 });
@@ -23,6 +34,13 @@ export async function POST(request: NextRequest) {
         vendorName: vendorName || (Array.isArray(departments) ? departments.join(", ") : departments) || token,
         department: Array.isArray(departments) ? departments.join(", ") : departments || token,
         departments: Array.isArray(departments) ? departments : [departments || token],
+        eventIds: Array.isArray(eventIds) ? eventIds : [],
+        locations: Array.isArray(locations) ? locations : [],
+        startDate: startDate || "",
+        endDate: endDate || "",
+        startTime: startTime || "",
+        endTime: endTime || "",
+        keyword: keyword || "",
         createdAt: new Date().toISOString(),
         revoked: false,
       });
