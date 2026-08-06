@@ -26,7 +26,13 @@ export const useEventData = (role: string | null, initialData: InitialData) => {
   const [departments, setDepartments] = useState<Department[]>(initialData.departments || []);
   const [sourceLabel, setSourceLabel] = useState(initialData.dataSourceLabel || "Static Init");
   const [isOffline, setIsOffline] = useState(false);
-  const [lastSynced, setLastSynced] = useState<string | null>(null);
+  const [lastSynced, setLastSynced] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      const cached = loadOfflineSnapshot(activeRole);
+      if (cached?.timestamp) return cached.timestamp;
+    }
+    return new Date().toISOString();
+  });
 
   // Monitor online/offline status and hydrate cache if offline
   useEffect(() => {
@@ -34,7 +40,7 @@ export const useEventData = (role: string | null, initialData: InitialData) => {
 
     const handleOffline = () => {
       setIsOffline(true);
-      const cached = loadOfflineSnapshot();
+      const cached = loadOfflineSnapshot(activeRole);
       if (cached) {
         setVenues(cached.venues);
         setEvents(cached.events);

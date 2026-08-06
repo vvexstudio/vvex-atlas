@@ -3638,3 +3638,98 @@ tr.highlight-active td:last-child {
   font-family: var(--font-mono, var(--font-fallback-mono));
   font-variant-numeric: tabular-nums;
 }
+
+/* Offline Badge & Last Sync Status Indicator */
+.offline-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  white-space: nowrap;
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
+.offline-badge span,
+.offline-badge svg {
+  color: inherit;
+}
+
+.offline-badge.is-online {
+  background: rgba(16, 185, 129, 0.14) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(52, 211, 153, 0.38) !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12);
+}
+
+.offline-badge.is-online:hover {
+  background: rgba(16, 185, 129, 0.22) !important;
+  border-color: rgba(52, 211, 153, 0.55) !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+.offline-badge.is-offline {
+  background: rgba(245, 158, 11, 0.16) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(251, 191, 36, 0.45) !important;
+  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.2);
+}
+
+.offline-badge.is-offline:hover {
+  background: rgba(245, 158, 11, 0.25) !important;
+  border-color: rgba(251, 191, 36, 0.65) !important;
+}
+
+.offline-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.offline-badge.is-online .offline-badge-dot {
+  background-color: #10b981 !important;
+  box-shadow: 0 0 6px #10b981;
+}
+
+.offline-badge.is-offline .offline-badge-dot {
+  background-color: #f59e0b !important;
+  box-shadow: 0 0 8px #f59e0b;
+  animation: pulse-offline 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse-offline {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.75); }
+}
+
+.offline-badge-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.offline-badge-label {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.offline-badge-time {
+  opacity: 0.88;
+  font-weight: 500;
+  font-size: 0.72rem;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.offline-badge.is-compact {
+  padding: 3px 9px;
+  font-size: 0.7rem;
+}

@@ -20,6 +20,7 @@ import { NowNext } from "./NowNext";
 import { Toasts, ToastMessage } from "./Toasts";
 import { parseUrlParams, buildUrlQuery, UrlState } from "@/lib/url-state";
 import { Legend } from "./Legend";
+import { OfflineBadge } from "@/components/ui/OfflineBadge";
 
 const MAP_CENTER = { lat: 40.7864, lng: -119.2065 }; // Default Playa (BRC) coordinates
 const MAP_DEFAULT_ZOOM = 13;
@@ -1169,6 +1170,7 @@ export function EventApp({
                 </Link>
               </div>
             )}
+            <OfflineBadge isOffline={isOffline} lastSynced={lastSynced} />
             <button
               type="button"
               className="legacy-theme-switch"
