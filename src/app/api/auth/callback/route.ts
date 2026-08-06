@@ -156,6 +156,13 @@ export async function GET(request: Request) {
     cookieStore.set("portal_user_session", sessionCookieVal, cookieOpts);
     cookieStore.set("portal_session", sessionCookieVal, cookieOpts);
 
+    if (role === "admin" || isAdminEmail(sanitizedEmail)) {
+      cookieStore.set("admin_access", "true", {
+        ...cookieOpts,
+        httpOnly: false, // allow client-side checks if needed
+      });
+    }
+
     console.log(`Access granted: ${email} successfully logged in`);
     const response = NextResponse.redirect(new URL(state, origin));
     response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");

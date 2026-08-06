@@ -3,6 +3,21 @@ import { APIProvider, Map, AdvancedMarker, AdvancedMarkerAnchorPoint, ColorSchem
 import { Venue, FestivalEvent } from "@/types/festival";
 import { Icon, type IconName } from "@/components/ui/icons";
 
+if (typeof window !== "undefined") {
+  const origError = console.error;
+  console.error = (...args: unknown[]) => {
+    const msg = typeof args[0] === "string" ? args[0] : "";
+    if (
+      msg.includes("without a valid Map ID") ||
+      msg.includes("Unable to fetch configuration for mapId")
+    ) {
+      console.warn(...args);
+      return;
+    }
+    origError.apply(console, args);
+  };
+}
+
 interface MapViewProps {
   venues: Venue[];
   mapCenter: { lat: number; lng: number };
@@ -196,7 +211,7 @@ const MapContent: React.FC<{
       key={mapDark ? "map-dark" : "map-light"}
       defaultCenter={savedCamera?.center ?? mapCenterCoords}
       defaultZoom={savedCamera?.zoom ?? defaultZoom}
-      mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || "2f9f04bb8e9c458045b99a65"}
+      mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || "DEMO_MAP_ID"}
       colorScheme={mapDark ? ColorScheme.DARK : ColorScheme.LIGHT}
       disableDefaultUI={false}
       style={{ width: "100%", height: "100%" }}
@@ -432,6 +447,20 @@ export const MapView: React.FC<MapViewProps> = ({
   }, [venues, activeCategories]);
 
   const [mapAuthError, setMapAuthError] = useState(false);
+  const [isClientOffline, setIsClientOffline] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleStatus = () => setIsClientOffline(!navigator.onLine);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial post-mount sync from navigator.onLine
+    setIsClientOffline(!navigator.onLine);
+    window.addEventListener("offline", handleStatus);
+    window.addEventListener("online", handleStatus);
+    return () => {
+      window.removeEventListener("offline", handleStatus);
+      window.removeEventListener("online", handleStatus);
+    };
+  }, []);
 
   useEffect(() => {
     const previousHandler = (window as any).gm_authFailure;
@@ -451,6 +480,28 @@ export const MapView: React.FC<MapViewProps> = ({
     }
     return mapCenter;
   }, [visibleMappableVenues, mapCenter]);
+
+  if (isClientOffline) {
+    return (
+      <div className="map-placeholder-container">
+        <div className="map-placeholder-grid" />
+        <div className="map-placeholder-card">
+          <div className="map-placeholder-icon"><Icon name="warning" size={40} /></div>
+          <h2>Live Map Unavailable Offline</h2>
+          <p>
+            Interactive Google Maps vector tiles require an active network connection to authenticate and download from Google Cloud servers.
+          </p>
+          <div className="map-placeholder-badge" style={{ backgroundColor: "rgba(239, 68, 68, 0.15)", color: "#ef4444" }}>
+            <span className="badge-dot" style={{ backgroundColor: "#ef4444" }}></span>
+            Offline Mode Active
+          </div>
+          <div className="map-placeholder-hint">
+            All festival events, schedules, locations, and personnel details remain fully accessible in the <strong>Schedule List</strong> and <strong>Now & Next</strong> views.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (mapAuthError) {
     return (

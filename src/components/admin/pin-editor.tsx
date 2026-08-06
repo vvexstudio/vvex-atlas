@@ -9,6 +9,21 @@ import { PredefinedLocation } from "@/lib/predefined-locations";
 import { Button } from "@/components/ui/Button";
 import { Icon, type IconName } from "@/components/ui/icons";
 
+if (typeof window !== "undefined") {
+  const origError = console.error;
+  console.error = (...args: unknown[]) => {
+    const msg = typeof args[0] === "string" ? args[0] : "";
+    if (
+      msg.includes("without a valid Map ID") ||
+      msg.includes("Unable to fetch configuration for mapId")
+    ) {
+      console.warn(...args);
+      return;
+    }
+    origError.apply(console, args);
+  };
+}
+
 type PinEditorProps = {
   initialData?: AdminEntry;
   locationOptions?: PredefinedLocation[];
@@ -531,7 +546,7 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
             <Map
               defaultCenter={location || { lat: 40.7864, lng: -119.2065 }}
               defaultZoom={location ? 16 : 14}
-              mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || "2f9f04bb8e9c458045b99a65"}
+              mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || "DEMO_MAP_ID"}
               disableDefaultUI={false}
               zoomControl={true}
               mapTypeControl={true}

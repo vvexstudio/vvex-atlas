@@ -377,12 +377,20 @@ export function EventApp({
   // Register PWA Service Worker
   useEffect(() => {
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("/sw.js").then(
-          (reg) => console.log("ServiceWorker registered with scope: ", reg.scope),
-          (err) => console.error("ServiceWorker registration failed: ", err)
-        );
-      });
+      const registerSW = () => {
+        if (!navigator.onLine) return;
+        navigator.serviceWorker
+          .register("/sw.js")
+          .then((reg) => console.log("ServiceWorker registered with scope: ", reg.scope))
+          .catch((err) => console.warn("ServiceWorker registration skipped or failed: ", err));
+      };
+
+      if (document.readyState === "complete") {
+        registerSW();
+      } else {
+        window.addEventListener("load", registerSW);
+        return () => window.removeEventListener("load", registerSW);
+      }
     }
   }, []);
 

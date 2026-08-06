@@ -9,6 +9,21 @@ import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { Icon } from "@/components/ui/icons";
 
+if (typeof window !== "undefined") {
+  const origError = console.error;
+  console.error = (...args: unknown[]) => {
+    const msg = typeof args[0] === "string" ? args[0] : "";
+    if (
+      msg.includes("without a valid Map ID") ||
+      msg.includes("Unable to fetch configuration for mapId")
+    ) {
+      console.warn(...args);
+      return;
+    }
+    origError.apply(console, args);
+  };
+}
+
 interface LocationsDashboardProps {
   venues: Venue[];
   events: FestivalEvent[];
@@ -197,7 +212,7 @@ export function LocationsDashboard({ venues, events, entries }: LocationsDashboa
             <Map
               defaultCenter={defaultCenter}
               defaultZoom={MAP_DEFAULT_ZOOM}
-              mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || "2f9f04bb8e9c458045b99a65"}
+              mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || "DEMO_MAP_ID"}
               disableDefaultUI={false}
               zoomControl={true}
               mapTypeControl={true}

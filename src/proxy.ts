@@ -31,9 +31,13 @@ export async function proxy(request: NextRequest) {
     if (session.role === "admin" || isAdminEmail(session.email)) {
       hasOAuthAdminAccess = true;
     } else {
-      const sheetRole = await getUserRoleFromPersonnel(session.email);
-      if (sheetRole === "admin") {
-        hasOAuthAdminAccess = true;
+      try {
+        const sheetRole = await getUserRoleFromPersonnel(session.email);
+        if (sheetRole === "admin") {
+          hasOAuthAdminAccess = true;
+        }
+      } catch (err) {
+        console.warn("Proxy middleware: Failed to fetch role from Personnel sheet:", err);
       }
     }
   }
