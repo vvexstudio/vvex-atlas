@@ -59,7 +59,11 @@ export type FestivalEvent = {
   scheduleCategory?: string;
   action?: string;
   department?: string;
+  supportDept1?: string;
+  supportDept2?: string;
   leadPointPerson?: string;
+  supportPerson1?: string;
+  supportPerson2?: string;
   locationName?: string;
   history?: EventHistoryEntry[];
 };

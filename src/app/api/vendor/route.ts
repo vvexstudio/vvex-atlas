@@ -160,7 +160,11 @@ export async function GET(request: NextRequest) {
     if (targetQueries.length === 0) return true;
 
     const eDept = (e.department || "").toLowerCase();
+    const eSuppDept1 = (e.supportDept1 || "").toLowerCase();
+    const eSuppDept2 = (e.supportDept2 || "").toLowerCase();
     const eLead = (e.leadPointPerson || "").toLowerCase();
+    const eSuppPerson1 = (e.supportPerson1 || "").toLowerCase();
+    const eSuppPerson2 = (e.supportPerson2 || "").toLowerCase();
     const eTitle = (e.title || "").toLowerCase();
     const eDesc = (e.description || "").toLowerCase();
     const eHost = (e.host || "").toLowerCase();
@@ -172,7 +176,11 @@ export async function GET(request: NextRequest) {
       if (!q) return false;
 
       if (eDept && (eDept.includes(q) || q.includes(eDept))) return true;
+      if (eSuppDept1 && (eSuppDept1.includes(q) || q.includes(eSuppDept1))) return true;
+      if (eSuppDept2 && (eSuppDept2.includes(q) || q.includes(eSuppDept2))) return true;
       if (eLead && (eLead.includes(q) || q.includes(eLead))) return true;
+      if (eSuppPerson1 && (eSuppPerson1.includes(q) || q.includes(eSuppPerson1))) return true;
+      if (eSuppPerson2 && (eSuppPerson2.includes(q) || q.includes(eSuppPerson2))) return true;
       if (eTitle && (eTitle.includes(q) || q.includes(eTitle))) return true;
       if (eDesc && eDesc.includes(q)) return true;
       if (eHost && (eHost.includes(q) || q.includes(eHost))) return true;
@@ -185,7 +193,11 @@ export async function GET(request: NextRequest) {
         return queryWords.some(
           (w) =>
             eDept.includes(w) ||
+            eSuppDept1.includes(w) ||
+            eSuppDept2.includes(w) ||
             eLead.includes(w) ||
+            eSuppPerson1.includes(w) ||
+            eSuppPerson2.includes(w) ||
             eTitle.includes(w) ||
             eDesc.includes(w) ||
             eHost.includes(w) ||

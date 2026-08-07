@@ -176,13 +176,14 @@ export const ScheduleGrid: React.FC<ScheduleGridProps> = ({
                         className={`main-schedule-row ${highlightedEventId === event.id ? "highlight-active" : ""}`}
                         onClick={() => setModalEvent(event)}
                         style={{ cursor: "pointer" }}
+                        suppressHydrationWarning
                       >
-                        <td className="time-cell">
+                        <td className="time-cell" suppressHydrationWarning>
                           {renderScheduleTime(event.startTime, event.endTime)}
                         </td>
 
                       {/* Desktop Table Cells */}
-                      <td className="loc-cell desktop-only">
+                      <td className="loc-cell desktop-only" suppressHydrationWarning>
                         {event.locationName ? (
                           <span className="loc-tag" style={getColorStyle("Location", event.locationName)}>
                             {event.locationName}
@@ -191,7 +192,7 @@ export const ScheduleGrid: React.FC<ScheduleGridProps> = ({
                           "-"
                         )}
                       </td>
-                      <td className="action-cell desktop-only">
+                      <td className="action-cell desktop-only" suppressHydrationWarning>
                         {event.action ? (
                           <span className="action-tag" style={getColorStyle("Action", event.action)}>
                             {event.action}
@@ -200,29 +201,57 @@ export const ScheduleGrid: React.FC<ScheduleGridProps> = ({
                           "-"
                         )}
                       </td>
-                      <td className="dept-cell desktop-only">
-                        {event.department ? (
-                          <span className="dept-tag" style={getColorStyle("Department", event.department)}>
-                            {event.department}
-                          </span>
+                      <td className="dept-cell desktop-only" suppressHydrationWarning>
+                        {(event.department || event.supportDept1 || event.supportDept2) ? (
+                          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }} suppressHydrationWarning>
+                            {event.department && (
+                              <span className="dept-tag" style={getColorStyle("Department", event.department)}>
+                                {event.department}
+                              </span>
+                            )}
+                            {event.supportDept1 && (
+                              <span className="dept-tag" style={{ ...getColorStyle("Department", event.supportDept1), opacity: 0.85, fontSize: "10px", padding: "1px 4px" }} title="Support Department">
+                                Supp: {event.supportDept1}
+                              </span>
+                            )}
+                            {event.supportDept2 && (
+                              <span className="dept-tag" style={{ ...getColorStyle("Department", event.supportDept2), opacity: 0.85, fontSize: "10px", padding: "1px 4px" }} title="Support Department">
+                                Supp: {event.supportDept2}
+                              </span>
+                            )}
+                          </div>
                         ) : (
                           "-"
                         )}
                       </td>
-                      <td className="lead-cell desktop-only">
-                        {event.leadPointPerson ? (
-                          <span className="lead-tag" style={getColorStyle("Personnel", event.leadPointPerson)}>
-                            {event.leadPointPerson}
-                          </span>
+                      <td className="lead-cell desktop-only" suppressHydrationWarning>
+                        {(event.leadPointPerson || event.supportPerson1 || event.supportPerson2) ? (
+                          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }} suppressHydrationWarning>
+                            {event.leadPointPerson && (
+                              <span className="lead-tag" style={getColorStyle("Personnel", event.leadPointPerson)}>
+                                {event.leadPointPerson}
+                              </span>
+                            )}
+                            {event.supportPerson1 && (
+                              <span className="lead-tag" style={{ ...getColorStyle("Personnel", event.supportPerson1), opacity: 0.85, fontSize: "10px", padding: "1px 4px" }} title="Support Person">
+                                Supp: {event.supportPerson1}
+                              </span>
+                            )}
+                            {event.supportPerson2 && (
+                              <span className="lead-tag" style={{ ...getColorStyle("Personnel", event.supportPerson2), opacity: 0.85, fontSize: "10px", padding: "1px 4px" }} title="Support Person">
+                                Supp: {event.supportPerson2}
+                              </span>
+                            )}
+                          </div>
                         ) : (
                           "-"
                         )}
                       </td>
-                      <td className="desc-cell desktop-only">{event.description || "-"}</td>
+                      <td className="desc-cell desktop-only" suppressHydrationWarning>{event.description || "-"}</td>
 
                       {/* Mobile Layout Details Cell */}
-                      <td className="mobile-details-cell mobile-only">
-                        {(event.locationName || event.action || event.department || event.leadPointPerson) && (
+                      <td className="mobile-details-cell mobile-only" suppressHydrationWarning>
+                        {(event.locationName || event.action || event.department || event.supportDept1 || event.supportDept2 || event.leadPointPerson || event.supportPerson1 || event.supportPerson2) && (
                           <div className="mobile-badges-row">
                             {event.locationName && (
                               <span className="loc-tag" style={getColorStyle("Location", event.locationName)}>
@@ -239,9 +268,29 @@ export const ScheduleGrid: React.FC<ScheduleGridProps> = ({
                                 {event.department}
                               </span>
                             )}
+                            {event.supportDept1 && (
+                              <span className="dept-tag" style={{ ...getColorStyle("Department", event.supportDept1), opacity: 0.85 }}>
+                                Supp: {event.supportDept1}
+                              </span>
+                            )}
+                            {event.supportDept2 && (
+                              <span className="dept-tag" style={{ ...getColorStyle("Department", event.supportDept2), opacity: 0.85 }}>
+                                Supp: {event.supportDept2}
+                              </span>
+                            )}
                             {event.leadPointPerson && (
                               <span className="lead-tag" style={getColorStyle("Personnel", event.leadPointPerson)}>
                                 {event.leadPointPerson}
+                              </span>
+                            )}
+                            {event.supportPerson1 && (
+                              <span className="lead-tag" style={{ ...getColorStyle("Personnel", event.supportPerson1), opacity: 0.85 }}>
+                                Supp: {event.supportPerson1}
+                              </span>
+                            )}
+                            {event.supportPerson2 && (
+                              <span className="lead-tag" style={{ ...getColorStyle("Personnel", event.supportPerson2), opacity: 0.85 }}>
+                                Supp: {event.supportPerson2}
                               </span>
                             )}
                           </div>

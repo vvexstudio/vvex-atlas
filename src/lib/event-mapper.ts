@@ -309,8 +309,20 @@ export function createEventFromSheetRow(
   const rawLeadDept = asString(getRowValue(row, ["Department", "department", "Lead Dept", "lead_dept", "lead_department"]));
   const leadDept = findLookupTarget(departmentsLookup, rawLeadDept) || rawLeadDept;
 
+  const rawSupportDept1 = asString(getRowValue(row, ["Support Dept 1", "support_dept_1", "Support Dept", "support_dept", "Support Department 1", "Support Department"]));
+  const supportDept1 = findLookupTarget(departmentsLookup, rawSupportDept1) || rawSupportDept1;
+
+  const rawSupportDept2 = asString(getRowValue(row, ["Support Dept 2", "support_dept_2", "Support Department 2"]));
+  const supportDept2 = findLookupTarget(departmentsLookup, rawSupportDept2) || rawSupportDept2;
+
   const rawLeadPerson = asString(getRowValue(row, ["Lead Point Person", "lead_point_person", "Lead Person", "lead_person", "lead"]));
   const leadPerson = findLookupTarget(personnelLookup, rawLeadPerson) || rawLeadPerson;
+
+  const rawSupportPerson1 = asString(getRowValue(row, ["Support Person 1", "support_person_1", "Support Person", "support_person", "Support Point Person 1", "Support Point Person", "support_point_person_1", "support_point_person", "support_lead"]));
+  const supportPerson1 = findLookupTarget(personnelLookup, rawSupportPerson1) || rawSupportPerson1;
+
+  const rawSupportPerson2 = asString(getRowValue(row, ["Support Person 2", "support_person_2", "Support Point Person 2", "support_point_person_2"]));
+  const supportPerson2 = findLookupTarget(personnelLookup, rawSupportPerson2) || rawSupportPerson2;
 
   const eventId = asString(getRowValue(row, ["event_id", "id"]));
   const eventType = asString(getRowValue(row, ["event_type", "type"]));
@@ -335,7 +347,11 @@ export function createEventFromSheetRow(
     scheduleCategory: action || undefined,
     action,
     department: leadDept,
+    supportDept1: supportDept1 || undefined,
+    supportDept2: supportDept2 || undefined,
     leadPointPerson: leadPerson,
+    supportPerson1: supportPerson1 || undefined,
+    supportPerson2: supportPerson2 || undefined,
     locationName,
   };
 }

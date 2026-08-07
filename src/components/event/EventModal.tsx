@@ -84,10 +84,27 @@ export const EventModal: React.FC<EventModalProps> = ({
             )}
             {modalEvent.department && (
               <div className="modal-detail-item">
-                <span className="detail-label">Department</span>
+                <span className="detail-label">Lead Dept</span>
                 <span className="dept-tag" style={getColorStyle("Department", modalEvent.department)}>
                   {modalEvent.department}
                 </span>
+              </div>
+            )}
+            {(modalEvent.supportDept1 || modalEvent.supportDept2) && (
+              <div className="modal-detail-item">
+                <span className="detail-label">Support Dept</span>
+                <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                  {modalEvent.supportDept1 && (
+                    <span className="dept-tag" style={{ ...getColorStyle("Department", modalEvent.supportDept1), opacity: 0.9 }}>
+                      {modalEvent.supportDept1}
+                    </span>
+                  )}
+                  {modalEvent.supportDept2 && (
+                    <span className="dept-tag" style={{ ...getColorStyle("Department", modalEvent.supportDept2), opacity: 0.9 }}>
+                      {modalEvent.supportDept2}
+                    </span>
+                  )}
+                </div>
               </div>
             )}
             {modalEvent.leadPointPerson && (
@@ -96,6 +113,23 @@ export const EventModal: React.FC<EventModalProps> = ({
                 <span className="lead-tag" style={getColorStyle("Personnel", modalEvent.leadPointPerson)}>
                   {modalEvent.leadPointPerson}
                 </span>
+              </div>
+            )}
+            {(modalEvent.supportPerson1 || modalEvent.supportPerson2) && (
+              <div className="modal-detail-item">
+                <span className="detail-label">Support Person</span>
+                <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                  {modalEvent.supportPerson1 && (
+                    <span className="lead-tag" style={{ ...getColorStyle("Personnel", modalEvent.supportPerson1), opacity: 0.9 }}>
+                      {modalEvent.supportPerson1}
+                    </span>
+                  )}
+                  {modalEvent.supportPerson2 && (
+                    <span className="lead-tag" style={{ ...getColorStyle("Personnel", modalEvent.supportPerson2), opacity: 0.9 }}>
+                      {modalEvent.supportPerson2}
+                    </span>
+                  )}
+                </div>
               </div>
             )}
             {modalEvent.action && (

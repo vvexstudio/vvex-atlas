@@ -83,12 +83,14 @@ export const useFilters = ({ events, venues, mapCenter }: UseFiltersProps) => {
   const departmentOptions = useMemo(() => {
     const unique = new Set<string>();
     events.forEach((e) => {
-      if (e.department) {
-        e.department.split(",").forEach((d) => {
-          const trimmed = d.trim();
-          if (trimmed) unique.add(trimmed);
-        });
-      }
+      [e.department, e.supportDept1, e.supportDept2].forEach((deptStr) => {
+        if (deptStr) {
+          deptStr.split(",").forEach((d) => {
+            const trimmed = d.trim();
+            if (trimmed) unique.add(trimmed);
+          });
+        }
+      });
     });
     return Array.from(unique).sort();
   }, [events]);
@@ -96,7 +98,12 @@ export const useFilters = ({ events, venues, mapCenter }: UseFiltersProps) => {
   const leadOptions = useMemo(() => {
     const unique = new Set<string>();
     events.forEach((e) => {
-      if (e.leadPointPerson) unique.add(e.leadPointPerson);
+      [e.leadPointPerson, e.supportPerson1, e.supportPerson2].forEach((leadStr) => {
+        if (leadStr) {
+          const trimmed = leadStr.trim();
+          if (trimmed) unique.add(trimmed);
+        }
+      });
     });
     return Array.from(unique).sort();
   }, [events]);
@@ -120,7 +127,12 @@ export const useFilters = ({ events, venues, mapCenter }: UseFiltersProps) => {
           (event.description && event.description.toLowerCase().includes(query)) ||
           (event.locationName && event.locationName.toLowerCase().includes(query)) ||
           (event.department && event.department.toLowerCase().includes(query)) ||
+          (event.supportDept1 && event.supportDept1.toLowerCase().includes(query)) ||
+          (event.supportDept2 && event.supportDept2.toLowerCase().includes(query)) ||
           (event.leadPointPerson && event.leadPointPerson.toLowerCase().includes(query)) ||
+          (event.supportPerson1 && event.supportPerson1.toLowerCase().includes(query)) ||
+          (event.supportPerson2 && event.supportPerson2.toLowerCase().includes(query)) ||
+          (event.host && event.host.toLowerCase().includes(query)) ||
           (event.action && event.action.toLowerCase().includes(query));
         if (!matchesQuery) return false;
       }
@@ -139,17 +151,28 @@ export const useFilters = ({ events, venues, mapCenter }: UseFiltersProps) => {
         return false;
       }
 
-      // 4. Department Dropdown Filter
+      // 4. Department Dropdown Filter (matches lead OR support departments)
       if (selectedDepartments.length > 0) {
-        if (!event.department) return false;
-        const eventDepts = event.department.split(",").map((d) => d.trim()).filter(Boolean);
-        const hasMatch = eventDepts.some((d) => selectedDepartments.includes(d));
+        const eventDepts = new Set<string>();
+        [event.department, event.supportDept1, event.supportDept2].forEach((deptStr) => {
+          if (deptStr) {
+            deptStr.split(",").forEach((d) => {
+              const trimmed = d.trim();
+              if (trimmed) eventDepts.add(trimmed);
+            });
+          }
+        });
+        const hasMatch = Array.from(eventDepts).some((d) => selectedDepartments.includes(d));
         if (!hasMatch) return false;
       }
 
-      // 5. Lead Dropdown Filter
-      if (selectedLeads.length > 0 && (!event.leadPointPerson || !selectedLeads.includes(event.leadPointPerson))) {
-        return false;
+      // 5. Lead Dropdown Filter (matches lead OR support personnel)
+      if (selectedLeads.length > 0) {
+        const eventLeads = [event.leadPointPerson, event.supportPerson1, event.supportPerson2]
+          .map((p) => (p || "").trim())
+          .filter(Boolean);
+        const hasMatch = eventLeads.some((l) => selectedLeads.includes(l));
+        if (!hasMatch) return false;
       }
 
       // 6. Time Range Filter (Overlap Check)
@@ -272,7 +295,14 @@ export const useFilters = ({ events, venues, mapCenter }: UseFiltersProps) => {
   const allDepartments = useMemo(() => {
     const unique = new Set<string>();
     events.forEach((e) => {
-      if (e.department) unique.add(e.department);
+      [e.department, e.supportDept1, e.supportDept2].forEach((deptStr) => {
+        if (deptStr) {
+          deptStr.split(",").forEach((d) => {
+            const trimmed = d.trim();
+            if (trimmed) unique.add(trimmed);
+          });
+        }
+      });
     });
     return Array.from(unique).sort();
   }, [events]);
@@ -307,11 +337,22 @@ export const useFilters = ({ events, venues, mapCenter }: UseFiltersProps) => {
       const dateStr = e.scheduleDate;
       if (!dateStr || dateStr === "Date TBD") return;
       
-      if (e.department) {
-        const key = `${dateStr}::department::${e.department}`;
+      const depts = new Set<string>();
+      [e.department, e.supportDept1, e.supportDept2].forEach((deptStr) => {
+        if (deptStr) {
+          deptStr.split(",").forEach((d) => {
+            const trimmed = d.trim();
+            if (trimmed) depts.add(trimmed);
+          });
+        }
+      });
+
+      depts.forEach((dept) => {
+        const key = `${dateStr}::department::${dept}`;
         if (!eventsByDayCol.has(key)) eventsByDayCol.set(key, []);
         eventsByDayCol.get(key)!.push(e);
-      }
+      });
+
       if (e.locationName) {
         const key = `${dateStr}::location::${e.locationName}`;
         if (!eventsByDayCol.has(key)) eventsByDayCol.set(key, []);

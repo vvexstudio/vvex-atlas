@@ -48,7 +48,7 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
           <span className="toast-toast-title">{toast.title}</span>
         </div>
         <p className="toast-message">{toast.message}</p>
-        <span className="toast-time">
+        <span className="toast-time" suppressHydrationWarning>
           {toast.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
         </span>
       </div>

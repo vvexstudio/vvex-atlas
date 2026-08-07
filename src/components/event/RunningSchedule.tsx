@@ -117,16 +117,36 @@ export const RunningSchedule: React.FC<RunningScheduleProps> = ({
                     )}
                   </div>
 
-                  {(event.leadPointPerson || event.department) && (
+                  {(event.leadPointPerson || event.supportPerson1 || event.supportPerson2 || event.department || event.supportDept1 || event.supportDept2) && (
                     <div className="event-card-badges">
                       {event.leadPointPerson && (
                         <span className="card-badge lead-badge" style={getColorStyle("Personnel", event.leadPointPerson)}>
                           <Icon name="user" size={12} /> {event.leadPointPerson}
                         </span>
                       )}
+                      {event.supportPerson1 && (
+                        <span className="card-badge lead-badge" style={{ ...getColorStyle("Personnel", event.supportPerson1), opacity: 0.85 }} title="Support Person">
+                          <Icon name="user" size={12} /> Supp: {event.supportPerson1}
+                        </span>
+                      )}
+                      {event.supportPerson2 && (
+                        <span className="card-badge lead-badge" style={{ ...getColorStyle("Personnel", event.supportPerson2), opacity: 0.85 }} title="Support Person">
+                          <Icon name="user" size={12} /> Supp: {event.supportPerson2}
+                        </span>
+                      )}
                       {event.department && (
                         <span className="card-badge dept-badge" style={getColorStyle("Department", event.department)}>
                           <Icon name="building" size={12} /> {event.department}
+                        </span>
+                      )}
+                      {event.supportDept1 && (
+                        <span className="card-badge dept-badge" style={{ ...getColorStyle("Department", event.supportDept1), opacity: 0.85 }} title="Support Department">
+                          <Icon name="building" size={12} /> Supp: {event.supportDept1}
+                        </span>
+                      )}
+                      {event.supportDept2 && (
+                        <span className="card-badge dept-badge" style={{ ...getColorStyle("Department", event.supportDept2), opacity: 0.85 }} title="Support Department">
+                          <Icon name="building" size={12} /> Supp: {event.supportDept2}
                         </span>
                       )}
                     </div>

@@ -32,11 +32,13 @@ const formatSyncTimestamp = (ts?: string | null): string => {
   try {
     const date = ts ? new Date(ts) : new Date();
     if (isNaN(date.getTime())) {
-      return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      const now = new Date();
+      return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
     }
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
   } catch {
-    return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
   }
 };
 
@@ -72,12 +74,13 @@ export function OfflineBadge({
           ? `Offline Mode — showing cached schedule data synced at ${syncFormatted}`
           : `Live Connected — last synced at ${syncFormatted}`
       }
+      suppressHydrationWarning
     >
       <span className="offline-badge-dot" aria-hidden="true" />
       <Icon name={isOffline ? "wifiOff" : "wifi"} size={compact ? 12 : 14} />
-      <span className="offline-badge-text">
+      <span className="offline-badge-text" suppressHydrationWarning>
         <span className="offline-badge-label">{isOffline ? "Offline" : "Live"}</span>
-        <span className="offline-badge-time"> • {isOffline ? "Cached" : "Synced"} {syncFormatted}</span>
+        <span className="offline-badge-time" suppressHydrationWarning> • {isOffline ? "Cached" : "Synced"} {syncFormatted}</span>
       </span>
     </div>
   );

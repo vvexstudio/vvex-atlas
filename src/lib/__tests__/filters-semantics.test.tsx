@@ -261,4 +261,60 @@ describe("useFilters - event filtering semantics", () => {
     expect(hookResult.filteredEvents).toHaveLength(3);
     expect(hookResult.filteredEvents.map((e: FestivalEvent) => e.id)).toContain("unscheduled-1");
   });
+
+  it("should match support departments and support persons in dropdown options and filtering", () => {
+    const supportEvents: FestivalEvent[] = [
+      {
+        id: "supp-1",
+        title: "Main Stage Concert",
+        description: "Stage production with heavy lighting support",
+        startTime: "14:00",
+        endTime: "16:00",
+        day: "sun",
+        scheduleDate: "2026-08-23",
+        type: "music",
+        hasLocation: true,
+        venueId: "forest",
+        locationName: "Forest",
+        department: "Audio",
+        supportDept1: "Lighting",
+        supportDept2: "Rigging",
+        leadPointPerson: "Alice Lead",
+        supportPerson1: "Sam Support",
+        supportPerson2: "Charlie Crew",
+        source: "schedule",
+        thumbnailUrl: "",
+      },
+    ];
+
+    act(() => {
+      const root = createRoot(container!);
+      root.render(<TestWrapper events={supportEvents} venues={mockVenues} />);
+    });
+
+    // Check options include support depts and support persons
+    expect(hookResult.departmentOptions).toContain("Audio");
+    expect(hookResult.departmentOptions).toContain("Lighting");
+    expect(hookResult.departmentOptions).toContain("Rigging");
+
+    expect(hookResult.leadOptions).toContain("Alice Lead");
+    expect(hookResult.leadOptions).toContain("Sam Support");
+    expect(hookResult.leadOptions).toContain("Charlie Crew");
+
+    // Filter by Support Dept "Lighting"
+    act(() => {
+      hookResult.setSelectedDepartments(["Lighting"]);
+    });
+    expect(hookResult.filteredEvents).toHaveLength(1);
+    expect(hookResult.filteredEvents[0].id).toBe("supp-1");
+
+    // Filter by Support Person "Sam Support"
+    act(() => {
+      hookResult.setSelectedDepartments([]);
+      hookResult.setSelectedLeads(["Sam Support"]);
+    });
+    expect(hookResult.filteredEvents).toHaveLength(1);
+    expect(hookResult.filteredEvents[0].id).toBe("supp-1");
+  });
 });
+
