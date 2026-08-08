@@ -215,6 +215,8 @@ Tracked here so we know what to stand up vs. what the client owns. Env var names
 ## 10. Session Log
 > Append newest at top. Format: `YYYY-MM-DD — who — what changed / decided / discovered`.
 
+- **2026-08-07 — agent — Implemented event inquiry / support report feature via direct `mailto:` links. Added `src/lib/support.ts` helper and `src/lib/__tests__/support.test.ts` unit tests (7 passing). Added `NEXT_PUBLIC_SUPPORT_EMAIL=` to `.env.example`, `.env.local`, and `.env.local.vvex`. Direct 1-click `mailto:` anchors in `EventModal.tsx` and `EventApp.tsx` header auto-populate recipient (`admin@vvexstudio.com`), subject, and structured event body. Verified 41/41 Vitest tests and clean lint checks passing.**
+
 - **2026-08-04 — agent — Updated `onShowOnMap` in `src/components/event/EventApp.tsx` and controlled collapse state in `src/components/event/Legend.tsx`: clicking 'Show on Map' from Schedule Grid or Spatial Calendar closes EventModal (`setModalEvent(null)`) and auto-collapses Map Explorer (`isLegendCollapsed = true`), ensuring the map pin and venue InfoWindow are completely unobstructed. Verified 33/33 Vitest unit tests and Next.js 16 build passing.**
 
 - **2026-08-04 — agent — Optimized `useAuthProfile.ts` dependency arrays to use primitive values (`initialSession?.email`, `initialSession?.role`) instead of inline object references. Eliminated redundant `GET /api/auth/firebase-token` requests on component re-renders. Verified 33/33 Vitest unit tests and Next.js 16 build passing.**

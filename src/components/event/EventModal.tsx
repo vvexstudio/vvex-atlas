@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { FestivalEvent, Venue } from "@/types/festival";
 import { Icon } from "@/components/ui/icons";
+import { buildEventSupportMailto, buildEventSupportGmailUrl, getEventReportDetails } from "@/lib/support";
 
 interface EventModalProps {
   modalEvent: FestivalEvent | null;
@@ -27,7 +28,37 @@ export const EventModal: React.FC<EventModalProps> = ({
   currentTab = "schedule",
   venues = []
 }) => {
+  const [copiedToast, setCopiedToast] = useState(false);
+
   if (!modalEvent) return null;
+
+  const handleReportIssue = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const mailtoUrl = buildEventSupportMailto(modalEvent);
+    const gmailUrl = buildEventSupportGmailUrl(modalEvent);
+    
+    // Copy report text to clipboard as fail-safe
+    try {
+      const { plainText } = getEventReportDetails(modalEvent);
+      navigator.clipboard.writeText(plainText);
+    } catch (_err) {
+      // Ignore clipboard write error if restricted
+    }
+
+    // Trigger OS/Browser mailto action
+    window.location.href = mailtoUrl;
+
+    // Smart fallback: If OS default mail app is not configured (browser remains in focus), auto-open Gmail webmail
+    setTimeout(() => {
+      if (document.hasFocus()) {
+        window.open(gmailUrl, "_blank", "noopener,noreferrer");
+      }
+    }, 600);
+
+    // Show instant feedback on button
+    setCopiedToast(true);
+    setTimeout(() => setCopiedToast(false), 3000);
+  };
 
   const isEventStarred = isStarred ? isStarred(modalEvent.id) : false;
 
@@ -150,6 +181,14 @@ export const EventModal: React.FC<EventModalProps> = ({
           )}
 
           <div className="modal-bottom-actions">
+            <button
+              type="button"
+              className="modal-action-btn report-issue-btn"
+              onClick={handleReportIssue}
+              title="Report an issue or discrepancy for this event"
+            >
+              <Icon name={copiedToast ? "check" : "warning"} size={14} /> {copiedToast ? "Opening Mail & Copied Details!" : "Report Issue"}
+            </button>
             {hasCoords && onShowOnMap && (
               <button
                 type="button"

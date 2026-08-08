@@ -3385,11 +3385,17 @@ button.gm-ui-hover-effect svg {
 .modal-bottom-actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
   margin-top: 14px;
   border-top: 1px solid var(--line);
   padding-top: 10px;
+  flex-wrap: wrap;
 }
 .modal-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 6px 12px;
   font-size: var(--text-sm);
   font-weight: 700;
@@ -3398,6 +3404,7 @@ button.gm-ui-hover-effect svg {
   background: var(--surface-raised);
   color: var(--muted);
   cursor: pointer;
+  text-decoration: none;
 }
 .modal-action-btn:hover {
   background-color: var(--surface);
@@ -3406,6 +3413,82 @@ button.gm-ui-hover-effect svg {
   border-color: var(--accent-soft);
   background: var(--accent-soft);
   color: var(--accent-strong);
+}
+.report-issue-btn {
+  border-color: rgba(239, 68, 68, 0.3);
+  background: var(--warn-soft);
+  color: var(--ink);
+  transition: all 0.15s ease-in-out;
+}
+.report-issue-btn:hover {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: var(--ink);
+}
+.support-header-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  font-size: var(--text-xs, 12px);
+  font-weight: 600;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  color: var(--muted);
+  text-decoration: none;
+  transition: all 0.15s ease-in-out;
+}
+.support-header-btn:hover {
+  color: var(--ink);
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+.report-issue-dropdown {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  min-width: 190px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  animation: fadeIn 0.15s ease-out;
+}
+.header-support-dropdown {
+  top: calc(100% + 6px);
+  bottom: auto;
+  right: 0;
+  left: auto;
+}
+.report-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: var(--text-xs, 12px);
+  font-weight: 600;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  text-decoration: none;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background-color 0.12s ease-in-out;
+}
+.report-dropdown-item:hover {
+  background-color: var(--surface-raised);
+}
+.report-dropdown-item.primary-option {
+  color: var(--accent-strong, #3b82f6);
+  font-weight: 700;
 }
 
 .main-tab-btn.starred-tab-btn {

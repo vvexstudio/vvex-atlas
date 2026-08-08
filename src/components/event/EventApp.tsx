@@ -21,6 +21,7 @@ import { Toasts, ToastMessage } from "./Toasts";
 import { parseUrlParams, buildUrlQuery, UrlState } from "@/lib/url-state";
 import { Legend } from "./Legend";
 import { OfflineBadge } from "@/components/ui/OfflineBadge";
+import { buildGeneralSupportMailto, buildGeneralSupportGmailUrl } from "@/lib/support";
 
 const MAP_CENTER = { lat: 40.7864, lng: -119.2065 }; // Default Playa (BRC) coordinates
 const MAP_DEFAULT_ZOOM = 13;
@@ -1171,6 +1172,21 @@ export function EventApp({
               </div>
             )}
             <OfflineBadge isOffline={isOffline} lastSynced={lastSynced} />
+            <button
+              type="button"
+              className="support-header-btn"
+              onClick={() => {
+                window.location.href = buildGeneralSupportMailto();
+                setTimeout(() => {
+                  if (document.hasFocus()) {
+                    window.open(buildGeneralSupportGmailUrl(), "_blank", "noopener,noreferrer");
+                  }
+                }, 600);
+              }}
+              title="Report issue or send inquiry"
+            >
+              <Icon name="mail" size={14} /> Support
+            </button>
             <button
               type="button"
               className="legacy-theme-switch"
