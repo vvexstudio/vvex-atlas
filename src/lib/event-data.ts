@@ -4,7 +4,9 @@ import type { Department, FestivalEvent, Venue } from "@/types/festival";
 import {
   getParsedSheetData,
   getParsedSheetDataFromPublicCsv,
+  getSpreadsheetSheets,
   getSpreadsheetWithFormatting,
+  matchTabTitle,
   parseSheetDataWithColors,
 } from "./google-sheets-api";
 import { adminDb } from "./firebase-admin";
@@ -138,11 +140,17 @@ export async function getFestivalDataFromRtdb(role: string = "public"): Promise<
 
 export async function getFestivalDataFromSheets(role: string = "public"): Promise<FestivalDataResult> {
   const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "1rpmzT4_6NlAOSryN86ROv3mv1Jf4ydColAlk6MrY1zw";
-  const tabLocations = process.env.GOOGLE_SHEETS_TAB_LOCATIONS || process.env.SHEETS_TAB_LOCATIONS || "Locations";
-  const tabPersonnel = process.env.GOOGLE_SHEETS_TAB_PERSONNEL || process.env.SHEETS_TAB_PERSONNEL || "Personnel";
-  const tabDepartments = process.env.GOOGLE_SHEETS_TAB_DEPARTMENTS || process.env.SHEETS_TAB_DEPARTMENTS || "Departments";
-  const tabActions = process.env.GOOGLE_SHEETS_TAB_ACTIONS || process.env.SHEETS_TAB_ACTIONS || "Actions";
-  const tabRos = process.env.GOOGLE_SHEETS_TAB_ROS || process.env.SHEETS_TAB_ROS || "ROS by TIME";
+  const rawTabLocations = process.env.GOOGLE_SHEETS_TAB_LOCATIONS || process.env.SHEETS_TAB_LOCATIONS || "Locations*";
+  const rawTabPersonnel = process.env.GOOGLE_SHEETS_TAB_PERSONNEL || process.env.SHEETS_TAB_PERSONNEL || "Personnel*";
+  const rawTabDepartments = process.env.GOOGLE_SHEETS_TAB_DEPARTMENTS || process.env.SHEETS_TAB_DEPARTMENTS || "Departments*";
+  const rawTabActions = process.env.GOOGLE_SHEETS_TAB_ACTIONS || process.env.SHEETS_TAB_ACTIONS || "Actions*";
+  const rawTabRos = process.env.GOOGLE_SHEETS_TAB_ROS || process.env.SHEETS_TAB_ROS || "ROS by TIME*";
+
+  let tabLocations = matchTabTitle(rawTabLocations, []);
+  let tabPersonnel = matchTabTitle(rawTabPersonnel, []);
+  let tabDepartments = matchTabTitle(rawTabDepartments, []);
+  let tabActions = matchTabTitle(rawTabActions, []);
+  let tabRos = matchTabTitle(rawTabRos, []);
 
   let locationsData: any[] = [];
   let personnelData: any[] = [];
@@ -159,6 +167,15 @@ export async function getFestivalDataFromSheets(role: string = "public"): Promis
 
   if (hasCredentials) {
     try {
+      const availableSheets = await getSpreadsheetSheets(spreadsheetId).catch(() => []);
+      if (availableSheets.length > 0) {
+        tabLocations = matchTabTitle(rawTabLocations, availableSheets);
+        tabPersonnel = matchTabTitle(rawTabPersonnel, availableSheets);
+        tabDepartments = matchTabTitle(rawTabDepartments, availableSheets);
+        tabActions = matchTabTitle(rawTabActions, availableSheets);
+        tabRos = matchTabTitle(rawTabRos, availableSheets);
+      }
+
       // Fetch grid formatting only for small metadata tabs (Locations, Personnel, Departments, Actions)
       const formattingSpreadsheet = await getSpreadsheetWithFormatting(spreadsheetId, [
         tabLocations,
@@ -170,7 +187,10 @@ export async function getFestivalDataFromSheets(role: string = "public"): Promis
       if (formattingSpreadsheet && formattingSpreadsheet.sheets) {
         const findSheet = (name: string) =>
           formattingSpreadsheet.sheets.find(
-            (s: any) => s.properties?.title?.trim().toLowerCase() === name.trim().toLowerCase()
+            (s: any) =>
+              s.properties?.title === name ||
+              matchTabTitle(name, [s.properties?.title || ""]) === (s.properties?.title || "") ||
+              s.properties?.title?.trim().toLowerCase() === name.trim().toLowerCase()
           );
 
         const locSheet = findSheet(tabLocations);
@@ -216,11 +236,17 @@ export async function getFestivalDataFromSheets(role: string = "public"): Promis
 
 export async function getFestivalDataFromCsv(): Promise<FestivalDataResult> {
   const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "1rpmzT4_6NlAOSryN86ROv3mv1Jf4ydColAlk6MrY1zw";
-  const tabLocations = process.env.GOOGLE_SHEETS_TAB_LOCATIONS || "Locations";
-  const tabPersonnel = process.env.GOOGLE_SHEETS_TAB_PERSONNEL || "Personnel";
-  const tabDepartments = process.env.GOOGLE_SHEETS_TAB_DEPARTMENTS || "Departments";
-  const tabActions = process.env.GOOGLE_SHEETS_TAB_ACTIONS || "Actions";
-  const tabRos = process.env.GOOGLE_SHEETS_TAB_ROS || "ROS by TIME";
+  const rawTabLocations = process.env.GOOGLE_SHEETS_TAB_LOCATIONS || process.env.SHEETS_TAB_LOCATIONS || "Locations*";
+  const rawTabPersonnel = process.env.GOOGLE_SHEETS_TAB_PERSONNEL || process.env.SHEETS_TAB_PERSONNEL || "Personnel*";
+  const rawTabDepartments = process.env.GOOGLE_SHEETS_TAB_DEPARTMENTS || process.env.SHEETS_TAB_DEPARTMENTS || "Departments*";
+  const rawTabActions = process.env.GOOGLE_SHEETS_TAB_ACTIONS || process.env.SHEETS_TAB_ACTIONS || "Actions*";
+  const rawTabRos = process.env.GOOGLE_SHEETS_TAB_ROS || process.env.SHEETS_TAB_ROS || "ROS by TIME*";
+
+  const tabLocations = matchTabTitle(rawTabLocations, []);
+  const tabPersonnel = matchTabTitle(rawTabPersonnel, []);
+  const tabDepartments = matchTabTitle(rawTabDepartments, []);
+  const tabActions = matchTabTitle(rawTabActions, []);
+  const tabRos = matchTabTitle(rawTabRos, []);
 
   let locationsData: any[] = [];
   let personnelData: any[] = [];

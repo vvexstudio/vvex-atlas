@@ -42,10 +42,10 @@ function syncAllToFirebase() {
     }
 
     // 1. Read sheet tabs
-    const locations = readSheetToJson(ss.getSheetByName("Locations"));
-    const personnel = readSheetToJson(ss.getSheetByName("Personnel"));
-    const ros = readSheetToJson(ss.getSheetByName("ROS by TIME") || ss.getSheetByName("ROS"));
-    const departments = readSheetToJson(ss.getSheetByName("Departments"));
+    const locations = readSheetToJson(findSheetByNameOrPattern(ss, "Locations*") || findSheetByNameOrPattern(ss, "Locations"));
+    const personnel = readSheetToJson(findSheetByNameOrPattern(ss, "Personnel*") || findSheetByNameOrPattern(ss, "Personnel"));
+    const ros = readSheetToJson(findSheetByNameOrPattern(ss, "ROS by TIME*") || findSheetByNameOrPattern(ss, "ROS by TIME") || findSheetByNameOrPattern(ss, "ROS*"));
+    const departments = readSheetToJson(findSheetByNameOrPattern(ss, "Departments*") || findSheetByNameOrPattern(ss, "Departments"));
 
     // 2. Format & Map data to structure
     const data = {
@@ -1595,5 +1595,40 @@ function makeCalendarsReadableToExternalCrew() {
   });
 
   Logger.log("=== EXTERNAL READABILITY UPDATE COMPLETE ===");
+}
+
+/**
+ * Resolves a sheet tab by exact name, wildcard pattern, or prefix matching.
+ */
+function findSheetByNameOrPattern(ss, pattern) {
+  if (!ss || !pattern) return null;
+  var exact = ss.getSheetByName(pattern);
+  if (exact) return exact;
+
+  var sheets = ss.getSheets();
+  var cleanPattern = pattern.replace(/[*?]/g, "").trim().toLowerCase();
+
+  // 1. Wildcard pattern if contains * or ?
+  if (pattern.indexOf("*") !== -1 || pattern.indexOf("?") !== -1) {
+    var regexStr = "^" + pattern
+      .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+      .replace(/\*/g, ".*")
+      .replace(/\?/g, ".") + "$";
+    var rx = new RegExp(regexStr, "i");
+    for (var i = 0; i < sheets.length; i++) {
+      if (rx.test(sheets[i].getName().trim())) {
+        return sheets[i];
+      }
+    }
+  }
+
+  // 2. Prefix / substring match
+  for (var j = 0; j < sheets.length; j++) {
+    var name = sheets[j].getName().trim().toLowerCase();
+    if (name === cleanPattern || name.indexOf(cleanPattern) === 0 || name.indexOf(cleanPattern) !== -1) {
+      return sheets[j];
+    }
+  }
+  return null;
 }
 

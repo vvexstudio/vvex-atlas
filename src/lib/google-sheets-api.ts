@@ -95,21 +95,71 @@ export async function getSpreadsheetValues(spreadsheetId: string, range: string)
 }
 
 /**
+ * Matches a target tab pattern (which may contain wildcards like '*' or '?') against actual available sheet titles.
+ * If no pattern matches with wildcards or exact match, it also falls back to checking if sheet title starts with or contains the target pattern.
+ * Respects exact match or pattern match (e.g. "ROS by TIME" or "ROS by TIME*" matching "ROS by TIME - 08/08 DO NOT DELETE").
+ */
+export function matchTabTitle(targetPattern: string, availableTitles: string[] = []): string {
+  if (!targetPattern) return "";
+  const trimmedPattern = targetPattern.trim();
+  const cleanFallback = trimmedPattern.replace(/[*?]/g, "").trim();
+
+  if (!availableTitles || availableTitles.length === 0) {
+    return cleanFallback;
+  }
+
+  const lowerPattern = trimmedPattern.toLowerCase();
+
+  // 1. Exact match (case-insensitive)
+  const exactMatch = availableTitles.find(
+    (t) => t.trim().toLowerCase() === lowerPattern
+  );
+  if (exactMatch) return exactMatch;
+
+  // 2. Wildcard pattern matching (if pattern contains * or ?)
+  if (trimmedPattern.includes("*") || trimmedPattern.includes("?")) {
+    const regexPattern = "^" + trimmedPattern
+      .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+      .replace(/\*/g, ".*")
+      .replace(/\?/g, ".") + "$";
+    const wildcardRegex = new RegExp(regexPattern, "i");
+    const wildcardMatch = availableTitles.find((t) => wildcardRegex.test(t.trim()));
+    if (wildcardMatch) return wildcardMatch;
+
+    if (cleanFallback) {
+      const cleanLower = cleanFallback.toLowerCase();
+      const prefixMatch = availableTitles.find((t) =>
+        t.trim().toLowerCase().startsWith(cleanLower)
+      );
+      if (prefixMatch) return prefixMatch;
+    }
+  }
+
+  // 3. Fallback: Prefix / substring match if sheet title starts with or contains targetPattern
+  const prefixMatch = availableTitles.find((t) =>
+    t.trim().toLowerCase().startsWith(lowerPattern)
+  );
+  if (prefixMatch) return prefixMatch;
+
+  const containsMatch = availableTitles.find((t) =>
+    t.trim().toLowerCase().includes(lowerPattern)
+  );
+  if (containsMatch) return containsMatch;
+
+  return cleanFallback || trimmedPattern;
+}
+
+/**
  * Fetches and parses Google Sheet tab data into objects using Workspace API (OAuth)
  */
 export async function getParsedSheetData<T extends Record<string, any>>(
   spreadsheetId: string,
   tabName: string
 ): Promise<T[]> {
-  let matchedTabName = tabName;
+  let matchedTabName = matchTabTitle(tabName, []);
   try {
     const availableSheets = await getSpreadsheetSheets(spreadsheetId);
-    const found = availableSheets.find(
-      (title) => title.trim().toLowerCase() === tabName.trim().toLowerCase()
-    );
-    if (found) {
-      matchedTabName = found;
-    }
+    matchedTabName = matchTabTitle(tabName, availableSheets);
   } catch (err) {
     console.warn(`Failed to resolve sheet tab titles list for '${tabName}':`, err);
   }
@@ -156,7 +206,8 @@ export async function getParsedSheetDataFromPublicCsv<T extends Record<string, a
   tabName: string
 ): Promise<T[]> {
   noStore();
-  const url = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`;
+  const resolvedTab = matchTabTitle(tabName, []);
+  const url = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(resolvedTab)}`;
 
   try {
     const res = await fetch(url);
@@ -169,7 +220,7 @@ export async function getParsedSheetDataFromPublicCsv<T extends Record<string, a
     const worksheet = workbook.Sheets[sheetName];
     return XLSX.utils.sheet_to_json<T>(worksheet, { defval: "" });
   } catch (err) {
-    console.error(`Error fetching/parsing public CSV sheet for tab '${tabName}':`, err);
+    console.error(`Error fetching/parsing public CSV sheet for tab '${tabName}' (resolved as '${resolvedTab}'):`, err);
     throw err;
   }
 }
@@ -268,9 +319,15 @@ export function parseSheetDataWithColors<T extends Record<string, any>>(
   spreadsheetObj: any,
   tabName: string
 ): ParsedSheetDataWithColors<T> {
-  const sheet = spreadsheetObj.sheets?.find((s: any) => s.properties?.title === tabName);
+  const availableTitles = (spreadsheetObj.sheets || [])
+    .map((s: any) => s.properties?.title)
+    .filter(Boolean);
+  const matchedTitle = matchTabTitle(tabName, availableTitles);
+  const sheet = spreadsheetObj.sheets?.find(
+    (s: any) => s.properties?.title === matchedTitle || s.properties?.title === tabName
+  );
   if (!sheet) {
-    throw new Error(`Sheet tab "${tabName}" not found in response`);
+    throw new Error(`Sheet tab "${tabName}" (matched as "${matchedTitle}") not found in response`);
   }
 
   const rows = sheet.data?.[0]?.rowData || [];

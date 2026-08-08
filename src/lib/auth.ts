@@ -13,8 +13,9 @@ export interface ApprovedEmail {
  */
 export async function getApprovedEmails(): Promise<ApprovedEmail[]> {
   const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "19Xs3TScHhS369n_A8VvUGxszoxncx1p32T8iwNHSKTU";
+  const tabPersonnel = process.env.GOOGLE_SHEETS_TAB_PERSONNEL || process.env.SHEETS_TAB_PERSONNEL || "Personnel*";
   try {
-    const list = await getParsedSheetData<any>(spreadsheetId, "Personnel");
+    const list = await getParsedSheetData<any>(spreadsheetId, tabPersonnel);
     return list.map(item => {
       let email = "";
       let name = "";
@@ -51,8 +52,9 @@ export async function isEmailApproved(email: string): Promise<boolean> {
  */
 export async function getUserRoleFromPersonnel(email: string): Promise<string | null> {
   const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "1rpmzT4_6NlAOSryN86ROv3mv1Jf4ydColAlk6MrY1zw";
+  const tabPersonnel = process.env.GOOGLE_SHEETS_TAB_PERSONNEL || process.env.SHEETS_TAB_PERSONNEL || "Personnel*";
   try {
-    const list = await getParsedSheetData<any>(spreadsheetId, "Personnel");
+    const list = await getParsedSheetData<any>(spreadsheetId, tabPersonnel);
     const normalizedEmail = email.trim().toLowerCase();
     for (const item of list) {
       let itemEmail = "";
