@@ -993,188 +993,28 @@ export function EventApp({
           {/* eslint-disable-next-line @next/next/no-img-element -- static 26px brand mark, next/image is overkill */}
           <img src="/icon.png?v=solaris" alt="" className="banner-brand-mark" width={26} height={26} suppressHydrationWarning />
           <h1 className="legacy-banner-heading">The Portal</h1>
-          {role === "admin" && (() => {
+          <span className="chip chip-accent eyebrow eyebrow-accent header-chip-location">
+            {process.env.NEXT_PUBLIC_EVENT_TIMEZONE || "PDT"}
+          </span>
+          {(() => {
             const isLive = typeof window !== "undefined" && !window.location.hostname.includes("localhost") && !window.location.hostname.includes("127.0.0.1");
             const isProd = appEnvironment === "PROD" || (typeof window !== "undefined" && (window.location.hostname.includes("portal-map-app") || window.location.hostname.includes("portal-production")));
-            const badgeText = isProd ? (isLive ? "PROD (Live)" : "PROD (Local)") : (isLive ? "DEV (Live)" : "DEV (Local)");
+            const envBadgeText = role === "admin" ? (isProd ? (isLive ? "PROD (Live)" : "PROD (Local)") : (isLive ? "DEV (Live)" : "DEV (Local)")) : undefined;
 
-            return isProd ? (
-              <span
-                className="chip"
-                title="Production Database Environment (portal-map-app)"
-                style={{
-                  backgroundColor: "rgba(16, 185, 129, 0.15)",
-                  color: "#10b981",
-                  border: "1px solid rgba(16, 185, 129, 0.35)",
-                  fontWeight: 700,
-                  fontSize: "0.68rem",
-                  letterSpacing: "0.06em",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "5px",
-                  padding: "2px 8px",
-                  borderRadius: "12px",
-                }}
-              >
-                <span
-                  style={{
-                    width: "6px",
-                    height: "6px",
-                    borderRadius: "50%",
-                    backgroundColor: "#10b981",
-                    boxShadow: "0 0 6px #10b981",
-                  }}
-                />
-                {badgeText}
-              </span>
-            ) : (
-              <span
-                className="chip"
-                title="Development Environment (portal-dev)"
-                style={{
-                  backgroundColor: "rgba(245, 158, 11, 0.15)",
-                  color: "#f59e0b",
-                  border: "1px solid rgba(245, 158, 11, 0.35)",
-                  fontWeight: 700,
-                  fontSize: "0.68rem",
-                  letterSpacing: "0.06em",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "5px",
-                  padding: "2px 8px",
-                  borderRadius: "12px",
-                }}
-              >
-                <span
-                  style={{
-                    width: "6px",
-                    height: "6px",
-                    borderRadius: "50%",
-                    backgroundColor: "#f59e0b",
-                    boxShadow: "0 0 6px #f59e0b",
-                  }}
-                />
-                {badgeText}
-              </span>
+            return (
+              <OfflineBadge
+                isOffline={isOffline}
+                lastSynced={lastSynced}
+                envLabel={envBadgeText}
+                sourceLabel={sourceLabel}
+                className="header-consolidated-badge"
+              />
             );
           })()}
-          {vendorScope ? (
-            <span
-              className="chip"
-              title="Vendor Scoped View"
-              style={{
-                backgroundColor: "rgba(249, 115, 22, 0.15)",
-                color: "var(--accent, #f97316)",
-                border: "1px solid rgba(249, 115, 22, 0.35)",
-                fontWeight: 700,
-                fontSize: "0.75rem",
-                letterSpacing: "0.04em",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "5px",
-                padding: "3px 10px",
-                borderRadius: "12px",
-              }}
-            >
-              <Icon name="key" size={12} />
-              Vendor Pass: {vendorScope.vendorName}
-            </span>
-          ) : (
-            <span className="chip chip-accent eyebrow eyebrow-accent">
-              PDT • Black Rock City
-            </span>
-          )}
-        </div>
-        <div className="legacy-banner-right-wrapper">
-          {vendorScope && (
-            <a
-              href={`/api/ics?token=${encodeURIComponent(vendorScope.token)}`}
-              className="btn btn-primary btn-sm"
-              style={{ marginRight: "8px", textDecoration: "none" }}
-            >
-              <Icon name="calendar" size={14} /> Subscribe to Calendar (.ics)
-            </a>
-          )}
-          <div className="legacy-banner-actions">
-            {userSession ? (
-              <div className="user-profile-section">
-                {userSession.picture ? (
-                  <img
-                    src={userSession.picture}
-                    alt={userSession.name || userSession.email}
-                    referrerPolicy="no-referrer"
-                    style={{ width: "30px", height: "30px", borderRadius: "50%", border: "1.5px solid var(--accent)" }}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      width: "30px",
-                      height: "30px",
-                      borderRadius: "50%",
-                      backgroundColor: "var(--accent)",
-                      color: "var(--accent-ink)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontWeight: "bold",
-                      fontSize: "0.8rem",
-                      border: "1.5px solid var(--line)",
-                    }}
-                  >
-                    {(userSession.name || userSession.email)[0].toUpperCase()}
-                  </div>
-                )}
-                <div className="user-profile-info" style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                    <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--ink)", lineHeight: "1.2" }}>
-                      {userSession.name || userSession.email.split("@")[0]}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: "0.68rem",
-                        fontWeight: 700,
-                        padding: "2px 8px",
-                        borderRadius: "12px",
-                        backgroundColor: activeRoleBadge.isHighlight ? "var(--accent, #f97316)" : "var(--line, rgba(255,255,255,0.15))",
-                        color: activeRoleBadge.isHighlight ? "#ffffff" : "var(--muted)",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "4px",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      <Icon name={activeRoleBadge.icon} size={11} />
-                      {activeRoleBadge.text}
-                    </span>
-                  </div>
-                  <span style={{ fontSize: "0.65rem", color: "var(--muted)" }}>
-                    {userSession.email}
-                  </span>
-                </div>
-                {role === "admin" && (
-                  <Link
-                    href="/admin"
-                    className="btn btn-ghost btn-sm"
-                    style={{ marginRight: "0.5rem" }}
-                  >
-                    <Icon name="settings" size={12} /> Admin Panel
-                  </Link>
-                )}
-                <a href="/api/auth/logout" className="btn btn-danger btn-sm">
-                  <Icon name="logout" size={12} /> Logout
-                </a>
-              </div>
-            ) : (
-              <div className="user-profile-section">
-                <Link href="/login" className="btn btn-primary btn-sm" style={{ fontWeight: 600, padding: "0.4rem 0.8rem" }}>
-                  <Icon name="user" size={12} /> Login to Crew Portal
-                </Link>
-              </div>
-            )}
-            <OfflineBadge isOffline={isOffline} lastSynced={lastSynced} />
+          <div className="header-top-right-actions">
             <button
               type="button"
-              className="support-header-btn"
+              className="support-header-btn mobile-top-support-btn"
               onClick={() => {
                 window.location.href = buildGeneralSupportMailto();
                 setTimeout(() => {
@@ -1185,17 +1025,146 @@ export function EventApp({
               }}
               title="Report issue or send inquiry"
             >
-              <Icon name="mail" size={14} /> Support
+              <Icon name="mail" size={14} /> <span className="header-btn-text">Support</span>
             </button>
             <button
               type="button"
-              className="legacy-theme-switch"
+              className="legacy-theme-switch header-top-theme-switch"
               onClick={cycleTheme}
               title={`Theme: ${theme} — click to switch`}
               aria-label={`Current theme ${theme}. Switch to ${theme === "letterpress" ? "noir" : theme === "noir" ? "dusk" : "letterpress"}`}
             >
               <Icon name={theme === "letterpress" ? "sun" : theme === "noir" ? "moon" : "sparkles"} size={16} />
             </button>
+          </div>
+        </div>
+        <div className="legacy-banner-right-wrapper">
+          {vendorScope && (
+            <a
+              href={`/api/ics?token=${encodeURIComponent(vendorScope.token)}`}
+              className="btn btn-primary btn-sm"
+              style={{ marginRight: "8px", textDecoration: "none" }}
+            >
+              <Icon name="calendar" size={14} /> <span className="header-btn-text">Subscribe (.ics)</span>
+            </a>
+          )}
+          <div className="legacy-banner-actions">
+            <button
+              type="button"
+              className="support-header-btn desktop-support-btn"
+              onClick={() => {
+                window.location.href = buildGeneralSupportMailto();
+                setTimeout(() => {
+                  if (document.hasFocus()) {
+                    window.open(buildGeneralSupportGmailUrl(), "_blank", "noopener,noreferrer");
+                  }
+                }, 600);
+              }}
+              title="Report issue or send inquiry"
+            >
+              <Icon name="mail" size={14} /> <span className="header-btn-text">Support</span>
+            </button>
+
+            {role === "admin" && (
+              <Link
+                href="/admin"
+                className="btn btn-ghost btn-sm header-admin-btn desktop-admin-btn"
+                title="Admin Panel"
+              >
+                <Icon name="settings" size={12} /> <span className="header-btn-text">Admin Panel</span>
+              </Link>
+            )}
+
+            {userSession ? (
+              <a href="/api/auth/logout" className="btn btn-danger btn-sm header-logout-btn desktop-logout-btn" title="Logout">
+                <Icon name="logout" size={12} /> <span className="header-btn-text">Logout</span>
+              </a>
+            ) : null}
+
+            <button
+              type="button"
+              className="legacy-theme-switch desktop-theme-switch"
+              onClick={cycleTheme}
+              title={`Theme: ${theme} — click to switch`}
+              aria-label={`Current theme ${theme}. Switch to ${theme === "letterpress" ? "noir" : theme === "noir" ? "dusk" : "letterpress"}`}
+            >
+              <Icon name={theme === "letterpress" ? "sun" : theme === "noir" ? "moon" : "sparkles"} size={16} />
+            </button>
+
+            {userSession ? (
+              <div className="user-profile-section">
+                <div className="user-profile-card">
+                  <div className="user-profile-avatar-wrapper">
+                    {userSession.picture ? (
+                      <img
+                        src={userSession.picture}
+                        alt={userSession.name || userSession.email}
+                        referrerPolicy="no-referrer"
+                        style={{ width: "30px", height: "30px", borderRadius: "50%", border: "1.5px solid var(--accent)", flexShrink: 0 }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: "30px",
+                          height: "30px",
+                          borderRadius: "50%",
+                          backgroundColor: "var(--accent)",
+                          color: "var(--accent-ink)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontWeight: "bold",
+                          fontSize: "0.8rem",
+                          border: "1.5px solid var(--line)",
+                          flexShrink: 0,
+                        }}
+                        title={userSession.name || userSession.email}
+                      >
+                        {(userSession.name || userSession.email)[0].toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div className="user-profile-info">
+                    <div className="user-profile-header-line">
+                      <span className="user-profile-name">
+                        {userSession.name || userSession.email.split("@")[0]}
+                      </span>
+                      <span
+                        className="user-profile-role-badge"
+                        style={{
+                          backgroundColor: activeRoleBadge.isHighlight ? "var(--accent, #f97316)" : "var(--line, rgba(255,255,255,0.15))",
+                          color: activeRoleBadge.isHighlight ? "#ffffff" : "var(--muted)",
+                        }}
+                      >
+                        <Icon name={activeRoleBadge.icon} size={11} />
+                        {activeRoleBadge.text}
+                      </span>
+                    </div>
+                    <span className="user-profile-email">{userSession.email}</span>
+                  </div>
+                </div>
+                <div className="user-profile-actions mobile-profile-actions">
+                  {role === "admin" && (
+                    <Link
+                      href="/admin"
+                      className="btn btn-ghost btn-sm header-admin-btn"
+                      title="Admin Panel"
+                    >
+                      <Icon name="settings" size={12} /> <span className="header-btn-text">Admin Panel</span>
+                    </Link>
+                  )}
+                  <a href="/api/auth/logout" className="btn btn-danger btn-sm header-logout-btn" title="Logout">
+                    <Icon name="logout" size={12} /> <span className="header-btn-text">Logout</span>
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <div className="user-profile-section">
+                <Link href="/login" className="btn btn-primary btn-sm" style={{ fontWeight: 600, padding: "0.4rem 0.8rem" }}>
+                  <Icon name="user" size={12} /> <span className="header-btn-text">Login to Crew Portal</span>
+                </Link>
+              </div>
+            )}
           </div>
           {role === "admin" && sourceLabel && (
             <span className="banner-source-label" title="Data connection mode">({sourceLabel})</span>

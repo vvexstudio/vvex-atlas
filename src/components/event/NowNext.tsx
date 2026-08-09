@@ -169,7 +169,7 @@ export const NowNext: React.FC<NowNextProps> = ({
               })}
             </span>
           </div>
-          <div className="now-next-date">{displayDateStr} (PDT)</div>
+          <div className="now-next-date">{displayDateStr} ({process.env.NEXT_PUBLIC_EVENT_TIMEZONE || "PDT"})</div>
         </div>
 
         {isSimulated && (

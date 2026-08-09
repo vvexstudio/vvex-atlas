@@ -217,7 +217,7 @@ export async function GET(request: NextRequest) {
       : hasSpecificEventIds
       ? `${matchingEvents.length} Pinned Events`
       : vendorScope.vendorName || token,
-    timezone: "America/Los_Angeles (PDT)",
+    timezone: `America/Los_Angeles (${process.env.NEXT_PUBLIC_EVENT_TIMEZONE || "PDT"})`,
     eventCount: matchingEvents.length,
     events: matchingEvents,
     venues: festivalData.venues || [],

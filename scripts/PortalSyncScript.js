@@ -1180,7 +1180,7 @@ function resetCalendarSyncMetadata() {
  */
 function parseRosDateTime(dateVal, timeVal) {
   if (!dateVal && (timeVal === undefined || timeVal === null || timeVal === "")) return null;
-  let year = 2026, month = 7, day = 24; // Default fallback: Black Rock City 2026 (PDT)
+  let year = 2026, month = 7, day = 24; // Default fallback: Event 2026 (PDT)
 
   if (dateVal instanceof Date && !isNaN(dateVal.getTime())) {
     year = dateVal.getFullYear();

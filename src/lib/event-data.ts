@@ -28,7 +28,7 @@ export type FestivalDataResult = {
   departments?: Department[];
   colors?: Record<string, Record<string, { bg: string; fg: string }>>;
   sourceLabel: string;
-  debug: LocationMatchDebug;
+  debug?: LocationMatchDebug;
 };
 
 function mergeAdminEntries(
@@ -139,7 +139,19 @@ export async function getFestivalDataFromRtdb(role: string = "public"): Promise<
 }
 
 export async function getFestivalDataFromSheets(role: string = "public"): Promise<FestivalDataResult> {
-  const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "1rpmzT4_6NlAOSryN86ROv3mv1Jf4ydColAlk6MrY1zw";
+  const spreadsheetId = (process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "").trim();
+  if (!spreadsheetId) {
+    console.warn("GOOGLE_SHEETS_SPREADSHEET_ID environment variable is missing.");
+    return {
+      events: [],
+      venues: [],
+      personnel: [],
+      departments: [],
+      colors: {},
+      sourceLabel: "No Google Spreadsheet target configured (GOOGLE_SHEETS_SPREADSHEET_ID missing)",
+    };
+  }
+
   const rawTabLocations = process.env.GOOGLE_SHEETS_TAB_LOCATIONS || process.env.SHEETS_TAB_LOCATIONS || "Locations*";
   const rawTabPersonnel = process.env.GOOGLE_SHEETS_TAB_PERSONNEL || process.env.SHEETS_TAB_PERSONNEL || "Personnel*";
   const rawTabDepartments = process.env.GOOGLE_SHEETS_TAB_DEPARTMENTS || process.env.SHEETS_TAB_DEPARTMENTS || "Departments*";
@@ -235,7 +247,19 @@ export async function getFestivalDataFromSheets(role: string = "public"): Promis
 }
 
 export async function getFestivalDataFromCsv(): Promise<FestivalDataResult> {
-  const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "1rpmzT4_6NlAOSryN86ROv3mv1Jf4ydColAlk6MrY1zw";
+  const spreadsheetId = (process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "").trim();
+  if (!spreadsheetId) {
+    console.warn("GOOGLE_SHEETS_SPREADSHEET_ID environment variable is missing.");
+    return {
+      events: [],
+      venues: [],
+      personnel: [],
+      departments: [],
+      colors: {},
+      sourceLabel: "No Google Spreadsheet target configured (GOOGLE_SHEETS_SPREADSHEET_ID missing)",
+    };
+  }
+
   const rawTabLocations = process.env.GOOGLE_SHEETS_TAB_LOCATIONS || process.env.SHEETS_TAB_LOCATIONS || "Locations*";
   const rawTabPersonnel = process.env.GOOGLE_SHEETS_TAB_PERSONNEL || process.env.SHEETS_TAB_PERSONNEL || "Personnel*";
   const rawTabDepartments = process.env.GOOGLE_SHEETS_TAB_DEPARTMENTS || process.env.SHEETS_TAB_DEPARTMENTS || "Departments*";

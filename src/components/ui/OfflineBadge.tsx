@@ -9,6 +9,8 @@ export interface OfflineBadgeProps {
   className?: string;
   compact?: boolean;
   showWhenOnline?: boolean;
+  envLabel?: string;
+  sourceLabel?: string;
 }
 
 function subscribeOnlineStatus(callback: () => void) {
@@ -52,6 +54,8 @@ export function OfflineBadge({
   className = "",
   compact = false,
   showWhenOnline = true,
+  envLabel,
+  sourceLabel,
 }: OfflineBadgeProps) {
   const isNetworkOffline = useSyncExternalStore(
     subscribeOnlineStatus,
@@ -66,20 +70,26 @@ export function OfflineBadge({
     return null;
   }
 
+  const cleanEnv = envLabel ? envLabel.replace(/\s*\((Local|Live)\)/gi, "") : "";
+  const tooltipText = [
+    isOffline ? "Offline Mode (showing cached data)" : "Live Connected",
+    envLabel ? `Env: ${envLabel}` : "",
+    sourceLabel ? `Data: ${sourceLabel}` : "",
+    `Synced at ${syncFormatted}`,
+  ]
+    .filter(Boolean)
+    .join(" • ");
+
   return (
     <div
       className={`offline-badge ${isOffline ? "is-offline" : "is-online"} ${compact ? "is-compact" : ""} ${className}`}
-      title={
-        isOffline
-          ? `Offline Mode — showing cached schedule data synced at ${syncFormatted}`
-          : `Live Connected — last synced at ${syncFormatted}`
-      }
+      title={tooltipText}
       suppressHydrationWarning
     >
       <span className="offline-badge-dot" aria-hidden="true" />
       <Icon name={isOffline ? "wifiOff" : "wifi"} size={compact ? 12 : 14} />
       <span className="offline-badge-text" suppressHydrationWarning>
-        <span className="offline-badge-label">{isOffline ? "Offline" : "Live"}</span>
+        <span className="offline-badge-label">{isOffline ? "Offline" : "Live"}{cleanEnv ? ` (${cleanEnv})` : ""}</span>
         <span className="offline-badge-time" suppressHydrationWarning> • {isOffline ? "Cached" : "Synced"} {syncFormatted}</span>
       </span>
     </div>

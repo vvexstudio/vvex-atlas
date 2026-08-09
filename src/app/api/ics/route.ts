@@ -150,7 +150,7 @@ export async function GET(request: NextRequest) {
   const icsLines: string[] = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//The Portal//Black Rock City Schedule//EN",
+    "PRODID:-//The Portal//Event Schedule//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     `X-WR-CALNAME:${calName}`,
@@ -161,7 +161,7 @@ export async function GET(request: NextRequest) {
     "BEGIN:DAYLIGHT",
     "TZOFFSETFROM:-0800",
     "TZOFFSETTO:-0700",
-    "TZNAME:PDT",
+    `TZNAME:${process.env.NEXT_PUBLIC_EVENT_TIMEZONE || "PDT"}`,
     "DTSTART:19700308T020000",
     "RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU",
     "END:DAYLIGHT",
@@ -184,7 +184,7 @@ export async function GET(request: NextRequest) {
     );
 
     const summary = escapeIcalText(e.title || "Portal Event");
-    const location = escapeIcalText(e.locationName || "Black Rock City");
+    const location = escapeIcalText(e.locationName || "Event Location TBD");
     const description = escapeIcalText(
       e.description || (e.department ? `Department: ${e.department}` : "The Portal Schedule")
     );

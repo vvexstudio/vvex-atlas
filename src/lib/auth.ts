@@ -12,7 +12,11 @@ export interface ApprovedEmail {
  * Fetches and normalizes list of approved emails from Google Sheets
  */
 export async function getApprovedEmails(): Promise<ApprovedEmail[]> {
-  const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "19Xs3TScHhS369n_A8VvUGxszoxncx1p32T8iwNHSKTU";
+  const spreadsheetId = (process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "").trim();
+  if (!spreadsheetId) {
+    console.warn("GOOGLE_SHEETS_SPREADSHEET_ID environment variable is missing.");
+    return [];
+  }
   const tabPersonnel = process.env.GOOGLE_SHEETS_TAB_PERSONNEL || process.env.SHEETS_TAB_PERSONNEL || "Personnel*";
   try {
     const list = await getParsedSheetData<any>(spreadsheetId, tabPersonnel);
@@ -51,7 +55,11 @@ export async function isEmailApproved(email: string): Promise<boolean> {
  * Resolves user role directly from Personnel sheet if auth-directory is not yet populated
  */
 export async function getUserRoleFromPersonnel(email: string): Promise<string | null> {
-  const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "1rpmzT4_6NlAOSryN86ROv3mv1Jf4ydColAlk6MrY1zw";
+  const spreadsheetId = (process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "").trim();
+  if (!spreadsheetId) {
+    console.warn("GOOGLE_SHEETS_SPREADSHEET_ID environment variable is missing.");
+    return null;
+  }
   const tabPersonnel = process.env.GOOGLE_SHEETS_TAB_PERSONNEL || process.env.SHEETS_TAB_PERSONNEL || "Personnel*";
   try {
     const list = await getParsedSheetData<any>(spreadsheetId, tabPersonnel);
