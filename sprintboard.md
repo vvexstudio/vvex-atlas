@@ -215,6 +215,8 @@ Tracked here so we know what to stand up vs. what the client owns. Env var names
 ## 10. Session Log
 > Append newest at top. Format: `YYYY-MM-DD — who — what changed / decided / discovered`.
 
+- **2026-08-10 — agent — Added production deployment & live spreadsheet transition checklist (`reports/production-deployment-checklist.md`) covering Apps Script trigger swap, GCP/Firebase domain authorizations, health linter verification, and Blaze plan confirmation.**
+
 - **2026-08-08 — agent — Implemented wildcard sheet tab pattern resolution (`Locations*`, `Personnel*`, `Departments*`, `Actions*`, `ROS by TIME*`) across `.env.local`, `.env.example`, `.env.local.vvex`, `src/lib/google-sheets-api.ts`, `src/lib/event-data.ts`, `src/lib/auth.ts`, and `scripts/PortalSyncScript.js`. Added `matchTabTitle` helper supporting exact, regex wildcard (`*`, `?`), and prefix fallback matching so clients can append update timestamps and notes (e.g. `ROS by TIME - updated 08/08 DO NOT DELETE`). Added `src/lib/__tests__/tab-wildcard.test.ts` (5 unit tests). Verified 46/46 Vitest unit tests passing, clean ESLint check, and clean Next.js 16 production build.**
 
 - **2026-08-07 — agent — Implemented event inquiry / support report feature via direct `mailto:` links. Added `src/lib/support.ts` helper and `src/lib/__tests__/support.test.ts` unit tests (7 passing). Added `NEXT_PUBLIC_SUPPORT_EMAIL=` to `.env.example`, `.env.local`, and `.env.local.vvex`. Direct 1-click `mailto:` anchors in `EventModal.tsx` and `EventApp.tsx` header auto-populate recipient (`admin@vvexstudio.com`), subject, and structured event body. Verified 41/41 Vitest tests and clean lint checks passing.**
