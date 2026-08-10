@@ -2,8 +2,22 @@ import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getDatabase } from "firebase-admin/database";
 
-const projectId = process.env.FIREBASE_PROJECT_ID;
-const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+function cleanEnvString(val?: string): string | undefined {
+  if (!val) return undefined;
+  let formatted = val.trim();
+  if (
+    (formatted.startsWith('"') && formatted.endsWith('"')) ||
+    (formatted.startsWith("'") && formatted.endsWith("'"))
+  ) {
+    formatted = formatted.substring(1, formatted.length - 1).trim();
+  }
+  return formatted;
+}
+
+const projectId = cleanEnvString(process.env.FIREBASE_PROJECT_ID);
+const clientEmail = cleanEnvString(process.env.FIREBASE_CLIENT_EMAIL);
+const rawDbUrl = cleanEnvString(process.env.FIREBASE_DATABASE_URL);
+
 function formatPrivateKey(key?: string): string | undefined {
   if (!key) return undefined;
   let formatted = key.trim();
@@ -26,7 +40,7 @@ if (getApps().length === 0) {
           clientEmail,
           privateKey,
         }),
-        databaseURL: process.env.FIREBASE_DATABASE_URL || `https://${projectId}-default-rtdb.firebaseio.com`,
+        databaseURL: rawDbUrl || `https://${projectId}-default-rtdb.firebaseio.com`,
       });
       appInitialized = true;
       console.log("Firebase Admin SDK successfully initialized.");

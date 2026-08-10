@@ -2,14 +2,26 @@ import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getDatabase } from "firebase/database";
 
+function cleanEnvString(val?: string): string | undefined {
+  if (!val) return undefined;
+  let formatted = val.trim();
+  if (
+    (formatted.startsWith('"') && formatted.endsWith('"')) ||
+    (formatted.startsWith("'") && formatted.endsWith("'"))
+  ) {
+    formatted = formatted.substring(1, formatted.length - 1).trim();
+  }
+  return formatted;
+}
+
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: cleanEnvString(process.env.NEXT_PUBLIC_FIREBASE_API_KEY),
+  authDomain: cleanEnvString(process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN),
+  databaseURL: cleanEnvString(process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL),
+  projectId: cleanEnvString(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID),
+  storageBucket: cleanEnvString(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET),
+  messagingSenderId: cleanEnvString(process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID),
+  appId: cleanEnvString(process.env.NEXT_PUBLIC_FIREBASE_APP_ID),
 };
 
 const isConfigured = !!(
