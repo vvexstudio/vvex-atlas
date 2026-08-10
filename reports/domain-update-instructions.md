@@ -55,7 +55,7 @@ Add the following record:
 
   Record Type: CNAME
   Name / Subdomain / Host: bm26 (Note: enter just bm26, not the full domain)
-  Target / Value / Points To: <YOUR_FIREBASE_PROJECT_ID>.web.app. (Replace with the exact target provided in Firebase Console)
+  Target / Value / Points To: portal-production--portal-map-app.us-east4.hosted.app (or portal-map-app.web.app per Firebase Console display)
   TTL: 3600 (or Automatic / Default)
 
 (If Firebase provides A records instead of a CNAME, add two A records with Host 'bm26' pointing to the two provided IPv4 addresses).
