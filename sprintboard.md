@@ -215,6 +215,8 @@ Tracked here so we know what to stand up vs. what the client owns. Env var names
 ## 10. Session Log
 > Append newest at top. Format: `YYYY-MM-DD — who — what changed / decided / discovered`.
 
+- **2026-08-10 — agent — Fixed TypeScript type checking errors in `src/lib/__tests__/filters-semantics.test.tsx` and `src/lib/__tests__/support.test.ts`. Supplied missing required `FestivalEvent` fields (`host`, `description`, `type`, `venueId`, `day`, `thumbnailUrl`) and removed non-existent `isFoh`/`isBoh` mock properties. Verified `npx tsc --noEmit`, 46/46 Vitest unit tests, clean ESLint check, and clean Next.js 16 build.**
+
 - **2026-08-10 — agent — Added production deployment & live spreadsheet transition checklist (`reports/production-deployment-checklist.md`) covering Apps Script trigger swap, GCP/Firebase domain authorizations, health linter verification, and Blaze plan confirmation.**
 
 - **2026-08-08 — agent — Implemented wildcard sheet tab pattern resolution (`Locations*`, `Personnel*`, `Departments*`, `Actions*`, `ROS by TIME*`) across `.env.local`, `.env.example`, `.env.local.vvex`, `src/lib/google-sheets-api.ts`, `src/lib/event-data.ts`, `src/lib/auth.ts`, and `scripts/PortalSyncScript.js`. Added `matchTabTitle` helper supporting exact, regex wildcard (`*`, `?`), and prefix fallback matching so clients can append update timestamps and notes (e.g. `ROS by TIME - updated 08/08 DO NOT DELETE`). Added `src/lib/__tests__/tab-wildcard.test.ts` (5 unit tests). Verified 46/46 Vitest unit tests passing, clean ESLint check, and clean Next.js 16 production build.**
