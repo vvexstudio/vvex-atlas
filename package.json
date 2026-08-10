@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:vvex": "node scripts/dev-vvex.js",
     "dev:portal": "node scripts/dev-portal.js",
     "build": "next build",
     "start": "next start",
