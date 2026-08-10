@@ -215,6 +215,8 @@ Tracked here so we know what to stand up vs. what the client owns. Env var names
 ## 10. Session Log
 > Append newest at top. Format: `YYYY-MM-DD — who — what changed / decided / discovered`.
 
+- **2026-08-10 — agent — Updated `.github/workflows/ci.yml` Vocabulary Check step to include the `-I` flag on `git grep`, skipping binary files (e.g. PNG image assets) to eliminate false-positive matches in CI.**
+
 - **2026-08-10 — agent — Fixed TypeScript type checking errors in `src/lib/__tests__/filters-semantics.test.tsx` and `src/lib/__tests__/support.test.ts`. Supplied missing required `FestivalEvent` fields (`host`, `description`, `type`, `venueId`, `day`, `thumbnailUrl`) and removed non-existent `isFoh`/`isBoh` mock properties. Verified `npx tsc --noEmit`, 46/46 Vitest unit tests, clean ESLint check, and clean Next.js 16 build.**
 
 - **2026-08-10 — agent — Added production deployment & live spreadsheet transition checklist (`reports/production-deployment-checklist.md`) covering Apps Script trigger swap, GCP/Firebase domain authorizations, health linter verification, and Blaze plan confirmation.**

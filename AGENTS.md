@@ -31,6 +31,7 @@ A private, reusable interactive **map + run-of-show schedule** app for The Porta
 - Match the surrounding code's style, naming, and structure. No broad rewrites of the big component in early milestones.
 - Before claiming something works, run it: `npm install`, `npm run dev`, `npm run lint`, `npm run build`. Report failures with the actual output.
 - Map rendering needs `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in `.env.local` (and Firebase config/env). Never commit `.env*`.
+- **NEVER commit or push code unless given explicit, step-by-step instructions by the user in that turn.** Even if a task involves fixing a bug or creating a file, complete the file changes and local verification, then STOP. Do not run `git commit` or `git push` unless the user explicitly requests a commit/push.
 - Prefer small, reviewable commits. Branch off `main`; don't commit/push unless asked. **Do NOT add any Co-authored-by or co-committer trailers to commit messages. Agents must never take co-author credit or use the antigravity@google.com email.**
 - **Never push to remote without explicit permission from the user.** The repository is configured with a git pre-push hook that prevents pushes unless interactive confirmation is given, or bypassed via `PORTAL_ALLOW_PUSH=true git push`.
 - Keep `proposal.md`, `sprintboard.md`, and the schema template consistent with each other when scope changes.
