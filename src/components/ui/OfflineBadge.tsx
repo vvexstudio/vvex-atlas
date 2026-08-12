@@ -34,13 +34,11 @@ const formatSyncTimestamp = (ts?: string | null): string => {
   try {
     const date = ts ? new Date(ts) : new Date();
     if (isNaN(date.getTime())) {
-      const now = new Date();
-      return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+      return new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
     }
-    return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+    return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
   } catch {
-    const now = new Date();
-    return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    return new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
   }
 };
 
@@ -57,6 +55,12 @@ export function OfflineBadge({
   envLabel,
   sourceLabel,
 }: OfflineBadgeProps) {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const isNetworkOffline = useSyncExternalStore(
     subscribeOnlineStatus,
     getOnlineSnapshot,
@@ -64,7 +68,7 @@ export function OfflineBadge({
   );
 
   const isOffline = propIsOffline !== undefined ? propIsOffline : isNetworkOffline;
-  const syncFormatted = formatSyncTimestamp(lastSynced);
+  const syncFormatted = mounted ? formatSyncTimestamp(lastSynced) : "";
 
   if (!isOffline && !showWhenOnline) {
     return null;
@@ -75,7 +79,7 @@ export function OfflineBadge({
     isOffline ? "Offline Mode (showing cached data)" : "Live Connected",
     envLabel ? `Env: ${envLabel}` : "",
     sourceLabel ? `Data: ${sourceLabel}` : "",
-    `Synced at ${syncFormatted}`,
+    syncFormatted ? `Synced at ${syncFormatted}` : "",
   ]
     .filter(Boolean)
     .join(" • ");
@@ -90,7 +94,9 @@ export function OfflineBadge({
       <Icon name={isOffline ? "wifiOff" : "wifi"} size={compact ? 12 : 14} />
       <span className="offline-badge-text" suppressHydrationWarning>
         <span className="offline-badge-label">{isOffline ? "Offline" : "Live"}{cleanEnv ? ` (${cleanEnv})` : ""}</span>
-        <span className="offline-badge-time" suppressHydrationWarning> • {isOffline ? "Cached" : "Synced"} {syncFormatted}</span>
+        {mounted && syncFormatted && (
+          <span className="offline-badge-time" suppressHydrationWarning> • {isOffline ? "Cached" : "Synced"} {syncFormatted}</span>
+        )}
       </span>
     </div>
   );

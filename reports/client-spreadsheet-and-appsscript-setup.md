@@ -87,6 +87,11 @@ Ensure the spreadsheet contains the canonical tabs below (wildcard suffixes such
 | `SPREADSHEET_ID` | `<THE_NEW_CLIENT_SPREADSHEET_ID>` | Extracted from Sheet URL |
 | `SA_CLIENT_EMAIL` | `firebase-adminsdk-fbsvc@portal-map-app.iam.gserviceaccount.com` | Service Account Email |
 | `SA_PRIVATE_KEY` | `-----BEGIN PRIVATE KEY-----\n...` | Service Account Private Key |
+| `SHEETS_TAB_LOCATIONS` | `*Locations*` | Locations sheet tab name/pattern |
+| `SHEETS_TAB_PERSONNEL` | `*Personnel*` | Personnel sheet tab name/pattern |
+| `SHEETS_TAB_DEPARTMENTS` | `*Departments*` | Departments sheet tab name/pattern |
+| `SHEETS_TAB_ACTIONS` | `*Actions*` | Actions sheet tab name/pattern |
+| `SHEETS_TAB_ROS` | `*ROS by Time*` | ROS schedule tab name/pattern |
 
 > 💡 **Note on `SA_PRIVATE_KEY`**: Copy the complete private key string from your Service Account JSON key (or `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` in `.env.local`), including `-----BEGIN PRIVATE KEY-----` and `-----END PRIVATE KEY-----`.
 

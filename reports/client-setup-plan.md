@@ -200,10 +200,10 @@ During this setup, you will generate and collect the following keys to populate 
 
 - [ ] **Step 4.2: Share Sheet with Service Account**
   - Open the Google Sheet $\rightarrow$ Click **Share**.
-  - Paste the Service Account email (`portal-backend-sync@...iam.gserviceaccount.com`).
+  - Paste the Service Account email (`firebase-adminsdk-fbsvc@portal-map-app.iam.gserviceaccount.com`).
   - Set Role to **Editor** $\rightarrow$ Uncheck notify $\rightarrow$ Click **Share**.
 
-- [ ] **Step 4.3: Bind Google Apps Script**
+- [ ] **Step 4.3: Bind Google Apps Script Files**
   - Inside the Google Sheet, navigate to **Extensions $\rightarrow$ Apps Script**.
   - Open `appsscript.json` (Project Settings $\rightarrow$ Check "Show appsscript.json manifest file in editor").
   - Replace content with `scripts/appsscript.json`:
@@ -222,13 +222,16 @@ During this setup, you will generate and collect the following keys to populate 
     }
     ```
   - Clear `Code.gs` and paste the full contents of `scripts/PortalSyncScript.js`.
+  - Add HTML template file: Click **+** (Add a file) $\rightarrow$ **HTML** $\rightarrow$ name it `email-templates/onboarding` $\rightarrow$ paste `scripts/email-templates/onboarding.html`.
 
 - [ ] **Step 4.4: Configure Apps Script Properties**
   - In Apps Script left sidebar, click ⚙️ **Project Settings**.
   - Scroll to **Script Properties** $\rightarrow$ Click **Add script property**:
     - `FIREBASE_DB_URL`: `https://portal-map-app-default-rtdb.firebaseio.com/`
-    - `APP_URL`: `https://app.theportal.is` (or production URL)
-    - `SPREADSHEET_ID`: `<SPREADSHEET_ID>`
+    - `APP_URL`: `https://bm26.theportal.is`
+    - `SPREADSHEET_ID`: `<THE_CLIENT_SPREADSHEET_ID>`
+    - `SA_CLIENT_EMAIL`: `firebase-adminsdk-fbsvc@portal-map-app.iam.gserviceaccount.com`
+    - `SA_PRIVATE_KEY`: `-----BEGIN PRIVATE KEY-----\n...` (from `.env.local`)
 
 - [ ] **Step 4.5: Authorize Scopes & Run Initial Sync**
   - Return to Editor $\rightarrow$ Select function **`syncAllToFirebase`** $\rightarrow$ Click **Run**.

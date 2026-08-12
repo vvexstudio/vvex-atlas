@@ -118,19 +118,11 @@ export async function verifySessionCookie(cookieValue: string): Promise<UserSess
 export function isAdminEmail(email: string): boolean {
   if (!email) return false;
   const cleanEmail = email.trim().toLowerCase();
-  
+
   const adminEmailsStr = (process.env.ADMIN_EMAILS || "") + "," + (process.env.ADMIN_EMAIL || "");
-  const defaultAdminEmails = [
-    "admin@vvexstudio.com",
-    "juliavved@gmail.com",
-    "vincent@drmbt.com",
-    "vvexstudio@gmail.com"
-  ];
-  
-  const adminEmails = new Set([
-    ...defaultAdminEmails,
-    ...adminEmailsStr.split(",").map(e => e.trim().toLowerCase()).filter(Boolean)
-  ]);
-    
+  const adminEmails = new Set(
+    adminEmailsStr.split(",").map(e => e.trim().toLowerCase()).filter(Boolean)
+  );
+
   return adminEmails.has(cleanEmail);
 }

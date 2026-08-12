@@ -993,13 +993,12 @@ export function EventApp({
           {/* eslint-disable-next-line @next/next/no-img-element -- static 26px brand mark, next/image is overkill */}
           <img src="/icon.png?v=solaris" alt="" className="banner-brand-mark" width={26} height={26} suppressHydrationWarning />
           <h1 className="legacy-banner-heading">The Portal</h1>
-          <span className="chip chip-accent eyebrow eyebrow-accent header-chip-location">
+          <span className="chip chip-accent eyebrow eyebrow-accent header-chip-location" suppressHydrationWarning>
             {process.env.NEXT_PUBLIC_EVENT_TIMEZONE || "PDT"}
           </span>
           {(() => {
-            const isLive = typeof window !== "undefined" && !window.location.hostname.includes("localhost") && !window.location.hostname.includes("127.0.0.1");
-            const isProd = appEnvironment === "PROD" || (typeof window !== "undefined" && (window.location.hostname.includes("portal-map-app") || window.location.hostname.includes("portal-production")));
-            const envBadgeText = role === "admin" ? (isProd ? (isLive ? "PROD (Live)" : "PROD (Local)") : (isLive ? "DEV (Live)" : "DEV (Local)")) : undefined;
+            const isProd = appEnvironment === "PROD";
+            const envBadgeText = role === "admin" ? (isProd ? "PROD" : "DEV") : undefined;
 
             return (
               <OfflineBadge
