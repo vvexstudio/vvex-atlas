@@ -93,10 +93,10 @@ export function OfflineBadge({
       <span className="offline-badge-dot" aria-hidden="true" />
       <Icon name={isOffline ? "wifiOff" : "wifi"} size={compact ? 12 : 14} />
       <span className="offline-badge-text" suppressHydrationWarning>
-        <span className="offline-badge-label">{isOffline ? "Offline" : "Live"}{cleanEnv ? ` (${cleanEnv})` : ""}</span>
-        {mounted && syncFormatted && (
+        <span className="offline-badge-label" suppressHydrationWarning>{isOffline ? "Offline" : "Live"}{cleanEnv ? ` (${cleanEnv})` : ""}</span>
+        {mounted && syncFormatted ? (
           <span className="offline-badge-time" suppressHydrationWarning> • {isOffline ? "Cached" : "Synced"} {syncFormatted}</span>
-        )}
+        ) : null}
       </span>
     </div>
   );

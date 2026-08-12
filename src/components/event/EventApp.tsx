@@ -32,14 +32,14 @@ const timeToMinutes = (timeStr: string): number => {
   const compact = timeStr.replace(/\s+/g, "").toLowerCase();
   const match = compact.match(/^(\d{1,2})(?::(\d{2}))?([ap]m|m)?$/);
   if (!match) return -1;
-  
+
   let hours = Number(match[1]);
   const minutes = Number(match[2] ?? "0");
   const suffix = match[3];
-  
+
   if (suffix === "pm" && hours < 12) hours += 12;
   if ((suffix === "am" || suffix === "m") && hours === 12) hours = 0;
-  
+
   return hours * 60 + minutes;
 };
 
@@ -54,7 +54,7 @@ const getActiveHoursForDay = (dayEvents: FestivalEvent[]): number[] => {
     } else if (endMin < startMin) {
       endMin = 24 * 60;
     }
-    
+
     const startHour = Math.floor(startMin / 60);
     const endHour = Math.ceil(endMin / 60) - 1;
     for (let h = startHour; h <= endHour; h++) {
@@ -504,22 +504,22 @@ export function EventApp({
     let initialColScale = 0;
     let initialHourScale = 0;
     let initialSchedScale = 0;
-    
+
     let initialTouch0 = { x: 0, y: 0 };
     let initialTouch1 = { x: 0, y: 0 };
 
     const handleTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
         e.preventDefault();
-        
+
         initialTouch0 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
         initialTouch1 = { x: e.touches[1].clientX, y: e.touches[1].clientY };
-        
+
         initialDist = Math.hypot(
           initialTouch0.x - initialTouch1.x,
           initialTouch0.y - initialTouch1.y
         );
-        
+
         const scales = scaleRef.current;
         initialColScale = scales.columnWidthScale;
         initialHourScale = scales.hourHeightScale;
@@ -530,10 +530,10 @@ export function EventApp({
     const handleTouchMove = (e: TouchEvent) => {
       if (e.touches.length === 2) {
         e.preventDefault();
-        
+
         const touch0 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
         const touch1 = { x: e.touches[1].clientX, y: e.touches[1].clientY };
-        
+
         const currentDist = Math.hypot(
           touch0.x - touch1.x,
           touch0.y - touch1.y
@@ -541,14 +541,14 @@ export function EventApp({
 
         if (initialDist > 0) {
           const ratio = currentDist / initialDist;
-          
+
           if (mainTab === "calendar") {
             const initialDeltaX = Math.abs(initialTouch0.x - initialTouch1.x);
             const initialDeltaY = Math.abs(initialTouch0.y - initialTouch1.y);
-            
+
             const currentDeltaX = Math.abs(touch0.x - touch1.x);
             const currentDeltaY = Math.abs(touch0.y - touch1.y);
-            
+
             if (initialDeltaX > 10) {
               const scaleRatioX = currentDeltaX / (initialDeltaX || 1);
               const newColScale = Math.min(400, Math.max(100, Math.round(initialColScale * scaleRatioX)));
@@ -743,8 +743,8 @@ export function EventApp({
     const containerEl = mainTab === "schedule"
       ? mainContentRef.current
       : mainTab === "calendar"
-      ? calendarScrollContainerRef.current
-      : null;
+        ? calendarScrollContainerRef.current
+        : null;
 
     if (!containerEl) return;
 
@@ -942,7 +942,7 @@ export function EventApp({
     } else if (mainTab === "calendar") {
       setTimeout(() => {
         const el = document.getElementById(`event-card-dept-${event.id}`) ||
-                   document.getElementById(`event-card-loc-${event.id}`);
+          document.getElementById(`event-card-loc-${event.id}`);
         if (el) {
           el.scrollIntoView({ behavior: "smooth", block: "center" });
         }
@@ -1231,7 +1231,7 @@ export function EventApp({
                 <Icon name="star" size={16} filled={isMyScheduleOnly} />
               </button>
             </div>
-            
+
             <div className="main-tabs-header-controls">
               {mainTab === "schedule" && (
                 <div className="tab-header-scale-item">

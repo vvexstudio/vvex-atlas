@@ -41,7 +41,7 @@ self.addEventListener("fetch", (event) => {
 
   // Skip hot module reloading paths or auth API requests
   if (
-    event.request.url.includes("/_next/webpack-hmr") || 
+    event.request.url.includes("/_next/webpack-hmr") ||
     event.request.url.includes("/api/auth") ||
     event.request.url.includes("/api/admin")
   ) {
@@ -58,8 +58,8 @@ self.addEventListener("fetch", (event) => {
               caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
             }
           })
-          .catch(() => {}); // Ignore network failure when offline
-        
+          .catch(() => { }); // Ignore network failure when offline
+
         return cachedResponse;
       }
 

@@ -41,6 +41,7 @@ async function getAccessToken(): Promise<string> {
   try {
     const res = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
+      cache: "no-store",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         client_id: clientId,
@@ -76,6 +77,7 @@ export async function getSpreadsheetValues(spreadsheetId: string, range: string)
 
   try {
     const res = await fetch(url, {
+      cache: "no-store",
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -210,7 +212,7 @@ export async function getParsedSheetDataFromPublicCsv<T extends Record<string, a
   const url = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(resolvedTab)}`;
 
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) {
       throw new Error(`HTTP status ${res.status}: ${res.statusText}`);
     }
@@ -257,6 +259,7 @@ export async function getSpreadsheetSheets(spreadsheetId: string): Promise<strin
 
   try {
     const res = await fetch(url, {
+      cache: "no-store",
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -290,6 +293,7 @@ export async function getSpreadsheetWithFormatting(
 
   try {
     const res = await fetch(url, {
+      cache: "no-store",
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
