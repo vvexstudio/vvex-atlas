@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ref, onValue } from "firebase/database";
-import { clientDb } from "@/lib/firebase-client";
+import { clientAuth, clientDb } from "@/lib/firebase-client";
+import { onAuthStateChanged } from "firebase/auth";
 import { Venue, FestivalEvent, Department } from "@/types/festival";
 import { saveOfflineSnapshot, loadOfflineSnapshot } from "@/lib/offline-cache";
 import { parseSpreadsheetData } from "@/lib/event-mapper";
@@ -87,116 +88,135 @@ export const useEventData = (role: string | null, initialData: InitialData) => {
       return;
     }
 
-    const nodePath = role === "admin" ? "admin-data" : (role === "crew" ? "crew-data" : "public-data");
-    const dbRef = ref(db, nodePath);
-    
-    console.log(`Establishing real-time listener on path: /${nodePath}`);
-    const unsubscribe = onValue(
-      dbRef,
-      (snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          console.log(`Realtime update received for path: /${nodePath}`);
-          
-          const locationsData = data.venues || [];
-          const rosData = data.events || [];
-          const personnelData = data.personnel || [];
-          const departmentsData = data.departments || [];
-          const adminEntriesMap = data.entries || {};
+    let unsubscribeDb: (() => void) | null = null;
+    let unsubscribeAuth: (() => void) | null = null;
 
-          const mapped = parseSpreadsheetData(locationsData, rosData, personnelData, departmentsData);
-
-          const adminVenues: Venue[] = [];
-          const adminEvents: FestivalEvent[] = [];
-          const adminEntriesList = Object.values(adminEntriesMap);
-
-          adminEntriesList.forEach((entryRaw: any) => {
-            const entry = entryRaw;
-            if (!entry || typeof entry !== "object") return;
-            const hasLocation = entry.hasLocation && entry.lat !== undefined && entry.lng !== undefined;
+    const setupListener = () => {
+      const nodePath = role === "admin" ? "admin-data" : (role === "crew" ? "crew-data" : "public-data");
+      const dbRef = ref(db, nodePath);
+      
+      console.log(`Establishing real-time listener on path: /${nodePath}`);
+      return onValue(
+        dbRef,
+        (snapshot) => {
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            console.log(`Realtime update received for path: /${nodePath}`);
             
-            if (hasLocation) {
-              adminVenues.push({
-                id: entry.id,
-                name: entry.name,
-                label: entry.serviceType ? "Service" : (entry.projectType === "venue" ? "Venue" : "Installation"),
-                mapLabel: entry.name,
-                shortDescription: entry.artist ? `By ${entry.artist}` : "",
-                description: entry.abridgedProjectText || "",
-                x: 0,
-                y: 0,
-                lat: Number(entry.lat),
-                lng: Number(entry.lng),
-                hasLocation: true,
-                thumbnailUrl: "",
-                accent: entry.projectType === "services" ? "#9a6a1b" : "#bc5c2d",
-                permanence: entry.permanence || entry.projectType || "venue",
-              });
-            }
+            const locationsData = data.venues || [];
+            const rosData = data.events || [];
+            const personnelData = data.personnel || [];
+            const departmentsData = data.departments || [];
+            const adminEntriesMap = data.entries || {};
 
-            if (entry.hasSchedule) {
-              const matchEvent = mapped.events.find(e => e.day === entry.day);
-              const scheduleDate = matchEvent ? matchEvent.scheduleDate : (entry.day === "fri" ? "2026-08-28" : (entry.day === "sat" ? "2026-08-29" : "2026-08-30"));
+            const mapped = parseSpreadsheetData(locationsData, rosData, personnelData, departmentsData);
+
+            const adminVenues: Venue[] = [];
+            const adminEvents: FestivalEvent[] = [];
+            const adminEntriesList = Object.values(adminEntriesMap);
+
+            adminEntriesList.forEach((entryRaw: any) => {
+              const entry = entryRaw;
+              if (!entry || typeof entry !== "object") return;
+              const hasLocation = entry.hasLocation && entry.lat !== undefined && entry.lng !== undefined;
               
-              adminEvents.push({
-                id: `event-${entry.id}`,
-                venueId: entry.id,
-                title: entry.name,
-                host: entry.artist || "",
-                description: entry.abridgedProjectText || "",
-                day: entry.day,
-                startTime: entry.startTime,
-                endTime: entry.endTime,
-                type: entry.projectType,
-                thumbnailUrl: "",
-                hasLocation,
-                lat: entry.lat,
-                lng: entry.lng,
-                source: "admin",
-                scheduleDate,
-                locationName: entry.locationInternal || "",
-                department: entry.projectType === "services" ? "Services" : "Art",
-                leadPointPerson: entry.artist || "",
-              });
-            }
-          });
+              if (hasLocation) {
+                adminVenues.push({
+                  id: entry.id,
+                  name: entry.name,
+                  label: entry.serviceType ? "Service" : (entry.projectType === "venue" ? "Venue" : "Installation"),
+                  mapLabel: entry.name,
+                  shortDescription: entry.artist ? `By ${entry.artist}` : "",
+                  description: entry.abridgedProjectText || "",
+                  x: 0,
+                  y: 0,
+                  lat: Number(entry.lat),
+                  lng: Number(entry.lng),
+                  hasLocation: true,
+                  thumbnailUrl: "",
+                  accent: entry.projectType === "services" ? "#9a6a1b" : "#bc5c2d",
+                  permanence: entry.permanence || entry.projectType || "venue",
+                });
+              }
 
-          const finalVenues = [...mapped.venues, ...adminVenues];
-          const rawEvents = [...mapped.events, ...adminEvents];
-          const finalEvents = filterEventsByRole(rawEvents, activeRole);
+              if (entry.hasSchedule) {
+                const matchEvent = mapped.events.find(e => e.day === entry.day);
+                const scheduleDate = matchEvent ? matchEvent.scheduleDate : (entry.day === "fri" ? "2026-08-28" : (entry.day === "sat" ? "2026-08-29" : "2026-08-30"));
+                
+                adminEvents.push({
+                  id: `event-${entry.id}`,
+                  venueId: entry.id,
+                  title: entry.name,
+                  host: entry.artist || "",
+                  description: entry.abridgedProjectText || "",
+                  day: entry.day,
+                  startTime: entry.startTime,
+                  endTime: entry.endTime,
+                  type: entry.projectType,
+                  thumbnailUrl: "",
+                  hasLocation,
+                  lat: entry.lat,
+                  lng: entry.lng,
+                  source: "admin",
+                  scheduleDate,
+                  locationName: entry.locationInternal || "",
+                  department: entry.projectType === "services" ? "Services" : "Art",
+                  leadPointPerson: entry.artist || "",
+                });
+              }
+            });
 
-          setVenues(finalVenues);
-          setEvents(finalEvents);
-          setPersonnel(mapped.personnel);
-          setDepartments(mapped.departments);
-          setSourceLabel(`Firebase RTD Live (${(activeRole || "public").toUpperCase()})`);
-          
-          // Cache snapshot locally for offline fallback
-          saveOfflineSnapshot(finalVenues, finalEvents, mapped.personnel, mapped.departments, activeRole);
-          setLastSynced(new Date().toISOString());
+            const finalVenues = [...mapped.venues, ...adminVenues];
+            const rawEvents = [...mapped.events, ...adminEvents];
+            const finalEvents = filterEventsByRole(rawEvents, activeRole);
+
+            setVenues(finalVenues);
+            setEvents(finalEvents);
+            setPersonnel(mapped.personnel);
+            setDepartments(mapped.departments);
+            setSourceLabel(`Firebase RTD Live (${(activeRole || "public").toUpperCase()})`);
+            
+            // Cache snapshot locally for offline fallback
+            saveOfflineSnapshot(finalVenues, finalEvents, mapped.personnel, mapped.departments, activeRole);
+            setLastSynced(new Date().toISOString());
+          }
+        },
+        (error) => {
+          console.warn(`RTDB read failed on path /${nodePath}:`, error);
+          // Fallback to role-scoped cache on DB error if available and non-empty
+          const cached = loadOfflineSnapshot(activeRole);
+          if (cached && cached.events.length > 0) {
+            setVenues(cached.venues);
+            setEvents(cached.events);
+            setPersonnel(cached.personnel);
+            setDepartments(cached.departments);
+            const timeStr = new Date(cached.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+            setSourceLabel(`Offline Cache (${activeRole.toUpperCase()}, Synced ${timeStr})`);
+            setLastSynced(cached.timestamp);
+          } else if (initialData.events && initialData.events.length > 0) {
+            console.log("Preserving server initialData on RTDB error.");
+            setSourceLabel(initialData.dataSourceLabel || `Server Data (${activeRole.toUpperCase()})`);
+          }
         }
-      },
-      (error) => {
-        console.warn(`RTDB read failed on path /${nodePath}:`, error);
-        // Fallback to role-scoped cache on DB error if available and non-empty
-        const cached = loadOfflineSnapshot(activeRole);
-        if (cached && cached.events.length > 0) {
-          setVenues(cached.venues);
-          setEvents(cached.events);
-          setPersonnel(cached.personnel);
-          setDepartments(cached.departments);
-          const timeStr = new Date(cached.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-          setSourceLabel(`Offline Cache (${activeRole.toUpperCase()}, Synced ${timeStr})`);
-          setLastSynced(cached.timestamp);
-        } else if (initialData.events && initialData.events.length > 0) {
-          console.log("Preserving server initialData on RTDB error.");
-          setSourceLabel(initialData.dataSourceLabel || `Server Data (${activeRole.toUpperCase()})`);
+      );
+    };
+
+    if (clientAuth && (role === "admin" || role === "crew")) {
+      unsubscribeAuth = onAuthStateChanged(clientAuth, () => {
+        if (unsubscribeDb) {
+          unsubscribeDb();
+          unsubscribeDb = null;
         }
-      }
-    );
+        unsubscribeDb = setupListener();
+      });
+    } else {
+      unsubscribeDb = setupListener();
+    }
 
     return () => {
-      unsubscribe();
+      if (unsubscribeDb) unsubscribeDb();
+      if (unsubscribeAuth) unsubscribeAuth();
+      const nodePath = role === "admin" ? "admin-data" : (role === "crew" ? "crew-data" : "public-data");
       console.log(`Unsubscribed from path: /${nodePath}`);
     };
   }, [role, isOffline]);

@@ -18,6 +18,7 @@ vi.mock("firebase/database", () => {
 vi.mock("@/lib/firebase-client", () => {
   return {
     clientDb: {},
+    clientAuth: null,
   };
 });
 
