@@ -16,7 +16,40 @@ const CONFIG = {
   },
   SENDER_EMAIL: PropertiesService.getScriptProperties().getProperty("SENDER_EMAIL") || "",
   SPREADSHEET_ID: "",
+  SHEETS_TAB_LOCATIONS: PropertiesService.getScriptProperties().getProperty("SHEETS_TAB_LOCATIONS") || "*Locations*",
+  SHEETS_TAB_PERSONNEL: PropertiesService.getScriptProperties().getProperty("SHEETS_TAB_PERSONNEL") || "*Personnel*",
+  SHEETS_TAB_DEPARTMENTS: PropertiesService.getScriptProperties().getProperty("SHEETS_TAB_DEPARTMENTS") || "*Departments*",
+  SHEETS_TAB_ACTIONS: PropertiesService.getScriptProperties().getProperty("SHEETS_TAB_ACTIONS") || "*Actions*",
+  SHEETS_TAB_ROS: PropertiesService.getScriptProperties().getProperty("SHEETS_TAB_ROS") || "*ROS by Time*",
 };
+
+/**
+ * Tab name resolvers using CONFIG script properties with wildcard/fallback matching
+ */
+function getLocationsSheet(ss) {
+  if (!ss) return null;
+  return findSheetByNameOrPattern(ss, CONFIG.SHEETS_TAB_LOCATIONS) || findSheetByNameOrPattern(ss, "Locations*") || findSheetByNameOrPattern(ss, "Locations");
+}
+
+function getPersonnelSheet(ss) {
+  if (!ss) return null;
+  return findSheetByNameOrPattern(ss, CONFIG.SHEETS_TAB_PERSONNEL) || findSheetByNameOrPattern(ss, "Personnel*") || findSheetByNameOrPattern(ss, "Personnel");
+}
+
+function getDepartmentsSheet(ss) {
+  if (!ss) return null;
+  return findSheetByNameOrPattern(ss, CONFIG.SHEETS_TAB_DEPARTMENTS) || findSheetByNameOrPattern(ss, "Departments*") || findSheetByNameOrPattern(ss, "Departments");
+}
+
+function getActionsSheet(ss) {
+  if (!ss) return null;
+  return findSheetByNameOrPattern(ss, CONFIG.SHEETS_TAB_ACTIONS) || findSheetByNameOrPattern(ss, "Actions*") || findSheetByNameOrPattern(ss, "Actions");
+}
+
+function getRosSheet(ss) {
+  if (!ss) return null;
+  return findSheetByNameOrPattern(ss, CONFIG.SHEETS_TAB_ROS) || findSheetByNameOrPattern(ss, "ROS by TIME*") || findSheetByNameOrPattern(ss, "ROS by TIME") || findSheetByNameOrPattern(ss, "ROS*");
+}
 
 /**
  * Main trigger function to run the sync
@@ -42,17 +75,19 @@ function syncAllToFirebase() {
     }
 
     // 1. Read sheet tabs
-    const locations = readSheetToJson(findSheetByNameOrPattern(ss, "Locations*") || findSheetByNameOrPattern(ss, "Locations"));
-    const personnel = readSheetToJson(findSheetByNameOrPattern(ss, "Personnel*") || findSheetByNameOrPattern(ss, "Personnel"));
-    const ros = readSheetToJson(findSheetByNameOrPattern(ss, "ROS by TIME*") || findSheetByNameOrPattern(ss, "ROS by TIME") || findSheetByNameOrPattern(ss, "ROS*"));
-    const departments = readSheetToJson(findSheetByNameOrPattern(ss, "Departments*") || findSheetByNameOrPattern(ss, "Departments"));
+    const locations = readSheetToJson(getLocationsSheet(ss));
+    const personnel = readSheetToJson(getPersonnelSheet(ss));
+    const ros = readSheetToJson(getRosSheet(ss));
+    const departments = readSheetToJson(getDepartmentsSheet(ss));
+    const actions = readSheetToJson(getActionsSheet(ss));
 
     // 2. Format & Map data to structure
     const data = {
       venues: locations,
       personnel: personnel,
       events: ros,
-      departments: departments
+      departments: departments,
+      actions: actions
     };
 
     // 3. Write data to public-data, crew-data, and admin-data nodes in Firebase
@@ -63,6 +98,7 @@ function syncAllToFirebase() {
     writeToFirebase("crew-data/events", ros);
     writeToFirebase("crew-data/departments", departments);
     writeToFirebase("crew-data/personnel", personnel);
+    writeToFirebase("crew-data/actions", actions);
 
     // 3a. Write sync heartbeat
     writeToFirebase("crew-data/metadata/heartbeat", {
@@ -84,13 +120,13 @@ function syncAllToFirebase() {
       if (email) {
         const escapedEmail = email.toLowerCase().replace(/\./g, ",");
 
-        // Find access level role key: prioritize "app_role" or "access" over generic "role" (job title)
+        // Find access level role key: prioritize "app_role", "app_access", or "role"
         let roleKey = Object.keys(person).find(k => {
           const clean = k.toLowerCase().trim();
-          return clean === "app_role" || clean === "app role" || clean === "app_access" || clean === "auth_role";
+          return clean === "app_role" || clean === "app role" || clean === "app_access" || clean === "auth_role" || clean === "access";
         });
         if (!roleKey) {
-          roleKey = Object.keys(person).find(k => k.toLowerCase().includes("role"));
+          roleKey = Object.keys(person).find(k => k.toLowerCase().includes("role") || k.toLowerCase().includes("type") || k.toLowerCase().includes("access"));
         }
         const roleVal = roleKey ? String(person[roleKey]).trim() : "";
 
@@ -98,12 +134,16 @@ function syncAllToFirebase() {
         let depts = [];
 
         const lowerRoleVal = roleVal.toLowerCase();
+
         if (lowerRoleVal === "admin" || lowerRoleVal.includes("admin")) {
           role = "admin";
           depts = ["All Departments"];
-        } else if (lowerRoleVal === "public" || !roleVal) {
+        } else if (lowerRoleVal === "public" || lowerRoleVal === "guest") {
           role = "guest";
           depts = ["Public"];
+        } else if (!roleVal) {
+          role = "crew";
+          depts = ["All Departments"];
         } else {
           role = "crew";
           depts = parseCsvList(roleVal);
@@ -158,7 +198,7 @@ function processOnboardingInvites(startRow) {
 
   startRow = startRow || 2;
   const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID || SpreadsheetApp.getActiveSpreadsheet().getId());
-  const sheet = ss.getSheetByName("Personnel");
+  const sheet = getPersonnelSheet(ss);
   if (!sheet) return;
 
   // Build department to calendar mapping from Departments tab
@@ -193,7 +233,7 @@ function processOnboardingInvites(startRow) {
     const sendInvite = row[sendInviteColIdx - 1];
     const userName = (nameColIdx > 0 && row[nameColIdx - 1]) ? String(row[nameColIdx - 1]).trim() : email.split("@")[0];
     const roleVal = (roleColIdx > 0 && row[roleColIdx - 1]) ? String(row[roleColIdx - 1]).trim() : "";
-    
+
     let role = "guest";
     let depts = [];
 
@@ -337,7 +377,7 @@ function processOnboardingInvites(startRow) {
           if (isAdmin) {
             // Build calendar subscription buttons for admins (unique department list from Departments sheet)
             const seenCalIds = new Set();
-            const deptSheet = ss.getSheetByName("Departments");
+            const deptSheet = getDepartmentsSheet(ss);
             const deptRows = deptSheet ? readSheetToJson(deptSheet) : [];
             let calendarLinksHtml = "";
 
@@ -484,9 +524,17 @@ function readSheetToJson(sheet) {
   const displayValues = range.getDisplayValues();
   if (values.length < 2) return [];
 
-  // Detect and skip a banner row if it's mostly empty (<= 2 non-empty cells)
+  // Dynamic header row detection: check if Row 1 contains header keywords or > 2 non-empty cells
   let headerRowIdx = 0;
-  if (sheet.getName() === "ROS by TIME" || (values[0].filter(val => String(val).trim() !== "").length <= 2 && values.length > 2)) {
+  const row0Clean = values[0].map(v => String(v).trim().toLowerCase()).filter(Boolean);
+  const row1Clean = values.length > 1 ? values[1].map(v => String(v).trim().toLowerCase()).filter(Boolean) : [];
+
+  const headerKeywords = ["date", "time", "location", "event", "title", "department", "dept", "name", "email", "action", "lead", "personnel", "venue", "role"];
+  const row0HasKeywords = row0Clean.some(cell => headerKeywords.some(kw => cell.indexOf(kw) !== -1));
+  const row1HasKeywords = row1Clean.some(cell => headerKeywords.some(kw => cell.indexOf(kw) !== -1));
+
+  // If Row 0 has <= 2 cells or lacks keywords, while Row 1 has keywords/more cells, offset to Row 1
+  if ((row0Clean.length <= 2 || !row0HasKeywords) && row1HasKeywords && values.length > 2) {
     headerRowIdx = 1;
   }
 
@@ -497,18 +545,27 @@ function readSheetToJson(sheet) {
     const row = values[i];
     const displayRow = displayValues ? displayValues[i] : null;
     const obj = {};
+    let hasData = false;
+
     headers.forEach((header, index) => {
       if (header) {
         let val = row[index];
         if (val instanceof Date) {
-          // Use formatted cell display string for Date objects to avoid ISO UTC +8h timezone shifts
           val = displayRow && displayRow[index] !== undefined && displayRow[index] !== "" ? displayRow[index] : val.toString();
+        }
+        if (val !== undefined && val !== null && String(val).trim() !== "") {
+          hasData = true;
         }
         obj[header] = val;
       }
     });
-    rows.push(obj);
+
+    if (hasData) {
+      rows.push(obj);
+    }
   }
+
+  Logger.log("📂 readSheetToJson ['" + sheet.getName() + "']: Found " + rows.length + " data rows using header row " + (headerRowIdx + 1));
   return rows;
 }
 
@@ -685,7 +742,7 @@ function parseCsvList(str) {
 
 function testPersonnelData() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("Personnel");
+  const sheet = getPersonnelSheet(ss);
   if (!sheet) {
     Logger.log("No 'Personnel' sheet found!");
     return;
@@ -758,7 +815,7 @@ function resumeOnboarding() {
  */
 function processOffboardingRemovals() {
   const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID || SpreadsheetApp.getActiveSpreadsheet().getId());
-  const sheet = ss.getSheetByName("Personnel");
+  const sheet = getPersonnelSheet(ss);
   if (!sheet) return;
 
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(normalizeHeader);
@@ -935,7 +992,7 @@ function syncRosEventsToGoogleCalendars(ss, forceResync) {
   const realSs = (ss && typeof ss.getSheetByName === "function")
     ? ss
     : SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID || SpreadsheetApp.getActiveSpreadsheet().getId());
-  
+
   // 1. Build map of department name -> google_calendar_id from Departments tab
   const deptCalMap = getDepartmentCalendarMap(realSs);
   const calendarKeys = Object.keys(deptCalMap);
@@ -949,8 +1006,13 @@ function syncRosEventsToGoogleCalendars(ss, forceResync) {
   const metadata = forceResync ? {} : (readFromFirebase(metadataPath) || {});
 
   // 3. Read ROS events
-  const rosSheet = realSs.getSheetByName("ROS by TIME") || realSs.getSheetByName("ROS");
-  if (!rosSheet) return;
+  const rosSheet = getRosSheet(realSs);
+  if (!rosSheet) {
+    Logger.log("⚠️ syncRosEventsToGoogleCalendars: ROS sheet tab not found matching pattern '" + CONFIG.SHEETS_TAB_ROS + "'");
+    return;
+  }
+
+  Logger.log("📂 syncRosEventsToGoogleCalendars reading ROS events from tab: '" + rosSheet.getName() + "'");
   const rosEvents = readSheetToJson(rosSheet);
 
   const activeKeys = new Set();
@@ -1005,7 +1067,7 @@ function syncRosEventsToGoogleCalendars(ss, forceResync) {
       }
     }
 
-    const locationName = String(row["solaris_ros_location"] || row["location"] || row["venue"] || row["place"] || "").trim();
+    const locationName = String(row["solaris_ros_location"] || row["loaction"] || row["location"] || row["venue"] || row["place"] || "").trim();
     const leadDept = String(row["lead_dept"] || row["department"] || row["lead_department"] || row["dept"] || "").trim();
     const support1 = String(row["support_dept_1"] || "").trim();
     const support2 = String(row["support_dept_2"] || "").trim();
@@ -1233,49 +1295,70 @@ function parseRosDateTime(dateVal, timeVal) {
  * grants the group read access to the calendar, and writes the calendar ID back to the sheet.
  */
 function provisionMissingCalendarsAndGroups(ss) {
-  const sheet = ss.getSheetByName("Departments");
-  if (!sheet) return;
+  const sheet = getDepartmentsSheet(ss);
+  if (!sheet) {
+    Logger.log("⚠️ provisionMissingCalendarsAndGroups: Could not find Departments sheet tab matching pattern '" + CONFIG.SHEETS_TAB_DEPARTMENTS + "'");
+    return;
+  }
 
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return;
+  Logger.log("📂 Resolved Departments tab: '" + sheet.getName() + "' (matching pattern '" + CONFIG.SHEETS_TAB_DEPARTMENTS + "')");
 
-  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(normalizeHeader);
+  const range = sheet.getDataRange();
+  const values = range.getValues();
+  if (values.length < 2) {
+    Logger.log("⚠️ Departments tab '" + sheet.getName() + "' has fewer than 2 rows (no data).");
+    return;
+  }
+
+  // Auto-detect header row index (skip banner row if <= 2 non-empty cells on row 1)
+  let headerRowIdx = 0;
+  if (values[0].filter(val => String(val).trim() !== "").length <= 2 && values.length > 2) {
+    headerRowIdx = 1;
+    Logger.log("ℹ️ Title banner detected on Row 1. Using Row 2 for column headers.");
+  }
+
+  const headers = values[headerRowIdx].map(normalizeHeader);
   let deptColIdx = headers.indexOf("department") + 1;
-  if (!deptColIdx) deptColIdx = headers.findIndex(h => h === "dept" || h === "name" || h === "department_name" || h === "dept_id") + 1;
+  if (!deptColIdx) deptColIdx = headers.findIndex(h => h === "dept" || h === "name" || h === "department_name" || h === "dept_id" || h.includes("department") || h.includes("dept")) + 1;
   let calColIdx = headers.indexOf("google_calendar_id") + 1;
   if (!calColIdx) calColIdx = headers.findIndex(h => h === "calendar_id" || h === "gcal_id" || h.includes("calendar")) + 1;
 
-  if (!deptColIdx || !calColIdx) return;
+  if (!deptColIdx || !calColIdx) {
+    Logger.log("⚠️ Could not locate department column (" + deptColIdx + ") or google_calendar_id column (" + calColIdx + ") in tab '" + sheet.getName() + "'. Headers found: " + headers.join(", "));
+    return;
+  }
 
-  const range = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn());
-  const values = range.getValues();
+  Logger.log("📋 Found headers in '" + sheet.getName() + "': Department Col=" + deptColIdx + ", Calendar ID Col=" + calColIdx);
+
   const domain = getWorkspaceDomain();
+  let createdCount = 0;
 
-  for (let i = 0; i < values.length; i++) {
-    const rowNum = i + 2;
+  for (let i = headerRowIdx + 1; i < values.length; i++) {
+    const rowNum = i + 1;
     const deptName = String(values[i][deptColIdx - 1]).trim();
     if (!deptName || deptName.toLowerCase() === "public") continue;
 
-    let calId = String(values[i][calColIdx - 1]).trim();
+    let calId = String(values[i][calColIdx - 1] || "").trim();
     let cal = null;
-    if (calId) {
+    if (calId && !calId.includes("PRIMARY_OR_DEPT")) {
       try {
         cal = CalendarApp.getCalendarById(calId);
       } catch (e) {
-        Logger.log("Inaccessible calendar ID " + calId + " for " + deptName + ": " + e.message);
+        Logger.log("⚠️ Inaccessible calendar ID '" + calId + "' for department '" + deptName + "': " + e.message);
       }
     }
 
-    // 1. Create calendar if missing or inaccessible
-    if (!calId || !cal) {
+    // 1. Create calendar if missing, inaccessible, or placeholder
+    if (!calId || !cal || calId.includes("PRIMARY_OR_DEPT")) {
       try {
-        Logger.log("Creating missing/inaccessible calendar for department: " + deptName);
+        Logger.log("🔨 Department '" + deptName + "' has no valid calendar ID (val: '" + calId + "'). Creating new Google Calendar...");
         const newCal = CalendarApp.createCalendar("Portal: " + deptName);
         calId = newCal.getId();
         sheet.getRange(rowNum, calColIdx).setValue(calId);
-        Logger.log("✓ Created calendar: " + calId);
+        createdCount++;
+        Logger.log("  ✓ Created Google Calendar 'Portal: " + deptName + "' (" + calId + ") & saved to tab '" + sheet.getName() + "' row " + rowNum + ", col " + calColIdx);
       } catch (err) {
-        Logger.log("❌ Failed to create calendar for " + deptName + ": " + err);
+        Logger.log("❌ Failed to create Google Calendar for department '" + deptName + "': " + err);
         continue;
       }
     }
@@ -1355,15 +1438,26 @@ function provisionMissingCalendarsAndGroups(ss) {
  */
 function getDepartmentCalendarMap(ss) {
   ss = ss || SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID || SpreadsheetApp.getActiveSpreadsheet().getId());
-  const deptSheet = ss.getSheetByName("Departments");
+  const deptSheet = getDepartmentsSheet(ss);
   const deptCalMap = {};
-  if (!deptSheet) return deptCalMap;
+  if (!deptSheet) {
+    Logger.log("⚠️ getDepartmentCalendarMap: Departments sheet tab not found matching pattern '" + CONFIG.SHEETS_TAB_DEPARTMENTS + "'");
+    return deptCalMap;
+  }
+
+  Logger.log("📂 getDepartmentCalendarMap reading from tab: '" + deptSheet.getName() + "'");
 
   const deptData = readSheetToJson(deptSheet);
+  let nameKeyFound = "";
+  let calKeyFound = "";
+
   deptData.forEach(row => {
-    const nameKey = Object.keys(row).find(k => k.toLowerCase() === "department" || k.toLowerCase() === "name" || k.toLowerCase() === "dept" || k.toLowerCase() === "dept_id");
-    const calKey = Object.keys(row).find(k => k.toLowerCase() === "google_calendar_id" || k.toLowerCase() === "calendar_id");
+    const nameKey = Object.keys(row).find(k => k.toLowerCase() === "department" || k.toLowerCase() === "name" || k.toLowerCase() === "dept" || k.toLowerCase() === "dept_id" || k.toLowerCase().includes("department") || k.toLowerCase().includes("dept"));
+    const calKey = Object.keys(row).find(k => k.toLowerCase() === "google_calendar_id" || k.toLowerCase() === "calendar_id" || k.toLowerCase() === "gcal_id" || k.toLowerCase().includes("calendar"));
     const aliasKey = Object.keys(row).find(k => k.toLowerCase() === "aliases" || k.toLowerCase() === "alias");
+
+    if (nameKey) nameKeyFound = nameKey;
+    if (calKey) calKeyFound = calKey;
 
     if (nameKey && calKey && row[nameKey] && row[calKey]) {
       const deptName = String(row[nameKey]).trim().toLowerCase();
@@ -1391,6 +1485,13 @@ function getDepartmentCalendarMap(ss) {
     }
   });
 
+  const count = Object.keys(deptCalMap).length;
+  if (count === 0) {
+    Logger.log("⚠️ getDepartmentCalendarMap: Found " + deptData.length + " rows in tab '" + deptSheet.getName() + "', but 0 valid google_calendar_id entries (matched department column '" + (nameKeyFound || "NONE") + "', calendar column '" + (calKeyFound || "NONE") + "'). Run provisionMissingCalendarsAndGroups to auto-create Google Calendars.");
+  } else {
+    Logger.log("✓ getDepartmentCalendarMap: Resolved " + count + " valid calendar mapping keys from tab '" + deptSheet.getName() + "'.");
+  }
+
   return deptCalMap;
 }
 
@@ -1402,11 +1503,11 @@ function clearAllSyncCalendars() {
   const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID || SpreadsheetApp.getActiveSpreadsheet().getId());
   const deptCalMap = getDepartmentCalendarMap(ss);
   const calendarKeys = Object.keys(deptCalMap);
-  
+
   // Date window of the event (August 1 to September 15, 2026)
   const startRange = new Date(2026, 7, 1); // August (7 is 0-indexed)
   const endRange = new Date(2026, 8, 15);  // September (8 is 0-indexed)
-  
+
   const processedCalIds = new Set();
   calendarKeys.forEach(dept => {
     const calId = deptCalMap[dept];
@@ -1450,12 +1551,12 @@ function allowExternalMembers(groupEmail) {
 function verifyCalendarLinksAndSetup() {
   const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID || SpreadsheetApp.getActiveSpreadsheet().getId());
   Logger.log("=== STARTING DIAGNOSTIC SETUP VERIFICATION ===");
-  
+
   // 1. Check Departments Sheet
   const deptCalMap = getDepartmentCalendarMap(ss);
   const deptKeys = Object.keys(deptCalMap);
   Logger.log("1. Departments Sheet: Found " + deptKeys.length + " calendar mappings.");
-  
+
   const verifiedCals = new Set();
   deptKeys.forEach(dept => {
     const calId = deptCalMap[dept];
@@ -1474,7 +1575,7 @@ function verifyCalendarLinksAndSetup() {
   });
 
   // 2. Check ROS Sheet
-  const rosSheet = ss.getSheetByName("ROS by TIME") || ss.getSheetByName("ROS");
+  const rosSheet = getRosSheet(ss);
   if (!rosSheet) {
     Logger.log("2. ROS Sheet: ❌ NEITHER 'ROS by TIME' nor 'ROS' TAB WAS FOUND IN SPREADSHEET!");
     return;
@@ -1548,7 +1649,7 @@ function grantUserCalendarAccess(targetEmail) {
         role: "reader",
         scope: { type: "user", value: targetEmail }
       }, calId, { sendNotifications: false }));
-      
+
       // 2. Count events in calendar
       const cal = CalendarApp.getCalendarById(calId);
       let eventCount = 0;
@@ -1606,27 +1707,44 @@ function findSheetByNameOrPattern(ss, pattern) {
   if (exact) return exact;
 
   var sheets = ss.getSheets();
-  var cleanPattern = pattern.replace(/[*?]/g, "").trim().toLowerCase();
+  var trimmedPattern = String(pattern).trim();
+  var lowerPattern = trimmedPattern.toLowerCase();
+  var cleanPattern = trimmedPattern.replace(/[*?]/g, "").trim().toLowerCase();
 
-  // 1. Wildcard pattern if contains * or ?
-  if (pattern.indexOf("*") !== -1 || pattern.indexOf("?") !== -1) {
-    var regexStr = "^" + pattern
+  // 1. Case-insensitive exact match
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].getName().trim().toLowerCase() === lowerPattern) {
+      return sheets[i];
+    }
+  }
+
+  // 2. Wildcard pattern match (* or ?)
+  if (trimmedPattern.indexOf("*") !== -1 || trimmedPattern.indexOf("?") !== -1) {
+    var regexStr = "^" + trimmedPattern
       .replace(/[.+^${}()|[\]\\]/g, "\\$&")
       .replace(/\*/g, ".*")
       .replace(/\?/g, ".") + "$";
     var rx = new RegExp(regexStr, "i");
-    for (var i = 0; i < sheets.length; i++) {
-      if (rx.test(sheets[i].getName().trim())) {
-        return sheets[i];
+    for (var j = 0; j < sheets.length; j++) {
+      if (rx.test(sheets[j].getName().trim())) {
+        return sheets[j];
+      }
+    }
+
+    if (cleanPattern) {
+      for (var k = 0; k < sheets.length; k++) {
+        if (sheets[k].getName().trim().toLowerCase().indexOf(cleanPattern) === 0) {
+          return sheets[k];
+        }
       }
     }
   }
 
-  // 2. Prefix / substring match
-  for (var j = 0; j < sheets.length; j++) {
-    var name = sheets[j].getName().trim().toLowerCase();
-    if (name === cleanPattern || name.indexOf(cleanPattern) === 0 || name.indexOf(cleanPattern) !== -1) {
-      return sheets[j];
+  // 3. Prefix & Substring fallback match
+  for (var m = 0; m < sheets.length; m++) {
+    var nameLower = sheets[m].getName().trim().toLowerCase();
+    if (nameLower.indexOf(cleanPattern) === 0 || nameLower.indexOf(cleanPattern) !== -1) {
+      return sheets[m];
     }
   }
   return null;

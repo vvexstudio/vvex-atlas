@@ -25,10 +25,11 @@ Here is a step-by-step guide formatted for both your engineering team (Firebase/
    - Click **Continue**.
 
 3. **Retrieve DNS Records**:
-   - Firebase will display the required DNS records to add:
-     - **CNAME Record**: Pointing `bm26` to `<YOUR_FIREBASE_PROJECT_ID>.web.app.` or `<YOUR_APP_HOSTING_DOMAIN>`.
-     - *(Alternative)*: If Firebase provides static **A Records**, note the two IPv4 addresses.
-     - *(Optional)*: If TXT ownership verification is required, copy the provided `firebase=...` token.
+   - Firebase App Hosting displays the exact required DNS records to add and remove:
+     - **Remove CNAME**: `bm26` pointing to `portal-production--portal-map-app.us-east4.hosted.app`
+     - **Add A Record**: `bm26` pointing to `35.219.200.205`
+     - **Add TXT Record**: `bm26` with value `fah-claim=023-02-aad1d339-b18d-44b2-b03f-6f8764ede60f`
+     - **Add ACME Validation CNAME**: `_acme-challenge_3bf472zqqwby6fxh.bm26` pointing to `252f1efc-0db1-4b9f-96a8-df973af09a0f.11.authorize.certificatemanager.goog.`
 
 ---
 
@@ -38,32 +39,45 @@ You can copy and send the email below directly to the client's IT or domain admi
 
 ```text
 To: The Portal IT / Domain Administrator
-Subject: DNS Configuration for bm26.theportal.is
+Subject: DNS Configuration Update for bm26.theportal.is
 
 Hi Team,
 
-To connect our map & run-of-show web app to bm26.theportal.is, please log into your 101domain management panel and add the following DNS records for theportal.is:
+To connect our map & run-of-show web app to bm26.theportal.is and complete SSL certificate validation, please log into 101domain.com and update the DNS records for theportal.is as follows:
 
 Step 1: Log into 101domain
-1. Go to 101domain.com and sign in.
-2. Navigate to Domain Names -> My Domains.
-3. Click on theportal.is.
-4. Click on Manage DNS (or DNS Records / Name Server & DNS Records).
+1. Log into 101domain.com.
+2. Navigate to Domain Names -> My Domains -> theportal.is -> Manage DNS.
 
-Step 2: Add DNS Record for Subdomain
-Add the following record:
+Step 2: REMOVE Existing CNAME Record
+- Record Type: CNAME
+- Host / Subdomain: bm26
+- Points To / Value: portal-production--portal-map-app.us-east4.hosted.app
 
-  Record Type: CNAME
-  Name / Subdomain / Host: bm26 (Note: enter just bm26, not the full domain)
-  Target / Value / Points To: portal-production--portal-map-app.us-east4.hosted.app
-  TTL: 3600 (or Automatic / Default)
+Step 3: ADD the Following 3 Records
 
-(If Firebase provides A records instead of a CNAME, add two A records with Host 'bm26' pointing to the two provided IPv4 addresses).
+1. A Record (App Hosting Endpoint)
+   - Record Type: A
+   - Host / Subdomain: bm26
+   - Points To / Value: 35.219.200.205
+   - TTL: 3600 (or Default)
 
-Step 3: Save Changes
-Click Save Records or Apply Changes.
+2. TXT Record (Domain Ownership Claim)
+   - Record Type: TXT
+   - Host / Subdomain: bm26
+   - Value: fah-claim=023-02-aad1d339-b18d-44b2-b03f-6f8764ede60f
+   - TTL: 3600 (or Default)
 
-Please reply once updated so we can verify DNS propagation and issue the SSL certificate.
+3. CNAME Record (SSL Certificate Validation)
+   - Record Type: CNAME
+   - Host / Subdomain: _acme-challenge_3bf472zqqwby6fxh.bm26
+   - Points To / Value: 252f1efc-0db1-4b9f-96a8-df973af09a0f.11.authorize.certificatemanager.goog.
+   - TTL: 3600 (or Default)
+
+Step 4: Save Changes
+Click Save / Apply Changes.
+
+Please let us know once updated so we can finalize SSL verification and verify the live app!
 ```
 
 ---

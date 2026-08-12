@@ -231,7 +231,7 @@ function rgbToHex(rgb: any): string | undefined {
   const r = rgb.red !== undefined ? Math.round(rgb.red * 255) : 0;
   const g = rgb.green !== undefined ? Math.round(rgb.green * 255) : 0;
   const b = rgb.blue !== undefined ? Math.round(rgb.blue * 255) : 0;
-  
+
   // Format to standard 6-digit hex string
   return "#" + [r, g, b].map(x => x.toString(16).padStart(2, "0")).join("");
 }
