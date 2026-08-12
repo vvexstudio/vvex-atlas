@@ -202,12 +202,14 @@ export const useEventData = (role: string | null, initialData: InitialData) => {
     };
 
     if (clientAuth && (role === "admin" || role === "crew")) {
-      unsubscribeAuth = onAuthStateChanged(clientAuth, () => {
+      unsubscribeAuth = onAuthStateChanged(clientAuth, (user) => {
         if (unsubscribeDb) {
           unsubscribeDb();
           unsubscribeDb = null;
         }
-        unsubscribeDb = setupListener();
+        if (user) {
+          unsubscribeDb = setupListener();
+        }
       });
     } else {
       unsubscribeDb = setupListener();

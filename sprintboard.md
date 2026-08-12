@@ -215,7 +215,7 @@ Tracked here so we know what to stand up vs. what the client owns. Env var names
 ## 10. Session Log
 > Append newest at top. Format: `YYYY-MM-DD — who — what changed / decided / discovered`.
 
-- **2026-08-11 — agent — Fixed RTDB listener race condition during Firebase Auth initialization in `src/hooks/useEventData.ts`. Wrapped Realtime Database subscription in `onAuthStateChanged(clientAuth, ...)` so client subscriptions on protected node paths (`/admin-data`, `/crew-data`) auto-re-subscribe seamlessly once `signInWithCustomToken` completes, eliminating initial `permission_denied` console warnings. Updated `src/lib/__tests__/rtdb-validation.test.tsx` mocks. Verified Vitest unit tests (46/46 passing), clean ESLint check, and Next.js 16 build.**
+- **2026-08-11 — agent — Suppressed unauthenticated RTDB listener connection attempts in `src/hooks/useEventData.ts`. Added authenticated `user` validation check inside `onAuthStateChanged` callback before establishing protected node listeners (`/admin-data`, `/crew-data`), eliminating transient initial `permission_denied` console log on page load. Verified Vitest unit tests (46/46 passing), clean ESLint check, and Next.js 16 build.**
 
 - **2026-08-11 — agent — Configured Map Explorer (`Legend`) to start collapsed by default on mobile viewports (`window.innerWidth <= 768`) in `src/components/event/EventApp.tsx`. Uses lazy state initialization (`useState(() => ...)`), ensuring the interactive map pins are unobstructed when entering Map View on mobile devices while allowing one-tap expansion. Verified Vitest unit tests (46/46 passing), clean ESLint check, and Next.js 16 build.**
 
