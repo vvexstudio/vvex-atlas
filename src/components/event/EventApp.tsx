@@ -133,7 +133,12 @@ export function EventApp({
   const [isMyScheduleOnly, setIsMyScheduleOnly] = useState(false);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [focusedVenueId, setFocusedVenueId] = useState<string | null>(null);
-  const [isLegendCollapsed, setIsLegendCollapsed] = useState(false);
+  const [isLegendCollapsed, setIsLegendCollapsed] = useState(() => {
+    if (typeof window !== "undefined" && window.innerWidth <= 768) {
+      return true;
+    }
+    return false;
+  });
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
   const prevEventsRef = useRef<FestivalEvent[]>([]);
