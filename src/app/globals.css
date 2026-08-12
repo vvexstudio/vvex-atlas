@@ -554,11 +554,19 @@ body.portal-dark .banner-brand-mark {
   }
 
   .legacy-app {
-    height: auto;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
   .legacy-banner {
+    flex: 0 0 auto;
     padding: 8px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
   }
 
   .legacy-banner-actions {
@@ -570,13 +578,41 @@ body.portal-dark .banner-brand-mark {
   }
 
   .legacy-shell {
+    flex: 1;
+    min-height: 0;
+    display: flex;
     flex-direction: column;
-    height: auto;
+    overflow: hidden;
+    height: 100%;
   }
 
   .legacy-map-panel {
-    height: 58vh;
-    min-height: 380px;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .main-tabs-header {
+    flex: 0 0 auto;
+    position: sticky;
+    top: 0;
+    z-index: 95;
+  }
+
+  .main-tab-content {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .main-tab-content.tab-schedule,
+  .main-tab-content.tab-now-next {
+    overflow-y: auto;
   }
 
   .legacy-list-panel {
@@ -653,7 +689,14 @@ body.portal-dark .banner-brand-mark {
     display: flex;
     align-items: center;
     gap: 6px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+
+  .banner-brand-mark,
+  .header-chip-location,
+  .header-top-right-actions {
+    flex-shrink: 0;
   }
 
   .header-top-right-actions {
@@ -661,6 +704,38 @@ body.portal-dark .banner-brand-mark {
     align-items: center;
     gap: 6px;
     margin-left: auto !important;
+    flex-shrink: 0;
+  }
+
+  .header-consolidated-badge {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    max-width: fit-content;
+  }
+
+  .header-consolidated-badge .offline-badge-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-shrink: 1;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .header-consolidated-badge .offline-badge-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-shrink: 1;
+  }
+
+  .header-consolidated-badge .offline-badge-time {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-shrink: 1;
   }
 
   .desktop-support-btn,
@@ -702,8 +777,10 @@ body.portal-dark .banner-brand-mark {
 
   .legacy-banner-heading {
     text-align: left;
-    font-size: clamp(1rem, 4.5vw, 1.25rem);
+    font-size: clamp(0.95rem, 4vw, 1.25rem);
     line-height: 1.2;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
 
   .legacy-banner-right-wrapper {
@@ -1226,7 +1303,9 @@ body.portal-dark .banner-brand-mark {
   display: flex;
   flex-direction: column;
   gap: 18px;
-  max-height: calc(100vh - 350px);
+  flex: 1;
+  min-height: 0;
+  max-height: none;
 }
 .sidebar-empty-state {
   text-align: center;
@@ -1603,8 +1682,21 @@ body.portal-dark .banner-brand-mark {
 }
 
 @media (max-width: 1080px) {
+  .spatial-calendar-container {
+    height: 100%;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
   .spatial-calendar-grid {
-    min-height: 250px;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
@@ -2560,7 +2652,16 @@ body.portal-dark .banner-brand-mark {
 .mobile-drawer-body {
   overflow-y: auto;
   flex: 1;
-  padding-bottom: 24px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom, 24px);
+}
+
+.mobile-drawer-body .sidebar-scroll-container {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
 }
 
 @keyframes drawer-up {
