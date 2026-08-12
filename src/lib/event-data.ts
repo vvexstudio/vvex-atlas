@@ -67,7 +67,7 @@ function mergeAdminEntries(
     if (entry.hasSchedule) {
       const matchEvent = events.find(e => e.day === entry.day);
       const scheduleDate = matchEvent ? matchEvent.scheduleDate : (entry.day === "fri" ? "2026-08-28" : (entry.day === "sat" ? "2026-08-29" : "2026-08-30"));
-      
+
       adminEvents.push({
         id: `event-${entry.id}`,
         venueId: entry.id,
@@ -188,38 +188,23 @@ export async function getFestivalDataFromSheets(role: string = "public"): Promis
         tabRos = matchTabTitle(rawTabRos, availableSheets);
       }
 
-      // Fetch grid formatting only for small metadata tabs (Locations, Personnel, Departments, Actions)
-      const formattingSpreadsheet = await getSpreadsheetWithFormatting(spreadsheetId, [
-        tabLocations,
-        tabPersonnel,
-        tabDepartments,
-        tabActions,
-      ]).catch(() => null);
+      // Fetch sheet tab values directly via OAuth without giant grid formatting payloads
+      const [locRes, perRes, depRes, actRes, rosRes] = await Promise.all([
+        getParsedSheetData(spreadsheetId, tabLocations).catch(() => []),
+        getParsedSheetData(spreadsheetId, tabPersonnel).catch(() => []),
+        getParsedSheetData(spreadsheetId, tabDepartments).catch(() => []),
+        getParsedSheetData(spreadsheetId, tabActions).catch(() => []),
+        getParsedSheetData(spreadsheetId, tabRos).catch(() => []),
+      ]);
 
-      if (formattingSpreadsheet && formattingSpreadsheet.sheets) {
-        const findSheet = (name: string) =>
-          formattingSpreadsheet.sheets.find(
-            (s: any) =>
-              s.properties?.title === name ||
-              matchTabTitle(name, [s.properties?.title || ""]) === (s.properties?.title || "") ||
-              s.properties?.title?.trim().toLowerCase() === name.trim().toLowerCase()
-          );
-
-        const locSheet = findSheet(tabLocations);
-        const perSheet = findSheet(tabPersonnel);
-        const depSheet = findSheet(tabDepartments);
-        const actSheet = findSheet(tabActions);
-
-        if (locSheet) locationsData = parseSheetDataWithColors(formattingSpreadsheet, tabLocations).data;
-        if (perSheet) personnelData = parseSheetDataWithColors(formattingSpreadsheet, tabPersonnel).data;
-        if (depSheet) departmentsData = parseSheetDataWithColors(formattingSpreadsheet, tabDepartments).data;
-        if (actSheet) actionsData = parseSheetDataWithColors(formattingSpreadsheet, tabActions).data;
-      }
-
-      // Fetch ROS values directly without giant grid formatting payload to avoid stack overflow
-      rosData = await getParsedSheetData(spreadsheetId, tabRos).catch(() => []);
+      locationsData = locRes;
+      personnelData = perRes;
+      departmentsData = depRes;
+      actionsData = actRes;
+      rosData = rosRes;
       sourceLabel = `Google Sheet ${spreadsheetId.substring(0, 8)}... (OAuth)`;
-    } catch {
+    } catch (err) {
+      console.warn("Failed to fetch Google Sheet data via OAuth, falling back to CSV...", err);
       return getFestivalDataFromCsv();
     }
   } else {
@@ -227,21 +212,26 @@ export async function getFestivalDataFromSheets(role: string = "public"): Promis
   }
 
   const { venues, events, personnel, departments } = parseSpreadsheetData(locationsData, rosData, personnelData, departmentsData, actionsData);
-  const adminEntries = await readAdminEntries();
+  const adminEntries = await readAdminEntries().catch(() => []);
   const merged = mergeAdminEntries(venues, events, adminEntries);
 
+  const cleanVenues = JSON.parse(JSON.stringify(merged.venues));
+  const cleanEvents = JSON.parse(JSON.stringify(merged.events));
+  const cleanPersonnel = JSON.parse(JSON.stringify(personnel));
+  const cleanDepartments = JSON.parse(JSON.stringify(departments));
+
   return {
-    venues: merged.venues,
-    events: merged.events,
-    personnel,
-    departments,
+    venues: cleanVenues,
+    events: cleanEvents,
+    personnel: cleanPersonnel,
+    departments: cleanDepartments,
     colors: colorsObj,
     sourceLabel,
     debug: {
       totalRows: rosData.length + adminEntries.length,
-      confirmedRows: merged.events.length,
-      matchedRows: merged.events.filter(e => e.hasLocation).length,
-      unmatchedLocations: [...new Set(merged.events.filter(e => !e.hasLocation).map(e => e.locationName || ""))].filter(Boolean),
+      confirmedRows: cleanEvents.length,
+      matchedRows: cleanEvents.filter((e: any) => e.hasLocation).length,
+      unmatchedLocations: Array.from(new Set(cleanEvents.filter((e: any) => !e.hasLocation).map((e: any) => String(e.locationName || "")))).filter(Boolean) as string[],
     },
   };
 }
@@ -278,28 +268,33 @@ export async function getFestivalDataFromCsv(): Promise<FestivalDataResult> {
   let actionsData: any[] = [];
   let rosData: any[] = [];
 
-  try { locationsData = await getParsedSheetDataFromPublicCsv(spreadsheetId, tabLocations); } catch {}
-  try { personnelData = await getParsedSheetDataFromPublicCsv(spreadsheetId, tabPersonnel); } catch {}
-  try { departmentsData = await getParsedSheetDataFromPublicCsv(spreadsheetId, tabDepartments); } catch {}
-  try { actionsData = await getParsedSheetDataFromPublicCsv(spreadsheetId, tabActions); } catch {}
-  try { rosData = await getParsedSheetDataFromPublicCsv(spreadsheetId, tabRos); } catch {}
+  try { locationsData = await getParsedSheetDataFromPublicCsv(spreadsheetId, tabLocations); } catch { }
+  try { personnelData = await getParsedSheetDataFromPublicCsv(spreadsheetId, tabPersonnel); } catch { }
+  try { departmentsData = await getParsedSheetDataFromPublicCsv(spreadsheetId, tabDepartments); } catch { }
+  try { actionsData = await getParsedSheetDataFromPublicCsv(spreadsheetId, tabActions); } catch { }
+  try { rosData = await getParsedSheetDataFromPublicCsv(spreadsheetId, tabRos); } catch { }
 
   const { venues, events, personnel, departments } = parseSpreadsheetData(locationsData, rosData, personnelData, departmentsData, actionsData);
   const adminEntries = await readAdminEntries().catch(() => []);
   const merged = mergeAdminEntries(venues, events, adminEntries);
 
+  const cleanVenues = JSON.parse(JSON.stringify(merged.venues));
+  const cleanEvents = JSON.parse(JSON.stringify(merged.events));
+  const cleanPersonnel = JSON.parse(JSON.stringify(personnel));
+  const cleanDepartments = JSON.parse(JSON.stringify(departments));
+
   return {
-    venues: merged.venues,
-    events: merged.events,
-    personnel,
-    departments,
+    venues: cleanVenues,
+    events: cleanEvents,
+    personnel: cleanPersonnel,
+    departments: cleanDepartments,
     colors: {},
     sourceLabel: `Google Sheet ${spreadsheetId.substring(0, 8)}... (Public CSV)`,
     debug: {
       totalRows: rosData.length + adminEntries.length,
-      confirmedRows: merged.events.length,
-      matchedRows: merged.events.filter(e => e.hasLocation).length,
-      unmatchedLocations: [...new Set(merged.events.filter(e => !e.hasLocation).map(e => e.locationName || ""))].filter(Boolean),
+      confirmedRows: cleanEvents.length,
+      matchedRows: cleanEvents.filter((e: any) => e.hasLocation).length,
+      unmatchedLocations: Array.from(new Set(cleanEvents.filter((e: any) => !e.hasLocation).map((e: any) => String(e.locationName || "")))).filter(Boolean) as string[],
     },
   };
 }
