@@ -25,17 +25,20 @@ describe("Support / Inquiry mailto and Gmail URL helper", () => {
 
   const mockEvent: FestivalEvent = {
     id: "evt-123",
+    venueId: "main-plaza",
     title: "Stage Setup",
+    host: "Rigging",
+    description: "Setting up main stage trussing",
+    day: "mon",
     startTime: "09:00",
     endTime: "11:00",
+    type: "services",
+    thumbnailUrl: "",
     scheduleDate: "2026-08-24",
     locationName: "Main Plaza",
     department: "Rigging",
     leadPointPerson: "Alice",
     action: "Setup",
-    description: "Setting up main stage trussing",
-    isFoh: false,
-    isBoh: true,
   };
 
   it("should return empty string for getSupportEmail when environment variable is not set", () => {
