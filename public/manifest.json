@@ -1,7 +1,7 @@
 {
-  "name": "The Portal Map App",
-  "short_name": "Portal Map",
-  "description": "Interactive MARTIANS operational map and schedule for The Portal.",
+  "name": "BM26 Solaris ROS",
+  "short_name": "BM26 Solaris ROS",
+  "description": "Interactive BM26 Solaris ROS map and run-of-show schedule.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
