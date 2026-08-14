@@ -37,7 +37,7 @@ ${details}
 [Please describe the issue, discrepancy, or requested update here]
 
 ---
-Sent from The Portal Map & ROS App`;
+Sent from BM26 Solaris ROS App`;
 
   const plainText = `${subject}\n\n${details}`;
 
@@ -71,13 +71,13 @@ export function buildGeneralSupportMailto(): string {
 
   const body = `Hi Support Team,
 
-I have an inquiry or would like to report an issue regarding The Portal Map & ROS App:
+I have an inquiry or would like to report an issue regarding BM26 Solaris ROS App:
 
 --- DETAILS ---
 [Please describe your request, issue, or feedback here]
 
 ---
-Sent from The Portal Map & ROS App`;
+Sent from BM26 Solaris ROS App`;
 
   return `mailto:${supportEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
@@ -91,13 +91,13 @@ export function buildGeneralSupportGmailUrl(): string {
 
   const body = `Hi Support Team,
 
-I have an inquiry or would like to report an issue regarding The Portal Map & ROS App:
+I have an inquiry or would like to report an issue regarding BM26 Solaris ROS App:
 
 --- DETAILS ---
 [Please describe your request, issue, or feedback here]
 
 ---
-Sent from The Portal Map & ROS App`;
+Sent from BM26 Solaris ROS App`;
 
   return `https://mail.google.com/mail/?view=cm&fs=1&to=${supportEmail}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }

@@ -23,9 +23,14 @@ const fontMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "The Portal Map App",
-  description: "Interactive MARTIANS map and run-of-show app for The Portal.",
+  title: "BM26 Solaris ROS",
+  description: "Interactive BM26 Solaris ROS map and run-of-show schedule.",
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "BM26 Solaris ROS",
+  },
   icons: {
     icon: [
       { url: "/icon.png", sizes: "100x100" },
