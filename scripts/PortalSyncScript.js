@@ -100,11 +100,14 @@ function syncAllToFirebase() {
     writeToFirebase("crew-data/personnel", personnel);
     writeToFirebase("crew-data/actions", actions);
 
-    // 3a. Write sync heartbeat
+    // 3a. Write sync heartbeat and status
     writeToFirebase("crew-data/metadata/heartbeat", {
       last_sync: new Date().toISOString(),
-      rows: ros.length
-    });
+      status: "ok",
+      last_error: null,
+      rows: ros.length,
+      venues_count: locations.length
+    }, { force: true });
 
     writeToFirebase("admin-data", data);
 
@@ -179,6 +182,16 @@ function syncAllToFirebase() {
     } catch (calSyncErr) {
       Logger.log("Error during Google Calendar event sync phase: " + calSyncErr);
     }
+  } catch (syncErr) {
+    Logger.log("Fatal error in syncAllToFirebase: " + syncErr);
+    try {
+      writeToFirebase("crew-data/metadata/heartbeat", {
+        last_sync: new Date().toISOString(),
+        status: "error",
+        last_error: String(syncErr.message || syncErr),
+        rows: 0
+      }, { force: true });
+    } catch (ignoreErr) {}
   } finally {
     lock.releaseLock();
   }
@@ -625,20 +638,54 @@ function getFirebaseAccessToken() {
   return data.access_token;
 }
 
-function writeToFirebase(path, data) {
+function writeToFirebase(path, data, options) {
+  const force = (options && options.force) === true;
+  const payloadStr = JSON.stringify(data || {});
+  const hash = computeMd5(payloadStr);
+
+  const key = "HASH_" + String(path).replace(/[^a-zA-Z0-9_]/g, "_");
+  const props = PropertiesService.getScriptProperties();
+  const lastHash = props.getProperty(key);
+
+  if (!force && lastHash === hash) {
+    Logger.log("✓ Data for [" + path + "] unchanged (hash: " + hash.substring(0, 8) + "). Skipping Firebase write.");
+    return true;
+  }
+
   const dbUrl = CONFIG.FIREBASE_DB_URL.endsWith("/") ? CONFIG.FIREBASE_DB_URL : CONFIG.FIREBASE_DB_URL + "/";
   const token = getFirebaseAccessToken();
   const url = dbUrl + path + ".json";
 
-  const options = {
+  const fetchOptions = {
     method: "put",
     contentType: "application/json",
     headers: {
       "Authorization": "Bearer " + token
     },
-    payload: JSON.stringify(data)
+    payload: payloadStr,
+    muteHttpExceptions: true
   };
-  UrlFetchApp.fetch(url, options);
+
+  try {
+    const response = UrlFetchApp.fetch(url, fetchOptions);
+    const code = response.getResponseCode();
+    if (code >= 200 && code < 300) {
+      props.setProperty(key, hash);
+      Logger.log("✓ Successfully updated Firebase [" + path + "]");
+      return true;
+    } else {
+      const errText = response.getContentText();
+      if (errText.indexOf("Bandwidth quota exceeded") !== -1 || code === 402) {
+        Logger.log("❌ Firebase write error [" + path + "] (HTTP " + code + "): Bandwidth quota exceeded on Firebase Spark (Free) plan. Upgrade Firebase project to Blaze (Pay-as-you-go) plan to resume sync.");
+      } else {
+        Logger.log("❌ Firebase write error [" + path + "] (HTTP " + code + "): " + errText);
+      }
+      return false;
+    }
+  } catch (e) {
+    Logger.log("❌ Exception during Firebase write [" + path + "]: " + e.message);
+    return false;
+  }
 }
 
 function readFromFirebase(path) {

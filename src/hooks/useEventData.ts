@@ -27,6 +27,8 @@ export const useEventData = (role: string | null, initialData: InitialData) => {
   const [departments, setDepartments] = useState<Department[]>(initialData.departments || []);
   const [sourceLabel, setSourceLabel] = useState(initialData.dataSourceLabel || "Static Init");
   const [isOffline, setIsOffline] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [isSyncStale, setIsSyncStale] = useState<boolean>(false);
   const [lastSynced, setLastSynced] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
       const cached = loadOfflineSnapshot(activeRole);
@@ -89,11 +91,32 @@ export const useEventData = (role: string | null, initialData: InitialData) => {
     }
 
     let unsubscribeDb: (() => void) | null = null;
+    let unsubscribeHb: (() => void) | null = null;
     let unsubscribeAuth: (() => void) | null = null;
 
     const setupListener = () => {
       const nodePath = role === "admin" ? "admin-data" : (role === "crew" ? "crew-data" : "public-data");
       const dbRef = ref(db, nodePath);
+      const hbRef = ref(db, "crew-data/metadata/heartbeat");
+
+      unsubscribeHb = onValue(
+        hbRef,
+        (hbSnap) => {
+          if (hbSnap.exists()) {
+            const hb = hbSnap.val();
+            if (hb.status === "error" || hb.last_error) {
+              setSyncError(hb.last_error || "Sheet sync failure");
+            } else {
+              setSyncError(null);
+            }
+            if (hb.last_sync) {
+              const age = (Date.now() - new Date(hb.last_sync).getTime()) / 1000;
+              setIsSyncStale(age > 600);
+            }
+          }
+        },
+        () => {}
+      );
       
       console.log(`Establishing real-time listener on path: /${nodePath}`);
       return onValue(
@@ -217,11 +240,12 @@ export const useEventData = (role: string | null, initialData: InitialData) => {
 
     return () => {
       if (unsubscribeDb) unsubscribeDb();
+      if (unsubscribeHb) unsubscribeHb();
       if (unsubscribeAuth) unsubscribeAuth();
       const nodePath = role === "admin" ? "admin-data" : (role === "crew" ? "crew-data" : "public-data");
       console.log(`Unsubscribed from path: /${nodePath}`);
     };
   }, [role, isOffline]);
 
-  return { venues, events, personnel, departments, sourceLabel, isOffline, lastSynced };
+  return { venues, events, personnel, departments, sourceLabel, isOffline, lastSynced, syncError, isSyncStale };
 };

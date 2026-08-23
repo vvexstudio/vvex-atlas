@@ -117,7 +117,7 @@ export function EventApp({
   const { userSession, role, departments: userDepartments } = useAuthProfile(initialUserSession);
 
   // 2. Event Data Hook
-  const { venues, events, personnel, departments, sourceLabel, isOffline, lastSynced } = useEventData(role, {
+  const { venues, events, personnel, departments, sourceLabel, isOffline, lastSynced, syncError, isSyncStale } = useEventData(role, {
     venues: initialVenues,
     events: initialEvents,
     personnel: initialPersonnel,
@@ -1011,6 +1011,8 @@ export function EventApp({
                 lastSynced={lastSynced}
                 envLabel={envBadgeText}
                 sourceLabel={sourceLabel}
+                syncError={syncError}
+                isSyncStale={isSyncStale}
                 className="header-consolidated-badge"
               />
             );

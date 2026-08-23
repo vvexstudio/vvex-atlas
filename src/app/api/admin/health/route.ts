@@ -31,7 +31,12 @@ export async function GET() {
   const firebaseHealth: {
     configured: boolean;
     active: boolean;
-    heartbeat: any;
+    heartbeat: {
+      last_sync?: string;
+      status?: string;
+      last_error?: string | null;
+      rows?: number;
+    } | null;
     heartbeatAgeSeconds: number | null;
   } = {
     configured: Boolean(adminDb),

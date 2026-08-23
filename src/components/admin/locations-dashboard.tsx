@@ -54,8 +54,18 @@ function MapCameraController({
   return null;
 }
 
-export function LocationsDashboard({ venues, events, entries }: LocationsDashboardProps) {
+export function LocationsDashboard({ venues: initialVenues, events, entries: initialEntries }: LocationsDashboardProps) {
   const [copiedSuccess, setCopiedSuccess] = useState(false);
+  const [venues, setVenues] = useState<Venue[]>(initialVenues);
+  const [entries, setEntries] = useState<AdminEntry[]>(initialEntries);
+
+  useEffect(() => {
+    setVenues(initialVenues);
+  }, [initialVenues]);
+
+  useEffect(() => {
+    setEntries(initialEntries);
+  }, [initialEntries]);
 
   // Map state
   const [selectedItem, setSelectedItem] = useState<SelectedMapItem>(null);
@@ -63,6 +73,41 @@ export function LocationsDashboard({ venues, events, entries }: LocationsDashboa
   const [showCustomEntries, setShowCustomEntries] = useState(true);
 
   const mapSectionRef = useRef<HTMLDivElement>(null);
+
+  const handleDeleteLocation = async (item: { id: string; name: string }) => {
+    if (!window.confirm(`Delete location '${item.name}' from Admin Panel? This will remove it from the map and database.`)) {
+      return;
+    }
+    try {
+      const res = await fetch("/api/admin-entries", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: item.id, name: item.name }),
+      });
+      if (!res.ok) {
+        alert(`Failed to delete '${item.name}'. Status: ${res.status}`);
+        return;
+      }
+      const cleanId = item.id.toLowerCase().trim();
+      const cleanName = item.name.toLowerCase().trim();
+
+      setVenues((prev) =>
+        prev.filter(
+          (v) => v.id.toLowerCase().trim() !== cleanId && v.name.toLowerCase().trim() !== cleanName
+        )
+      );
+      setEntries((prev) =>
+        prev.filter(
+          (e) => e.id.toLowerCase().trim() !== cleanId && e.name.toLowerCase().trim() !== cleanName
+        )
+      );
+      if (selectedItem?.id === item.id) {
+        setSelectedItem(null);
+      }
+    } catch (err: any) {
+      alert(`Error deleting location: ${err?.message || "Unknown error"}`);
+    }
+  };
 
   // Set of names and IDs from Google Sheet venues to check supersession
   const sheetVenueIds = useMemo(() => new Set(venues.map((v) => v.id.toLowerCase())), [venues]);
@@ -426,18 +471,6 @@ export function LocationsDashboard({ venues, events, entries }: LocationsDashboa
                   (e) => e.locationName && e.locationName.toLowerCase() === venue.name.toLowerCase()
                 ).length;
 
-                const handleDeleteClick = () => {
-                  alert(
-                    `⚠️ Master Location Protection:\n\n'${venue.name}' is synced directly from the canonical Google Sheet.\n\nTo delete this location permanently, please remove its row directly from the 'Locations' tab of your master Google Sheet database.`
-                  );
-                };
-
-                const handleEditClick = () => {
-                  alert(
-                    `📍 Master Location Edit Guidance:\n\n'${venue.name}' is populated from the Google Sheet Locations tab.\n\nTo update coordinates or address permanently, edit the 'Lat', 'Long', or 'Address' columns in your master Google Sheet. Alternatively, create a Custom Pin Overlay below and click 'Copy Pins for Google Sheet'.`
-                  );
-                };
-
                 return (
                   <tr
                     key={venue.id}
@@ -473,15 +506,7 @@ export function LocationsDashboard({ venues, events, entries }: LocationsDashboa
                       <button
                         type="button"
                         className="admin-link"
-                        onClick={handleEditClick}
-                        style={{ background: "none", border: "none", cursor: "pointer", marginRight: "12px" }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        className="admin-link"
-                        onClick={handleDeleteClick}
+                        onClick={() => handleDeleteLocation(venue)}
                         style={{
                           background: "none",
                           border: "none",
@@ -588,9 +613,22 @@ export function LocationsDashboard({ venues, events, entries }: LocationsDashboa
                       >
                         Inspect
                       </button>
-                      <Link href={`/admin/edit/${entry.id}`} className="admin-link">
+                      <Link href={`/admin/edit/${entry.id}`} className="admin-link" style={{ marginRight: "12px" }}>
                         Edit
                       </Link>
+                      <button
+                        type="button"
+                        className="admin-link"
+                        onClick={() => handleDeleteLocation(entry)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          color: "var(--color-danger, #ef4444)",
+                        }}
+                      >
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 );

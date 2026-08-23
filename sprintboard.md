@@ -215,6 +215,10 @@ Tracked here so we know what to stand up vs. what the client owns. Env var names
 ## 10. Session Log
 > Append newest at top. Format: `YYYY-MM-DD — who — what changed / decided / discovered`.
 
+- **2026-08-23 — agent — Removed blocking 'Master Location Protection' alerts in `locations-dashboard.tsx` to enable direct location/pin deletion from the Admin Panel (`DELETE /api/admin-entries`), purging entries across local files and Firebase RTDB. Updated `useEventData.ts`, `OfflineBadge.tsx`, `EventApp.tsx`, and `globals.css` to track Apps Script `heartbeat` status and report sync errors/stale status in the header badge (`⚠️ Sync Issue` / `⚠️ Sync Stale`) instead of reporting false live sync success.**
+
+- **2026-08-23 — agent — Diagnosed client Google Apps Script 'Bandwidth quota exceeded' failure (`crew-data/venues.json`) and stale location/test pin sync behavior. Optimized `scripts/PortalSyncScript.js` `writeToFirebase` with procedural MD5 hash payload deduplication to skip redundant writes when spreadsheet data is unchanged, and added graceful HTTP quota error handling. Documented client upgrade requirement to Firebase Blaze (Pay-as-you-go) plan to unblock RTDB limits.**
+
 - **2026-08-13 — agent — Updated application display name to 'BM26 Solaris ROS' across PWA Manifest (`public/manifest.json`), Next.js Metadata title and `appleWebApp` iOS home screen title (`src/app/layout.tsx`), main header banner heading (`src/components/event/EventApp.tsx`), support email templates (`src/lib/support.ts`), and bumped Service Worker cache (`public/sw.js` -> `portal-cache-v3`). Verified local build and linting checks.**
 
 - **2026-08-11 — agent — Suppressed unauthenticated RTDB listener connection attempts in `src/hooks/useEventData.ts`. Added authenticated `user` validation check inside `onAuthStateChanged` callback before establishing protected node listeners (`/admin-data`, `/crew-data`), eliminating transient initial `permission_denied` console log on page load. Verified Vitest unit tests (46/46 passing), clean ESLint check, and Next.js 16 build.**

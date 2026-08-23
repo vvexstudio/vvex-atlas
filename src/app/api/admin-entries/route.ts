@@ -75,18 +75,15 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const { password, id } = (await request.json()) as { password?: string; id?: string };
+    const { password, id, name } = (await request.json()) as { password?: string; id?: string; name?: string };
     if (!(await isAuthorized(password))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    if (!id) {
-      return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    if (!id && !name) {
+      return NextResponse.json({ error: "Missing id or name" }, { status: 400 });
     }
-    const deleted = await deleteAdminEntry(id);
-    if (!deleted) {
-      return NextResponse.json({ error: "Entry not found" }, { status: 404 });
-    }
-    return NextResponse.json({ ok: true });
+    const deleted = await deleteAdminEntry(id || "", name);
+    return NextResponse.json({ ok: true, deleted });
   } catch (error) {
     console.error("Delete admin entry failed:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

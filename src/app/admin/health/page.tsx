@@ -13,6 +13,8 @@ interface HealthData {
     active: boolean;
     heartbeat: {
       last_sync: string;
+      status?: string;
+      last_error?: string | null;
       rows: number;
     } | null;
     heartbeatAgeSeconds: number | null;
@@ -92,7 +94,9 @@ export default function AdminHealthPage() {
   if (!data) return null;
 
   // Sync health check (> 10 minutes is flagged red)
-  const isHeartbeatStale = data.firebase.heartbeatAgeSeconds !== null && data.firebase.heartbeatAgeSeconds > 600;
+  const syncError = data.firebase.heartbeat?.last_error;
+  const isSyncError = Boolean(syncError || data.firebase.heartbeat?.status === "error");
+  const isHeartbeatStale = isSyncError || (data.firebase.heartbeatAgeSeconds !== null && data.firebase.heartbeatAgeSeconds > 600);
   const heartbeatTimeStr = data.firebase.heartbeat
     ? new Date(data.firebase.heartbeat.last_sync).toLocaleString()
     : "Never";
@@ -103,6 +107,36 @@ export default function AdminHealthPage() {
         <h1 className="admin-page-title">System & Data Health Panel</h1>
         <span className="admin-live-badge">Live System Stats</span>
       </div>
+
+      {/* Sync Failure Alert Box */}
+      {isSyncError && (
+        <Card
+          className="admin-card"
+          style={{
+            borderColor: "var(--color-danger, #ef4444)",
+            backgroundColor: "rgba(239, 68, 68, 0.08)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              color: "var(--color-danger, #ef4444)",
+              fontWeight: 700,
+            }}
+          >
+            <Icon name="xCircle" size={20} />
+            <span>Google Apps Script Sync Failure Alert</span>
+          </div>
+          <p style={{ margin: "8px 0 4px 0", fontSize: "var(--text-sm)", color: "var(--ink)" }}>
+            <strong>Last Reported Error:</strong> {syncError || "Apps Script trigger failed during sync execution."}
+          </p>
+          <p className="admin-stat-note" style={{ margin: 0, color: "var(--muted)" }}>
+            Reported by Google Apps Script trigger. Check Apps Script Execution Logs or Firebase Database quotas to resolve.
+          </p>
+        </Card>
+      )}
 
       {/* Grid Row 1: Source and Sync status */}
       <div className="admin-grid-cols">
@@ -124,7 +158,7 @@ export default function AdminHealthPage() {
           <h3 className="eyebrow admin-section-title">Sync Heartbeat Status</h3>
           <div className="admin-stat-value">
             <Icon name={isHeartbeatStale ? "warning" : "checkCircle"} size={18} />
-            {isHeartbeatStale ? "Heartbeat Stale" : "Heartbeat Healthy"}
+            {isSyncError ? "Sync Error" : isHeartbeatStale ? "Heartbeat Stale" : "Heartbeat Healthy"}
           </div>
           <div>
             <strong>Last Sync:</strong> {heartbeatTimeStr}

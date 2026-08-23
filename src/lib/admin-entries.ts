@@ -236,11 +236,55 @@ export async function updateAdminEntry(id: string, input: Partial<AdminEntry>): 
   return merged;
 }
 
-export async function deleteAdminEntry(id: string): Promise<boolean> {
+export async function deleteAdminEntry(id: string, name?: string): Promise<boolean> {
   const entries = await readAdminEntries();
-  const nextEntries = entries.filter((entry) => entry.id !== id);
-  if (nextEntries.length === entries.length) return false;
+  const cleanId = String(id).toLowerCase().trim();
+  const cleanName = name ? String(name).toLowerCase().trim() : "";
+
+  const nextEntries = entries.filter(
+    (entry) =>
+      entry.id.toLowerCase().trim() !== cleanId &&
+      (!cleanName || entry.name.toLowerCase().trim() !== cleanName)
+  );
+
   await writeAdminEntries(nextEntries);
+
+  if (adminDb) {
+    try {
+      await adminDb.ref(`admin-data/entries/${id}`).remove();
+      await adminDb.ref(`crew-data/entries/${id}`).remove();
+      await adminDb.ref(`public-data/entries/${id}`).remove();
+
+      for (const node of ["crew-data/venues", "public-data/venues", "admin-data/venues"]) {
+        const snap = await adminDb.ref(node).once("value");
+        if (snap.exists()) {
+          const val = snap.val();
+          if (Array.isArray(val)) {
+            const filtered = val.filter(
+              (v: any) =>
+                v &&
+                String(v.id || "").toLowerCase().trim() !== cleanId &&
+                (!cleanName || String(v.name || "").toLowerCase().trim() !== cleanName)
+            );
+            await adminDb.ref(node).set(filtered);
+          } else if (typeof val === "object") {
+            for (const [k, v] of Object.entries(val as Record<string, any>)) {
+              if (
+                v &&
+                (String(v.id || "").toLowerCase().trim() === cleanId ||
+                  (cleanName && String(v.name || "").toLowerCase().trim() === cleanName))
+              ) {
+                await adminDb.ref(`${node}/${k}`).remove();
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Failed to delete admin entry from Firebase RTDB:", e);
+    }
+  }
+
   return true;
 }
 

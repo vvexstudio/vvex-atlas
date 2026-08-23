@@ -11,6 +11,8 @@ export interface OfflineBadgeProps {
   showWhenOnline?: boolean;
   envLabel?: string;
   sourceLabel?: string;
+  syncError?: string | null;
+  isSyncStale?: boolean;
 }
 
 function subscribeOnlineStatus(callback: () => void) {
@@ -44,7 +46,7 @@ const formatSyncTimestamp = (ts?: string | null): string => {
 
 /**
  * Premium Offline + Last Sync Status Indicator Badge.
- * Uses useSyncExternalStore for reactive network status tracking and formats last sync timestamp.
+ * Tracks network state, sheet sync errors, and heartbeat freshness.
  */
 export function OfflineBadge({
   isOffline: propIsOffline,
@@ -54,6 +56,8 @@ export function OfflineBadge({
   showWhenOnline = true,
   envLabel,
   sourceLabel,
+  syncError,
+  isSyncStale,
 }: OfflineBadgeProps) {
   const [mounted, setMounted] = React.useState(false);
 
@@ -70,13 +74,36 @@ export function OfflineBadge({
   const isOffline = propIsOffline !== undefined ? propIsOffline : isNetworkOffline;
   const syncFormatted = mounted ? formatSyncTimestamp(lastSynced) : "";
 
-  if (!isOffline && !showWhenOnline) {
+  if (!isOffline && !showWhenOnline && !syncError && !isSyncStale) {
     return null;
   }
 
+  const isError = Boolean(syncError);
+  const isWarning = Boolean(!isError && (isSyncStale || isOffline));
   const cleanEnv = envLabel ? envLabel.replace(/\s*\((Local|Live)\)/gi, "") : "";
+
+  let stateClass = "is-online";
+  let labelText = `Live${cleanEnv ? ` (${cleanEnv})` : ""}`;
+  let iconName: "wifi" | "wifiOff" | "warning" = "wifi";
+
+  if (isError) {
+    stateClass = "is-error";
+    labelText = `Sync Issue${cleanEnv ? ` (${cleanEnv})` : ""}`;
+    iconName = "warning";
+  } else if (isWarning) {
+    stateClass = "is-offline";
+    labelText = isOffline ? `Offline${cleanEnv ? ` (${cleanEnv})` : ""}` : `Sync Stale${cleanEnv ? ` (${cleanEnv})` : ""}`;
+    iconName = isOffline ? "wifiOff" : "warning";
+  }
+
   const tooltipText = [
-    isOffline ? "Offline Mode (showing cached data)" : "Live Connected",
+    isError
+      ? `⚠️ Sheet Sync Error: ${syncError}`
+      : isSyncStale
+      ? "⚠️ Sheet sync is stale (>10m ago)"
+      : isOffline
+      ? "Offline Mode (showing cached data)"
+      : "Live Connected",
     envLabel ? `Env: ${envLabel}` : "",
     sourceLabel ? `Data: ${sourceLabel}` : "",
     syncFormatted ? `Synced at ${syncFormatted}` : "",
@@ -86,16 +113,18 @@ export function OfflineBadge({
 
   return (
     <div
-      className={`offline-badge ${isOffline ? "is-offline" : "is-online"} ${compact ? "is-compact" : ""} ${className}`}
+      className={`offline-badge ${stateClass} ${compact ? "is-compact" : ""} ${className}`}
       title={tooltipText}
       suppressHydrationWarning
     >
       <span className="offline-badge-dot" aria-hidden="true" />
-      <Icon name={isOffline ? "wifiOff" : "wifi"} size={compact ? 12 : 14} />
+      <Icon name={iconName} size={compact ? 12 : 14} />
       <span className="offline-badge-text" suppressHydrationWarning>
-        <span className="offline-badge-label" suppressHydrationWarning>{isOffline ? "Offline" : "Live"}{cleanEnv ? ` (${cleanEnv})` : ""}</span>
+        <span className="offline-badge-label" suppressHydrationWarning>{labelText}</span>
         {mounted && syncFormatted ? (
-          <span className="offline-badge-time" suppressHydrationWarning> • {isOffline ? "Cached" : "Synced"} {syncFormatted}</span>
+          <span className="offline-badge-time" suppressHydrationWarning>
+            {" "}• {isError ? "Error" : isOffline ? "Cached" : "Synced"} {syncFormatted}
+          </span>
         ) : null}
       </span>
     </div>
