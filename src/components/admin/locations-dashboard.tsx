@@ -454,7 +454,56 @@ export function LocationsDashboard({ venues: initialVenues, events, entries: ini
           </div>
         </div>
 
-        <div className="card admin-table-wrap">
+        {/* Mobile View: Cards */}
+        <div className="admin-mobile-cards-list">
+          {venues.map((venue) => {
+            const venueEventsCount = events.filter(
+              (e) => e.locationName && e.locationName.toLowerCase() === venue.name.toLowerCase()
+            ).length;
+            return (
+              <div className="admin-mobile-card" key={`mobile-venue-${venue.id}`}>
+                <div className="admin-mobile-card-header">
+                  <div>
+                    <strong className="admin-mobile-card-title">{venue.name}</strong>
+                    <div className="admin-mobile-card-sub">
+                      {venue.address ? <span>{venue.address} • </span> : null}
+                      <Chip tone="neutral">{venue.permanence || "Standard"}</Chip>
+                    </div>
+                  </div>
+                  <span className="admin-mobile-card-badge">{venueEventsCount} shifts</span>
+                </div>
+
+                <div className="admin-mobile-card-meta mono">
+                  {venue.hasLocation && venue.lat !== undefined && venue.lng !== undefined
+                    ? `${venue.lat.toFixed(5)}, ${venue.lng.toFixed(5)}`
+                    : "Pending (Synthetic)"}
+                </div>
+
+                <div className="admin-mobile-card-actions">
+                  <button
+                    type="button"
+                    className="admin-btn-action"
+                    onClick={() => handleSelectVenue(venue)}
+                  >
+                    <Icon name="eye" size={14} />
+                    <span>Inspect</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="admin-btn-action admin-btn-action-danger"
+                    onClick={() => handleDeleteLocation(venue)}
+                  >
+                    <Icon name="trash" size={14} />
+                    <span>Delete Location</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Desktop View: Table */}
+        <div className="card admin-table-wrap admin-desktop-table">
           <table className="admin-table">
             <thead>
               <tr>
@@ -555,7 +604,73 @@ export function LocationsDashboard({ venues: initialVenues, events, entries: ini
           </div>
         </div>
 
-        <div className="card admin-table-wrap">
+        {/* Mobile View: Cards */}
+        <div className="admin-mobile-cards-list">
+          {entries.map((entry) => {
+            const isSuperceded =
+              sheetVenueIds.has(entry.id.toLowerCase()) ||
+              sheetVenueNames.has(entry.name.trim().toLowerCase());
+            return (
+              <div className="admin-mobile-card" key={`mobile-entry-${entry.id}`}>
+                <div className="admin-mobile-card-header">
+                  <div>
+                    <strong className="admin-mobile-card-title">{entry.name}</strong>
+                    <div className="admin-mobile-card-sub">
+                      <Chip tone={entry.serviceType ? "warn" : "accent"}>
+                        {entry.projectType === "services" && entry.serviceType
+                          ? `Services: ${entry.serviceType}`
+                          : entry.projectType}
+                      </Chip>
+                      {isSuperceded ? (
+                        <Chip tone="success" icon="check">In Sheet</Chip>
+                      ) : (
+                        <Chip tone="warn" icon="zap">Temporary</Chip>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="admin-mobile-card-meta">
+                  {entry.locationInternal ? <div>{entry.locationInternal}</div> : null}
+                  <div className="mono" style={{ marginTop: "2px" }}>
+                    {entry.hasLocation && entry.lat !== undefined && entry.lng !== undefined
+                      ? `${entry.lat.toFixed(5)}, ${entry.lng.toFixed(5)}`
+                      : "Unplaced"}
+                  </div>
+                </div>
+
+                <div className="admin-mobile-card-actions">
+                  <button
+                    type="button"
+                    className="admin-btn-action"
+                    onClick={() => handleSelectEntry(entry)}
+                  >
+                    <Icon name="eye" size={14} />
+                    <span>Inspect</span>
+                  </button>
+                  <Link
+                    href={`/admin/edit/${entry.id}`}
+                    className="admin-btn-action"
+                  >
+                    <Icon name="pencil" size={14} />
+                    <span>Edit</span>
+                  </Link>
+                  <button
+                    type="button"
+                    className="admin-btn-action admin-btn-action-danger"
+                    onClick={() => handleDeleteLocation(entry)}
+                  >
+                    <Icon name="trash" size={14} />
+                    <span>Delete Pin</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Desktop View: Table */}
+        <div className="card admin-table-wrap admin-desktop-table">
           <table className="admin-table">
             <thead>
               <tr>
