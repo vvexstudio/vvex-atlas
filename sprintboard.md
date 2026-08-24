@@ -215,6 +215,8 @@ Tracked here so we know what to stand up vs. what the client owns. Env var names
 ## 10. Session Log
 > Append newest at top. Format: `YYYY-MM-DD — who — what changed / decided / discovered`.
 
+- **2026-08-24 — agent — Bumped Service Worker PWA cache version (`public/sw.js` -> `portal-cache-v4`). Automatically invalidates stale cached assets on mobile devices and claims active clients (`self.skipWaiting()` / `self.clients.claim()`), propagating new UI layouts without requiring app reinstallation.**
+
 - **2026-08-23 — agent — Removed blocking 'Master Location Protection' alerts in `locations-dashboard.tsx` to enable direct location/pin deletion from the Admin Panel (`DELETE /api/admin-entries`), purging entries across local files and Firebase RTDB. Updated `useEventData.ts`, `OfflineBadge.tsx`, `EventApp.tsx`, and `globals.css` to track Apps Script `heartbeat` status and report sync errors/stale status in the header badge (`⚠️ Sync Issue` / `⚠️ Sync Stale`) instead of reporting false live sync success.**
 
 - **2026-08-23 — agent — Diagnosed client Google Apps Script 'Bandwidth quota exceeded' failure (`crew-data/venues.json`) and stale location/test pin sync behavior. Optimized `scripts/PortalSyncScript.js` `writeToFirebase` with procedural MD5 hash payload deduplication to skip redundant writes when spreadsheet data is unchanged, and added graceful HTTP quota error handling. Documented client upgrade requirement to Firebase Blaze (Pay-as-you-go) plan to unblock RTDB limits.**
