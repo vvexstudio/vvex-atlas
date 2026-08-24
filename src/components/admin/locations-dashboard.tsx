@@ -8,6 +8,7 @@ import { FestivalEvent, Venue } from "@/types/festival";
 import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { Icon } from "@/components/ui/icons";
+import { clearOfflineSnapshots } from "@/lib/offline-cache";
 
 if (typeof window !== "undefined") {
   const origError = console.error;
@@ -101,6 +102,7 @@ export function LocationsDashboard({ venues: initialVenues, events, entries: ini
           (e) => e.id.toLowerCase().trim() !== cleanId && e.name.toLowerCase().trim() !== cleanName
         )
       );
+      clearOfflineSnapshots();
       if (selectedItem?.id === item.id) {
         setSelectedItem(null);
       }
@@ -495,27 +497,26 @@ export function LocationsDashboard({ venues: initialVenues, events, entries: ini
                       <strong>{venueEventsCount} shifts</strong>
                     </td>
                     <td className="admin-cell-right">
-                      <button
-                        type="button"
-                        className="admin-link"
-                        onClick={() => handleSelectVenue(venue)}
-                        style={{ background: "none", border: "none", cursor: "pointer", marginRight: "12px" }}
-                      >
-                        Inspect
-                      </button>
-                      <button
-                        type="button"
-                        className="admin-link"
-                        onClick={() => handleDeleteLocation(venue)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          color: "var(--color-danger, #ef4444)",
-                        }}
-                      >
-                        Delete
-                      </button>
+                      <div className="admin-action-group">
+                        <button
+                          type="button"
+                          className="admin-btn-action"
+                          onClick={() => handleSelectVenue(venue)}
+                          title="Inspect location on map"
+                        >
+                          <Icon name="eye" size={13} />
+                          <span>Inspect</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-btn-action admin-btn-action-danger"
+                          onClick={() => handleDeleteLocation(venue)}
+                          title="Delete location permanently"
+                        >
+                          <Icon name="trash" size={13} />
+                          <span>Delete</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -605,30 +606,34 @@ export function LocationsDashboard({ venues: initialVenues, events, entries: ini
                       )}
                     </td>
                     <td className="admin-cell-right">
-                      <button
-                        type="button"
-                        className="admin-link"
-                        onClick={() => handleSelectEntry(entry)}
-                        style={{ background: "none", border: "none", cursor: "pointer", marginRight: "12px" }}
-                      >
-                        Inspect
-                      </button>
-                      <Link href={`/admin/edit/${entry.id}`} className="admin-link" style={{ marginRight: "12px" }}>
-                        Edit
-                      </Link>
-                      <button
-                        type="button"
-                        className="admin-link"
-                        onClick={() => handleDeleteLocation(entry)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          color: "var(--color-danger, #ef4444)",
-                        }}
-                      >
-                        Delete
-                      </button>
+                      <div className="admin-action-group">
+                        <button
+                          type="button"
+                          className="admin-btn-action"
+                          onClick={() => handleSelectEntry(entry)}
+                          title="Inspect pin on map"
+                        >
+                          <Icon name="eye" size={13} />
+                          <span>Inspect</span>
+                        </button>
+                        <Link
+                          href={`/admin/edit/${entry.id}`}
+                          className="admin-btn-action"
+                          title="Edit pin details"
+                        >
+                          <Icon name="pencil" size={13} />
+                          <span>Edit</span>
+                        </Link>
+                        <button
+                          type="button"
+                          className="admin-btn-action admin-btn-action-danger"
+                          onClick={() => handleDeleteLocation(entry)}
+                          title="Delete pin permanently"
+                        >
+                          <Icon name="trash" size={13} />
+                          <span>Delete</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

@@ -44,6 +44,7 @@ import {
   Megaphone,
   Moon,
   Palette,
+  Pencil,
   Phone,
   Pin,
   Plane,
@@ -110,6 +111,8 @@ const ICONS = {
   megaphone: Megaphone,
   moon: Moon,
   palette: Palette,
+  pencil: Pencil,
+  edit: Pencil,
   phone: Phone,
   pin: Pin,
   plane: Plane,
@@ -157,7 +160,8 @@ export const Icon = React.memo(function Icon({
   filled = false,
   ...rest
 }: IconProps) {
-  const Cmp = ICONS[name];
+  const Cmp = ICONS[name] || ICONS["pin"] || ICONS["x"];
+  if (!Cmp) return null;
   return (
     <Cmp
       size={size}

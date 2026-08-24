@@ -51,3 +51,18 @@ export function loadOfflineSnapshot(role: string = "public"): OfflineSnapshot | 
     return null;
   }
 }
+
+/**
+ * Clears cached offline snapshots from localStorage.
+ */
+export function clearOfflineSnapshots() {
+  if (typeof window === "undefined") return;
+  try {
+    const roles = ["public", "crew", "admin"];
+    roles.forEach((role) => {
+      localStorage.removeItem(`${STORAGE_KEY}_${role}`);
+    });
+  } catch (err) {
+    console.error("Failed to clear offline snapshots from localStorage:", err);
+  }
+}
