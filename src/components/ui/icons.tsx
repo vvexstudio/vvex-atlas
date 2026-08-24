@@ -161,7 +161,7 @@ export const Icon = React.memo(function Icon({
   ...rest
 }: IconProps) {
   const Cmp = ICONS[name] || ICONS["pin"] || ICONS["x"];
-  if (!Cmp) return null;
+  if (!Cmp || (typeof Cmp !== "function" && typeof Cmp !== "object")) return null;
   return (
     <Cmp
       size={size}

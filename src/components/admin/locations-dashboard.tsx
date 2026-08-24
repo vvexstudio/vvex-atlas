@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
-import { APIProvider, Map, AdvancedMarker, useMap } from "@vis.gl/react-google-maps";
+import { APIProvider, Map, AdvancedMarker, useMap, MapMouseEvent } from "@vis.gl/react-google-maps";
 import { AdminEntry } from "@/types/admin-entry";
 import { FestivalEvent, Venue } from "@/types/festival";
 import { Button } from "@/components/ui/Button";
@@ -57,8 +57,11 @@ function MapCameraController({
 
 export function LocationsDashboard({ venues: initialVenues, events, entries: initialEntries }: LocationsDashboardProps) {
   const [copiedSuccess, setCopiedSuccess] = useState(false);
+  const [copiedRowId, setCopiedRowId] = useState<string | null>(null);
   const [venues, setVenues] = useState<Venue[]>(initialVenues);
   const [entries, setEntries] = useState<AdminEntry[]>(initialEntries);
+  const [editingVenue, setEditingVenue] = useState<Venue | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
     setVenues(initialVenues);
@@ -108,6 +111,88 @@ export function LocationsDashboard({ venues: initialVenues, events, entries: ini
       }
     } catch (err: any) {
       alert(`Error deleting location: ${err?.message || "Unknown error"}`);
+    }
+  };
+
+  const handleCopySingleRow = (entry: AdminEntry) => {
+    const location = entry.name.trim();
+    const aliases = entry.artist ? entry.artist.trim() : "";
+    const address = entry.locationInternal ? entry.locationInternal.trim() : "";
+    const lat = entry.hasLocation && entry.lat !== undefined ? entry.lat.toString() : "";
+    const long = entry.hasLocation && entry.lng !== undefined ? entry.lng.toString() : "";
+    const description = entry.abridgedProjectText ? entry.abridgedProjectText.trim() : "";
+
+    const tsvLine = `${location}\t${aliases}\t${address}\t${lat}\t${long}\t${description}`;
+    navigator.clipboard.writeText(tsvLine);
+    setCopiedRowId(entry.id);
+    setTimeout(() => setCopiedRowId(null), 2500);
+  };
+
+  const handleSaveVenueEdit = async (updatedData: {
+    id: string;
+    name: string;
+    aliases?: string;
+    address: string;
+    permanence: string;
+    lat?: number;
+    lng?: number;
+    description: string;
+  }) => {
+    setSavingEdit(true);
+    try {
+      const entryId = updatedData.id.startsWith("entry-") ? updatedData.id : `entry-${updatedData.id}`;
+      const newEntry: Partial<AdminEntry> = {
+        id: entryId,
+        name: updatedData.name,
+        artist: updatedData.aliases || "",
+        locationInternal: updatedData.address,
+        projectType: (updatedData.permanence || "venue") as any,
+        lat: updatedData.lat,
+        lng: updatedData.lng,
+        hasLocation: typeof updatedData.lat === "number" && typeof updatedData.lng === "number",
+        abridgedProjectText: updatedData.description,
+      };
+
+      const res = await fetch("/api/admin-entries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entry: newEntry }),
+      });
+
+      if (!res.ok) {
+        alert(`Failed to save location update. Status: ${res.status}`);
+        setSavingEdit(false);
+        return;
+      }
+
+      const createdRes = await res.json();
+      const savedEntry: AdminEntry = createdRes.entry || {
+        ...newEntry,
+        id: entryId,
+        artist: updatedData.aliases || "",
+        hasSchedule: false,
+        day: "fri",
+      };
+
+      setEntries((prev) => {
+        const filtered = prev.filter(
+          (e) => e.id !== savedEntry.id && e.name.toLowerCase().trim() !== savedEntry.name.toLowerCase().trim()
+        );
+        return [...filtered, savedEntry];
+      });
+
+      clearOfflineSnapshots();
+      setEditingVenue(null);
+      setSelectedItem({ type: "entry", id: savedEntry.id });
+
+      if (typeof savedEntry.lat === "number" && typeof savedEntry.lng === "number") {
+        setTargetCoord({ coord: { lat: savedEntry.lat, lng: savedEntry.lng }, zoom: 16 });
+        mapSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    } catch (err: any) {
+      alert(`Error saving location edit: ${err?.message || "Unknown error"}`);
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -490,11 +575,19 @@ export function LocationsDashboard({ venues: initialVenues, events, entries: ini
                   </button>
                   <button
                     type="button"
+                    className="admin-btn-action"
+                    onClick={() => setEditingVenue(venue)}
+                  >
+                    <Icon name="pencil" size={14} />
+                    <span>Edit</span>
+                  </button>
+                  <button
+                    type="button"
                     className="admin-btn-action admin-btn-action-danger"
                     onClick={() => handleDeleteLocation(venue)}
                   >
                     <Icon name="trash" size={14} />
-                    <span>Delete Location</span>
+                    <span>Delete</span>
                   </button>
                 </div>
               </div>
@@ -558,6 +651,15 @@ export function LocationsDashboard({ venues: initialVenues, events, entries: ini
                         </button>
                         <button
                           type="button"
+                          className="admin-btn-action"
+                          onClick={() => setEditingVenue(venue)}
+                          title="Edit location details & move to custom overlays"
+                        >
+                          <Icon name="pencil" size={13} />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          type="button"
                           className="admin-btn-action admin-btn-action-danger"
                           onClick={() => handleDeleteLocation(venue)}
                           title="Delete location permanently"
@@ -595,7 +697,7 @@ export function LocationsDashboard({ venues: initialVenues, events, entries: ini
               icon={copiedSuccess ? "check" : "copy"}
               onClick={handleCopyForGoogleSheets}
             >
-              {copiedSuccess ? "Copied" : "Copy Pins for Google Sheet"}
+              {copiedSuccess ? "Copied All" : "Copy All Pins for Google Sheet"}
             </Button>
 
             <Link href="/admin/new" className="btn btn-primary btn-sm">
@@ -648,6 +750,15 @@ export function LocationsDashboard({ venues: initialVenues, events, entries: ini
                     <Icon name="eye" size={14} />
                     <span>Inspect</span>
                   </button>
+                  <button
+                    type="button"
+                    className="admin-btn-action"
+                    onClick={() => handleCopySingleRow(entry)}
+                    title="Copy single TSV row for Google Sheet"
+                  >
+                    <Icon name={copiedRowId === entry.id ? "check" : "copy"} size={14} />
+                    <span>{copiedRowId === entry.id ? "Copied" : "Copy Row"}</span>
+                  </button>
                   <Link
                     href={`/admin/edit/${entry.id}`}
                     className="admin-btn-action"
@@ -661,7 +772,7 @@ export function LocationsDashboard({ venues: initialVenues, events, entries: ini
                     onClick={() => handleDeleteLocation(entry)}
                   >
                     <Icon name="trash" size={14} />
-                    <span>Delete Pin</span>
+                    <span>Delete</span>
                   </button>
                 </div>
               </div>
@@ -731,6 +842,15 @@ export function LocationsDashboard({ venues: initialVenues, events, entries: ini
                           <Icon name="eye" size={13} />
                           <span>Inspect</span>
                         </button>
+                        <button
+                          type="button"
+                          className="admin-btn-action"
+                          onClick={() => handleCopySingleRow(entry)}
+                          title="Copy single TSV row for Google Sheet"
+                        >
+                          <Icon name={copiedRowId === entry.id ? "check" : "copy"} size={13} />
+                          <span>{copiedRowId === entry.id ? "Copied" : "Copy Row"}</span>
+                        </button>
                         <Link
                           href={`/admin/edit/${entry.id}`}
                           className="admin-btn-action"
@@ -757,6 +877,321 @@ export function LocationsDashboard({ venues: initialVenues, events, entries: ini
           </table>
         </div>
       </div>
+
+      {/* Edit Location Modal */}
+      {editingVenue && (
+        <EditLocationModal
+          venue={editingVenue}
+          onClose={() => setEditingVenue(null)}
+          onSave={handleSaveVenueEdit}
+          isSaving={savingEdit}
+        />
+      )}
+    </div>
+  );
+}
+
+function EditLocationModal({
+  venue,
+  onClose,
+  onSave,
+  isSaving,
+}: {
+  venue: Venue;
+  onClose: () => void;
+  onSave: (updated: {
+    id: string;
+    name: string;
+    aliases: string;
+    address: string;
+    permanence: string;
+    lat?: number;
+    lng?: number;
+    description: string;
+  }) => void;
+  isSaving: boolean;
+}) {
+  const [name, setName] = useState(venue.name);
+  const [aliases, setAliases] = useState("");
+  const [address, setAddress] = useState(venue.address || "");
+  const [permanence, setPermanence] = useState(venue.permanence || "Standard");
+  const [description, setDescription] = useState(venue.description || "");
+  const [latVal, setLatVal] = useState<string>(venue.lat !== undefined ? String(venue.lat) : "");
+  const [lngVal, setLngVal] = useState<string>(venue.lng !== undefined ? String(venue.lng) : "");
+
+  const parsedLat = latVal ? parseFloat(latVal) : undefined;
+  const parsedLng = lngVal ? parseFloat(lngVal) : undefined;
+  const hasCoord = !isNaN(parsedLat as number) && !isNaN(parsedLng as number);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      alert("Location Name is required.");
+      return;
+    }
+    onSave({
+      id: venue.id,
+      name: name.trim(),
+      aliases: aliases.trim(),
+      address: address.trim(),
+      permanence: permanence.trim(),
+      lat: hasCoord ? parsedLat : undefined,
+      lng: hasCoord ? parsedLng : undefined,
+      description: description.trim(),
+    });
+  };
+
+  const centerCoord = hasCoord
+    ? { lat: parsedLat!, lng: parsedLng! }
+    : MAP_CENTER;
+
+  return (
+    <div className="admin-modal-overlay" onClick={onClose}>
+      <div className="admin-modal-card" onClick={(e) => e.stopPropagation()}>
+        <div className="admin-modal-header">
+          <h3 className="admin-modal-title">
+            <Icon name="pencil" size={18} />
+            Edit Location &amp; Move to Custom Overlays
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}
+          >
+            <Icon name="x" size={18} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+          <div className="admin-modal-body">
+            <p style={{ margin: 0, fontSize: "12px", color: "var(--muted)" }}>
+              Editing this location will create a modified overlay under <strong>Custom Map Pin Overlays</strong> so you can copy it directly back into the Google Sheet.
+            </p>
+
+            <div className="admin-form-row">
+              <div className="admin-form-group">
+                <label className="admin-form-label">Location Name *</label>
+                <input
+                  type="text"
+                  className="admin-form-input"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Will Call, Le Salon, Gerlach Store"
+                  required
+                />
+              </div>
+
+              <div className="admin-form-group">
+                <label className="admin-form-label">Aliases / Alternate Names</label>
+                <input
+                  type="text"
+                  className="admin-form-input"
+                  value={aliases}
+                  onChange={(e) => setAliases(e.target.value)}
+                  placeholder="e.g. Main Gate, Box Office"
+                />
+              </div>
+            </div>
+
+            <div className="admin-form-row">
+              <div className="admin-form-group">
+                <label className="admin-form-label">Address / Spot Location</label>
+                <input
+                  type="text"
+                  className="admin-form-input"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="e.g. 2:15 & K or Gerlach, NV"
+                />
+              </div>
+
+              <div className="admin-form-group">
+                <label className="admin-form-label">Category / Type</label>
+                <select
+                  className="admin-form-select"
+                  value={permanence}
+                  onChange={(e) => setPermanence(e.target.value)}
+                >
+                  <option value="Standard">Standard</option>
+                  <option value="Venue">Venue</option>
+                  <option value="Installation">Installation</option>
+                  <option value="Services">Services</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="admin-form-row">
+              <div className="admin-form-group">
+                <label className="admin-form-label">Latitude (Lat)</label>
+                <input
+                  type="number"
+                  step="any"
+                  className="admin-form-input mono"
+                  value={latVal}
+                  onChange={(e) => setLatVal(e.target.value)}
+                  placeholder="40.78640"
+                />
+              </div>
+
+              <div className="admin-form-group">
+                <label className="admin-form-label">Longitude (Lng)</label>
+                <input
+                  type="number"
+                  step="any"
+                  className="admin-form-input mono"
+                  value={lngVal}
+                  onChange={(e) => setLngVal(e.target.value)}
+                  placeholder="-119.20650"
+                />
+              </div>
+            </div>
+
+            <div className="admin-form-group">
+              <label className="admin-form-label">Search Place or Click Map to Set Coordinates</label>
+              <ModalMapSearchBox
+                onSelectLocation={({ lat, lng, address: searchedAddress }) => {
+                  setLatVal(lat.toFixed(6));
+                  setLngVal(lng.toFixed(6));
+                  if (searchedAddress && !address) {
+                    setAddress(searchedAddress);
+                  }
+                }}
+              />
+              <div style={{ width: "100%", height: "190px", borderRadius: "6px", overflow: "hidden", border: "1px solid var(--line)" }}>
+                <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""}>
+                  <Map
+                    defaultCenter={centerCoord}
+                    defaultZoom={15}
+                    mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || "DEMO_MAP_ID"}
+                    disableDefaultUI={true}
+                    zoomControl={true}
+                    onClick={(ev: MapMouseEvent) => {
+                      if (ev.detail.latLng) {
+                        setLatVal(ev.detail.latLng.lat.toFixed(6));
+                        setLngVal(ev.detail.latLng.lng.toFixed(6));
+                      }
+                    }}
+                    gestureHandling="greedy"
+                    style={{ width: "100%", height: "100%" }}
+                  >
+                    {hasCoord && (
+                      <AdvancedMarker position={{ lat: parsedLat!, lng: parsedLng! }}>
+                        <div className="admin-map-marker-pin admin-map-marker-custom active">
+                          <Icon name="pin" size={12} />
+                          <span>{name || "Pin Location"}</span>
+                        </div>
+                      </AdvancedMarker>
+                    )}
+                  </Map>
+                </APIProvider>
+              </div>
+            </div>
+
+            <div className="admin-form-group">
+              <label className="admin-form-label">Description / Notes</label>
+              <textarea
+                className="admin-form-textarea"
+                rows={2}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Detailed location description or operational notes..."
+              />
+            </div>
+          </div>
+
+          <div className="admin-modal-footer">
+            <Button variant="ghost" size="sm" type="button" onClick={onClose} disabled={isSaving}>
+              Cancel
+            </Button>
+            <Button variant="primary" size="sm" type="submit" icon="check" disabled={isSaving}>
+              {isSaving ? "Saving..." : "Save & Move to Custom Overlays"}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function ModalMapSearchBox({
+  onSelectLocation,
+}: {
+  onSelectLocation: (loc: { lat: number; lng: number; address?: string }) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = query.trim();
+    if (!q) return;
+
+    setSearching(true);
+    setSearchError(null);
+
+    try {
+      if (typeof window !== "undefined" && window.google?.maps?.Geocoder) {
+        const geocoder = new window.google.maps.Geocoder();
+        geocoder.geocode({ address: q }, (results, status) => {
+          setSearching(false);
+          if (status === "OK" && results && results[0]) {
+            const loc = results[0].geometry.location;
+            onSelectLocation({
+              lat: loc.lat(),
+              lng: loc.lng(),
+              address: results[0].formatted_address,
+            });
+          } else {
+            setSearchError(`No place found for "${q}". Try adding city/state (e.g. Gerlach, NV).`);
+          }
+        });
+      } else {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        setSearching(false);
+        if (Array.isArray(data) && data.length > 0) {
+          onSelectLocation({
+            lat: parseFloat(data[0].lat),
+            lng: parseFloat(data[0].lon),
+            address: data[0].display_name,
+          });
+        } else {
+          setSearchError(`No results found for "${q}".`);
+        }
+      }
+    } catch (err: any) {
+      setSearching(false);
+      setSearchError(`Search error: ${err?.message || "Unknown error"}`);
+    }
+  };
+
+  return (
+    <div style={{ marginBottom: "6px" }}>
+      <div style={{ display: "flex", gap: "6px" }}>
+        <input
+          type="text"
+          className="admin-form-input"
+          style={{ flex: 1 }}
+          placeholder="🔍 Search place/landmark (e.g. Airport, Gerlach Store, Bruno's)..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleSearch(e);
+            }
+          }}
+        />
+        <Button variant="secondary" size="sm" type="button" onClick={handleSearch} disabled={searching}>
+          {searching ? "..." : "Search"}
+        </Button>
+      </div>
+      {searchError && (
+        <div style={{ color: "var(--danger)", fontSize: "11px", marginTop: "3px" }}>
+          {searchError}
+        </div>
+      )}
     </div>
   );
 }

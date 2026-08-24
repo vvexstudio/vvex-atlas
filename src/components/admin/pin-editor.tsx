@@ -303,13 +303,14 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
 
         {!isServicesBatchMode ? (
           <div>
-            <label className="admin-label">Project / Title *</label>
+            <label className="admin-label">Location Name *</label>
             <input
               required
               type="text"
               className="admin-input"
               value={formData.name}
               onChange={e => setFormData(f => ({ ...f, name: e.target.value }))}
+              placeholder="e.g. Will Call, Le Salon, Gerlach Store"
             />
           </div>
         ) : (
@@ -318,19 +319,20 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
 
         {!isServicesBatchMode && (
           <div>
-            <label className="admin-label">Artist / Host</label>
+            <label className="admin-label">Aliases / Alternate Names</label>
             <input
               type="text"
               className="admin-input"
               value={formData.artist}
               onChange={e => setFormData(f => ({ ...f, artist: e.target.value }))}
+              placeholder="e.g. Main Gate, Box Office"
             />
           </div>
         )}
 
         {!isServicesBatchMode && (
           <div>
-            <label className="admin-label">Location</label>
+            <label className="admin-label">Address / Spot Location</label>
             <input
               type="text"
               list="predefined-locations"
@@ -344,7 +346,7 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
                   setLocation({ lat: matched.lat, lng: matched.lng });
                 }
               }}
-              placeholder="Choose or type a location"
+              placeholder="e.g. 2:15 & K or Gerlach, NV"
             />
             <datalist id="predefined-locations">
               {locationOptions.map((option, index) => (
@@ -362,7 +364,7 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
         )}
 
         <div>
-          <label className="admin-label">Project Type *</label>
+          <label className="admin-label">Category / Type *</label>
           <select
             className="admin-input"
             value={formData.projectType}
@@ -397,12 +399,13 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
         {!isServicesBatchMode && (
           <>
             <div>
-              <label className="admin-label">Abridged Project Text</label>
+              <label className="admin-label">Description / Notes</label>
               <textarea
-                rows={5}
+                rows={4}
                 className="admin-input"
                 value={formData.abridgedProjectText}
                 onChange={e => setFormData(f => ({ ...f, abridgedProjectText: e.target.value }))}
+                placeholder="Detailed location description or operational notes..."
               />
             </div>
 
@@ -451,7 +454,7 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
                     className="admin-input"
                     value={formData.endTime}
                     onChange={e => setFormData(f => ({ ...f, endTime: e.target.value }))}
-                    placeholder="e.g. 4:00 PM"
+                    placeholder="e.g. 03/28/2026 4:00 PM"
                   />
                 </div>
               </div>
@@ -529,7 +532,15 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
 
       <div className="admin-editor-map">
         <div className="admin-map-header">
-          <p className="admin-label">Click on the map to set the exact coordinates.</p>
+          <MapSearchBox
+            onSelectLocation={({ lat, lng, address }) => {
+              setLocation({ lat, lng });
+              if (address && !formData.locationInternal) {
+                setFormData((f) => ({ ...f, locationInternal: address }));
+              }
+            }}
+          />
+          <p className="admin-label">Search a place above or click on the map to set exact coordinates.</p>
           <p className="admin-hint">
             {isServicesBatchMode
               ? `Pending markers: ${servicePins.length}`
@@ -581,6 +592,83 @@ export function PinEditor({ initialData, locationOptions = [] }: PinEditorProps)
           </APIProvider>
         </div>
       </div>
+    </div>
+  );
+}
+
+function MapSearchBox({
+  onSelectLocation,
+}: {
+  onSelectLocation: (loc: { lat: number; lng: number; address?: string }) => void;
+}) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+
+  const handleSearchSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const query = searchQuery.trim();
+    if (!query) return;
+
+    setIsSearching(true);
+    setSearchError(null);
+
+    try {
+      if (typeof window !== "undefined" && window.google?.maps?.Geocoder) {
+        const geocoder = new window.google.maps.Geocoder();
+        geocoder.geocode({ address: query }, (results, status) => {
+          setIsSearching(false);
+          if (status === "OK" && results && results[0]) {
+            const latLng = results[0].geometry.location;
+            onSelectLocation({
+              lat: latLng.lat(),
+              lng: latLng.lng(),
+              address: results[0].formatted_address,
+            });
+          } else {
+            setSearchError(`No results for "${query}". Try adding city/state (e.g. Gerlach, NV).`);
+          }
+        });
+      } else {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        setIsSearching(false);
+        if (Array.isArray(data) && data.length > 0) {
+          onSelectLocation({
+            lat: parseFloat(data[0].lat),
+            lng: parseFloat(data[0].lon),
+            address: data[0].display_name,
+          });
+        } else {
+          setSearchError(`No results found for "${query}".`);
+        }
+      }
+    } catch (err: any) {
+      setIsSearching(false);
+      setSearchError(`Search error: ${err?.message || "Unknown error"}`);
+    }
+  };
+
+  return (
+    <div style={{ marginBottom: "8px", width: "100%" }}>
+      <form onSubmit={handleSearchSubmit} style={{ display: "flex", gap: "6px" }}>
+        <input
+          type="text"
+          className="admin-input"
+          style={{ flex: 1 }}
+          placeholder="🔍 Search place or landmark (e.g. Airport, Gerlach, Bruno's)..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        <Button variant="secondary" size="sm" type="submit" disabled={isSearching}>
+          {isSearching ? "Searching..." : "Search"}
+        </Button>
+      </form>
+      {searchError && (
+        <div style={{ color: "var(--danger)", fontSize: "11px", marginTop: "4px" }}>
+          {searchError}
+        </div>
+      )}
     </div>
   );
 }
