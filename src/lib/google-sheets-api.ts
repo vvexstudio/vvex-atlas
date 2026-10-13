@@ -152,52 +152,78 @@ export function matchTabTitle(targetPattern: string, availableTitles: string[] =
 }
 
 /**
- * Fetches and parses Google Sheet tab data into objects using Workspace API (OAuth)
+ * Fetches and parses Google Sheet tab data into objects using Workspace API (OAuth),
+ * with automatic, resilient fallback to public CSV export if OAuth credentials are
+ * absent, expired, or rejected (e.g. 401 UNAUTHENTICATED).
  */
 export async function getParsedSheetData<T extends Record<string, any>>(
   spreadsheetId: string,
   tabName: string
 ): Promise<T[]> {
+  const hasCredentials = Boolean(
+    (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY) ||
+    (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.GOOGLE_REFRESH_TOKEN)
+  );
+
+  if (!hasCredentials) {
+    return getParsedSheetDataFromPublicCsv<T>(spreadsheetId, tabName);
+  }
+
   let matchedTabName = matchTabTitle(tabName, []);
   try {
     const availableSheets = await getSpreadsheetSheets(spreadsheetId);
-    matchedTabName = matchTabTitle(tabName, availableSheets);
+    if (availableSheets.length > 0) {
+      matchedTabName = matchTabTitle(tabName, availableSheets);
+    }
   } catch (err) {
     console.warn(`Failed to resolve sheet tab titles list for '${tabName}':`, err);
   }
 
-  const rows = await getSpreadsheetValues(spreadsheetId, `${matchedTabName}!A1:Z`);
-  if (rows.length === 0) return [];
-
-  // Auto-detect header row index within first 10 rows
-  let headerRowIndex = 0;
-  for (let i = 0; i < Math.min(rows.length, 10); i++) {
-    const rowVals = (rows[i] || []).map((cell: any) =>
-      String(cell || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "")
-    );
-    const hasKnownHeader = rowVals.some((v: string) =>
-      ["startday", "action", "location", "loaction", "department", "leaddept", "description", "start"].includes(v)
-    );
-    if (hasKnownHeader) {
-      headerRowIndex = i;
-      break;
+  try {
+    const rows = await getSpreadsheetValues(spreadsheetId, `${matchedTabName}!A1:Z`);
+    if (rows.length === 0) {
+      return getParsedSheetDataFromPublicCsv<T>(spreadsheetId, tabName);
     }
+
+    // Auto-detect header row index within first 10 rows
+    let headerRowIndex = 0;
+    for (let i = 0; i < Math.min(rows.length, 10); i++) {
+      const rowVals = (rows[i] || []).map((cell: any) =>
+        String(cell || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "")
+      );
+      const hasKnownHeader = rowVals.some((v: string) =>
+        ["startday", "action", "location", "loaction", "department", "leaddept", "description", "start"].includes(v)
+      );
+      if (hasKnownHeader) {
+        headerRowIndex = i;
+        break;
+      }
+    }
+
+    const headers = (rows[headerRowIndex] || []).map((h: any) => String(h || "").trim());
+    const dataRows = rows.slice(headerRowIndex + 1);
+
+    const result = dataRows
+      .map((row) => {
+        const item: Record<string, any> = {};
+        headers.forEach((header, index) => {
+          if (header) {
+            item[header] = row[index] !== undefined ? row[index] : "";
+          }
+        });
+        return item as T;
+      })
+      .filter((item) => Object.values(item).some((val) => val !== "" && val !== undefined));
+
+    if (result.length === 0) {
+      return getParsedSheetDataFromPublicCsv<T>(spreadsheetId, tabName);
+    }
+
+    return result;
+  } catch (err) {
+    console.warn(`OAuth fetch failed for tab '${tabName}', falling back to public CSV:`, err);
+    return getParsedSheetDataFromPublicCsv<T>(spreadsheetId, tabName);
   }
-
-  const headers = (rows[headerRowIndex] || []).map((h: any) => String(h || "").trim());
-  const dataRows = rows.slice(headerRowIndex + 1);
-
-  return dataRows
-    .map((row) => {
-      const item: Record<string, any> = {};
-      headers.forEach((header, index) => {
-        if (header) {
-          item[header] = row[index] !== undefined ? row[index] : "";
-        }
-      });
-      return item as T;
-    })
-    .filter((item) => Object.values(item).some((val) => val !== "" && val !== undefined));
 }
 
 /**
@@ -254,10 +280,19 @@ function getContrastColor(hexBg: string): string {
 export async function getSpreadsheetSheets(spreadsheetId: string): Promise<string[]> {
   noStore();
 
-  const accessToken = await getAccessToken();
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties.title`;
+  const hasCredentials = Boolean(
+    (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY) ||
+    (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.GOOGLE_REFRESH_TOKEN)
+  );
+
+  if (!hasCredentials) {
+    return [];
+  }
 
   try {
+    const accessToken = await getAccessToken();
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties.title`;
+
     const res = await fetch(url, {
       cache: "no-store",
       headers: {
@@ -267,14 +302,15 @@ export async function getSpreadsheetSheets(spreadsheetId: string): Promise<strin
 
     if (!res.ok) {
       const errorText = await res.text();
-      throw new Error(`Sheets API request failed with status ${res.status}: ${errorText}`);
+      console.warn(`Sheets API getSpreadsheetSheets returned ${res.status}: ${errorText}`);
+      return [];
     }
 
     const data = await res.json();
     return (data.sheets || []).map((sheet: any) => sheet.properties?.title).filter(Boolean);
   } catch (err) {
-    console.error(`Error fetching spreadsheet sheets list:`, err);
-    throw err;
+    console.warn(`Error fetching spreadsheet sheets list:`, err);
+    return [];
   }
 }
 

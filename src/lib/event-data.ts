@@ -197,6 +197,11 @@ export async function getFestivalDataFromSheets(role: string = "public"): Promis
         getParsedSheetData(spreadsheetId, tabRos).catch(() => []),
       ]);
 
+      if (!rosRes || rosRes.length === 0) {
+        console.warn("ROS data returned empty from OAuth, falling back to public CSV...");
+        return getFestivalDataFromCsv();
+      }
+
       locationsData = locRes;
       personnelData = perRes;
       departmentsData = depRes;
@@ -303,6 +308,15 @@ import { filterEventsByRole } from "./role-filter";
 export { filterEventsByRole };
 
 export async function getFestivalData(role: string = "public"): Promise<FestivalDataResult> {
+  const forceCsv = process.env.DATA_SOURCE === "csv" || process.env.DATA_SOURCE === "sheets-csv";
+  if (forceCsv) {
+    const csvResult = await getFestivalDataFromCsv();
+    return {
+      ...csvResult,
+      events: filterEventsByRole(csvResult.events, role),
+    };
+  }
+
   const forceSheets = process.env.DATA_SOURCE === "sheets" || process.env.PREFER_SHEETS_SOURCE === "true";
   const result = forceSheets ? await getFestivalDataFromSheets(role) : await getFestivalDataFromRtdb(role);
   return {

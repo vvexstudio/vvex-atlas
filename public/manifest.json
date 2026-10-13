@@ -1,7 +1,7 @@
 {
-  "name": "VVEX Atlas",
-  "short_name": "VVEX Atlas",
-  "description": "Interactive VVEX Atlas map and run-of-show schedule.",
+  "name": "Vvexplore",
+  "short_name": "Vvexplore",
+  "description": "Interactive Vvexplore map and run-of-show schedule.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

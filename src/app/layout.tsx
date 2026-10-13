@@ -23,13 +23,13 @@ const fontMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "VVEX Atlas",
-  description: "Interactive VVEX Atlas map and run-of-show schedule.",
+  title: "Vvexplore",
+  description: "Interactive Vvexplore map and run-of-show schedule.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "VVEX Atlas",
+    title: "Vvexplore",
   },
   icons: {
     icon: [

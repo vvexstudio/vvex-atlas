@@ -19,7 +19,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <header className="admin-header">
         <div className="admin-header-left">
           <div className="admin-brand">
-            <img src="/vvex-mark.svg" alt="VVEX Atlas" width={26} height={26} className="admin-brand-logo" suppressHydrationWarning />
+            <img src="/vvex-mark.svg" alt="Vvexplore" width={26} height={26} className="admin-brand-logo" suppressHydrationWarning />
             <h2 className="admin-brand-title">The Portal — Admin</h2>
             {(() => {
               const isLive = typeof window !== "undefined" && !window.location.hostname.includes("localhost") && !window.location.hostname.includes("127.0.0.1");
