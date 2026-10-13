@@ -1,8 +1,9 @@
-const CACHE_NAME = "portal-cache-v4";
+const CACHE_NAME = "portal-cache-v5";
 const ASSETS_TO_CACHE = [
   "/",
   "/login",
   "/manifest.json",
+  "/vvex-mark.svg",
   "/icon.png",
   "/icon-192.png",
   "/icon-512.png",

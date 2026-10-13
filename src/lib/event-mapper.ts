@@ -326,6 +326,7 @@ export function createEventFromSheetRow(
 
   const eventId = asString(getRowValue(row, ["event_id", "id"]));
   const eventType = asString(getRowValue(row, ["event_type", "type"]));
+  const fohBoh = asString(getRowValue(row, ["FOH / BOH", "foh_boh", "foh/boh", "foh_boh_default", "foh", "boh"])) || (matchedVenue?.label?.toLowerCase().includes("boh") ? "Back" : "Front");
 
   return {
     id: eventId || `remote-${slugify(`${dateStr || "date"}-${title}-${index}`)}`,
@@ -353,6 +354,7 @@ export function createEventFromSheetRow(
     supportPerson1: supportPerson1 || undefined,
     supportPerson2: supportPerson2 || undefined,
     locationName,
+    foh_boh: fohBoh,
   };
 }
 

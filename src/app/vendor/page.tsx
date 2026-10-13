@@ -72,7 +72,7 @@ export default function VendorSchedulePage({
         }}
       >
         <div className="banner-brand-mark" style={{ animation: "pulse 1.5s infinite" }}>
-          <img src="/icon.png?v=solaris" alt="" width={26} height={26} className="banner-brand-mark" suppressHydrationWarning />
+          <img src="/vvex-mark.svg" alt="VVEX Atlas" width={26} height={26} className="banner-brand-mark" suppressHydrationWarning />
         </div>
         <div style={{ fontSize: "1rem", fontWeight: 600 }}>Loading Vendor Schedule...</div>
       </div>

@@ -303,7 +303,8 @@ import { filterEventsByRole } from "./role-filter";
 export { filterEventsByRole };
 
 export async function getFestivalData(role: string = "public"): Promise<FestivalDataResult> {
-  const result = await getFestivalDataFromRtdb(role);
+  const forceSheets = process.env.DATA_SOURCE === "sheets" || process.env.PREFER_SHEETS_SOURCE === "true";
+  const result = forceSheets ? await getFestivalDataFromSheets(role) : await getFestivalDataFromRtdb(role);
   return {
     ...result,
     events: filterEventsByRole(result.events, role),

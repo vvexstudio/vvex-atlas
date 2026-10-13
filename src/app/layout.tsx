@@ -23,13 +23,13 @@ const fontMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BM26 Solaris ROS",
-  description: "Interactive BM26 Solaris ROS map and run-of-show schedule.",
+  title: "VVEX Atlas",
+  description: "Interactive VVEX Atlas map and run-of-show schedule.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "BM26 Solaris ROS",
+    title: "VVEX Atlas",
   },
   icons: {
     icon: [

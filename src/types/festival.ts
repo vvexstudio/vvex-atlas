@@ -65,6 +65,7 @@ export type FestivalEvent = {
   supportPerson1?: string;
   supportPerson2?: string;
   locationName?: string;
+  foh_boh?: string;
   history?: EventHistoryEntry[];
 };
 

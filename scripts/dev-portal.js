@@ -63,7 +63,11 @@ process.on("exit", () => {
   cleanup();
 });
 
-const child = spawn("npx", ["next", "dev"], { stdio: "inherit", cwd: root, shell: true });
+const extraArgs = process.argv.slice(2);
+const portArgs = !extraArgs.includes("-p") && !extraArgs.includes("--port") && process.env.PORT
+  ? ["-p", process.env.PORT]
+  : [];
+const child = spawn("npx", ["next", "dev", ...portArgs, ...extraArgs], { stdio: "inherit", cwd: root, shell: true });
 child.on("exit", (code) => {
   cleanup();
   process.exit(code || 0);
