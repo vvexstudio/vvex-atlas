@@ -51,3 +51,4 @@ to do
 client_secret*.json
 *service-account*.json
 
+env.local*

@@ -997,7 +997,7 @@ export function EventApp({
         <div className="legacy-banner-title">
           {/* eslint-disable-next-line @next/next/no-img-element -- static 26px brand mark, next/image is overkill */}
           <img src="/vvex-mark.svg" alt="Vvexplore" className="banner-brand-mark" width={26} height={26} suppressHydrationWarning />
-          <h1 className="legacy-banner-heading">Vvexplore</h1>
+          <h1 className="legacy-banner-heading" suppressHydrationWarning>Vvexplore</h1>
           <span className="chip chip-accent eyebrow eyebrow-accent header-chip-location" suppressHydrationWarning>
             {process.env.NEXT_PUBLIC_EVENT_TIMEZONE || "PDT"}
           </span>

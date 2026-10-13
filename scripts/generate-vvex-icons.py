@@ -59,6 +59,24 @@ def main():
         icon.save(dest, "PNG")
         print(f"Generated {filename} ({sz}x{sz})")
 
+    # Generate multi-size favicon.ico for public/
+    fav_dest = os.path.join(public_dir, "favicon.ico")
+    icon_48 = create_vvex_icon(48)
+    icon_48.save(fav_dest, format="ICO", sizes=[(16, 16), (32, 32), (48, 48)])
+    print("Generated public/favicon.ico (16, 32, 48)")
+
+    # Update Next.js App Router default icon at src/app/icon.png
+    src_app_dir = os.path.join(os.path.dirname(__file__), "..", "src", "app")
+    app_icon_dest = os.path.join(src_app_dir, "icon.png")
+    icon_app = create_vvex_icon(100)
+    icon_app.save(app_icon_dest, "PNG")
+    print("Generated src/app/icon.png")
+
+    # Also generate src/app/favicon.ico for Next.js App Router metadata fallback
+    app_fav_dest = os.path.join(src_app_dir, "favicon.ico")
+    icon_48.save(app_fav_dest, format="ICO", sizes=[(16, 16), (32, 32), (48, 48)])
+    print("Generated src/app/favicon.ico")
+
     # Generate crisp SVG version
     svg_content = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
   <defs>
