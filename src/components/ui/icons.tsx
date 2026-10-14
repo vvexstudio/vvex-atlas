@@ -31,6 +31,7 @@ import {
   EyeOff,
   FileText,
   Globe,
+  Heart,
   Hotel,
   Hourglass,
   KeyRound,
@@ -98,6 +99,7 @@ const ICONS = {
   eyeOff: EyeOff,
   file: FileText,
   globe: Globe,
+  heart: Heart,
   hotel: Hotel,
   hourglass: Hourglass,
   key: KeyRound,
@@ -187,7 +189,8 @@ const DEPARTMENT_ICON_MAP: Record<string, IconName> = {
   "Med / Sec": "shieldPlus",
   Rigging: "anchor",
   "Set Design": "palette",
-  SolarPunks: "sun",
+  "Punk Hearts": "heart",
+  SolarPunks: "heart",
   Structural: "construction",
 };
 

@@ -1,23 +1,24 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Fraunces, IBM_Plex_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const fontDisplay = Fraunces({
+const fontDisplay = Space_Grotesk({
   subsets: ["latin"],
-  axes: ["opsz", "SOFT", "WONK"],
   variable: "--font-display",
   display: "swap",
+  weight: ["500", "600", "700"],
 });
 
-const fontSans = Archivo({
+const fontSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
+  weight: ["400", "500", "600", "700"],
 });
 
-const fontMono = IBM_Plex_Mono({
+const fontMono = JetBrains_Mono({
   subsets: ["latin"],
-  weight: ["400", "600"],
+  weight: ["400", "500", "600"],
   variable: "--font-mono",
   display: "swap",
 });

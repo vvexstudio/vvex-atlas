@@ -102,6 +102,16 @@
         "fg": "#a8d8b8"
       }
     },
+    "Punk Hearts": {
+      "light": {
+        "bg": "#fce7f3",
+        "fg": "#be185d"
+      },
+      "dark": {
+        "bg": "#371b2b",
+        "fg": "#f472b6"
+      }
+    },
     "Structural": {
       "light": {
         "bg": "#e4ddd1",

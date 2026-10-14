@@ -1,41 +1,40 @@
 /* ============================================================
-   DESIGN TOKENS
-   Light: "Desert Letterpress" — sand, ink, burnt orange.
-   Dark:  "Playa Noir" — warm charcoal, dust amber.
-   Every color, radius, shadow, spacing, and type size in this
-   file must come from these tokens.
+   DESIGN TOKENS — VVEX ATLAS / VVEXPLORE
+   Light: "Titanium Studio" — clean slate, crisp white, electric cobalt.
+   Dark:  "Obsidian Void" — deep space navy, neo-cyan, ultra-crisp ice.
+   Dusk:  "Cyber Iris" — midnight violet, neon purple, synth glow.
    ============================================================ */
 
 :root {
-  --bg: #efe5d0;
-  --surface: #f7efdd;
-  --surface-raised: #fffdf3;
-  --ink: #1e1a16;
-  --muted: #63584c;
-  --line: rgba(56, 38, 17, 0.18);
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-raised: #f1f5f9;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: rgba(15, 23, 42, 0.08);
 
-  --accent: #bc5c2d;
-  --accent-strong: #9c4a20;
-  --accent-ink: #fffdf3;
-  --accent-soft: rgba(188, 92, 45, 0.14);
+  --accent: #0284c7;
+  --accent-strong: #0369a1;
+  --accent-ink: #ffffff;
+  --accent-soft: rgba(2, 132, 199, 0.1);
 
-  --success: #4a7c46;
-  --success-soft: #dfe9d3;
-  --warn: #9a6a1b;
-  --warn-soft: #f3e4c0;
-  --danger: #a63d2a;
-  --danger-soft: #f2d9cf;
-  --info: #3f6b7d;
-  --info-soft: #d9e6ea;
+  --success: #059669;
+  --success-soft: #d1fae5;
+  --warn: #d97706;
+  --warn-soft: #fef3c7;
+  --danger: #e11d48;
+  --danger-soft: #ffe4e6;
+  --info: #0284c7;
+  --info-soft: #e0f2fe;
 
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
   --radius-full: 999px;
 
-  --shadow-sm: 0 1px 2px rgba(62, 35, 12, 0.1);
-  --shadow-md: 0 6px 18px rgba(62, 35, 12, 0.12);
-  --shadow-lg: 0 24px 80px rgba(62, 35, 12, 0.16);
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 16px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 20px 48px rgba(15, 23, 42, 0.12);
 
   --space-xs: 4px;
   --space-sm: 8px;
@@ -58,77 +57,77 @@
   --font-fallback-sans: system-ui, -apple-system, sans-serif;
   --font-fallback-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --gradient-color-1: rgba(255, 245, 222, 0.8);
-  --gradient-color-2: rgba(168, 126, 63, 0.18);
-  --gradient-start: #f5ead2;
-  --gradient-end: #e3d3b6;
+  --gradient-color-1: rgba(2, 132, 199, 0.06);
+  --gradient-color-2: rgba(99, 102, 241, 0.04);
+  --gradient-start: #f8fafc;
+  --gradient-end: #f1f5f9;
   color-scheme: light;
 }
 
 body.portal-dark {
-  --bg: #16130f;
-  --surface: #201b15;
-  --surface-raised: #2a241c;
-  --ink: #ede4d4;
-  --muted: #a89a86;
-  --line: rgba(237, 228, 212, 0.14);
+  --bg: #090d16;
+  --surface: #0f172a;
+  --surface-raised: #1e293b;
+  --ink: #f8fafc;
+  --muted: #94a3b8;
+  --line: rgba(148, 163, 184, 0.14);
 
-  --accent: #d98e4a;
-  --accent-strong: #e5a465;
-  --accent-ink: #1e1a16;
-  --accent-soft: rgba(217, 142, 74, 0.16);
+  --accent: #00d2ff;
+  --accent-strong: #38bdf8;
+  --accent-ink: #04121d;
+  --accent-soft: rgba(0, 210, 255, 0.14);
 
-  --success: #8fbf85;
-  --success-soft: rgba(143, 191, 133, 0.16);
-  --warn: #d9b45c;
-  --warn-soft: rgba(217, 180, 92, 0.16);
-  --danger: #e08a72;
-  --danger-soft: rgba(224, 138, 114, 0.16);
-  --info: #8fb6c4;
-  --info-soft: rgba(143, 182, 196, 0.16);
+  --success: #10b981;
+  --success-soft: rgba(16, 185, 129, 0.16);
+  --warn: #f59e0b;
+  --warn-soft: rgba(245, 158, 11, 0.16);
+  --danger: #f43f5e;
+  --danger-soft: rgba(244, 63, 94, 0.16);
+  --info: #38bdf8;
+  --info-soft: rgba(56, 189, 248, 0.16);
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 32px 80px rgba(0, 0, 0, 0.55);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.6);
+  --shadow-md: 0 8px 28px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.7);
 
-  --gradient-color-1: rgba(42, 36, 28, 0.8);
-  --gradient-color-2: rgba(217, 142, 74, 0.06);
-  --gradient-start: #1b1712;
-  --gradient-end: #16130f;
+  --gradient-color-1: rgba(0, 210, 255, 0.08);
+  --gradient-color-2: rgba(99, 102, 241, 0.06);
+  --gradient-start: #0a0f1d;
+  --gradient-end: #060911;
   color-scheme: dark;
 }
 
 body.portal-dusk {
-  /* Dusk Rose — deep plum surfaces, warm cream ink, dusty rose accent */
-  --bg: #201318;
-  --surface: #2b1a21;
-  --surface-raised: #37222b;
-  --ink: #f3e2da;
-  --muted: #b294a0;
-  --line: rgba(243, 226, 218, 0.14);
+  /* Cyber Iris — deep midnight violet, pure lavender-ice, neon violet accent */
+  --bg: #0c0a1d;
+  --surface: #14122d;
+  --surface-raised: #1e1b40;
+  --ink: #f5f3ff;
+  --muted: #9d94c9;
+  --line: rgba(167, 139, 250, 0.16);
 
-  --accent: #e0849b;
-  --accent-strong: #eb9fb2;
-  --accent-ink: #2a1219;
-  --accent-soft: rgba(224, 132, 155, 0.16);
+  --accent: #a855f7;
+  --accent-strong: #c084fc;
+  --accent-ink: #1a082e;
+  --accent-soft: rgba(168, 85, 247, 0.16);
 
-  --success: #9dc49a;
-  --success-soft: rgba(157, 196, 154, 0.16);
-  --warn: #dcb277;
-  --warn-soft: rgba(220, 178, 119, 0.16);
-  --danger: #e6907c;
-  --danger-soft: rgba(230, 144, 124, 0.16);
-  --info: #97b3cd;
-  --info-soft: rgba(151, 179, 205, 0.16);
+  --success: #34d399;
+  --success-soft: rgba(52, 211, 153, 0.16);
+  --warn: #fbbf24;
+  --warn-soft: rgba(251, 191, 36, 0.16);
+  --danger: #fb7185;
+  --danger-soft: rgba(251, 113, 133, 0.16);
+  --info: #818cf8;
+  --info-soft: rgba(129, 140, 248, 0.16);
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 32px 80px rgba(0, 0, 0, 0.55);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.6);
+  --shadow-md: 0 8px 28px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.7);
 
-  --gradient-color-1: rgba(55, 34, 43, 0.8);
-  --gradient-color-2: rgba(224, 132, 155, 0.06);
-  --gradient-start: #241419;
-  --gradient-end: #201318;
+  --gradient-color-1: rgba(168, 85, 247, 0.12);
+  --gradient-color-2: rgba(236, 72, 153, 0.08);
+  --gradient-start: #100d24;
+  --gradient-end: #090815;
   color-scheme: dark;
 }
 
@@ -260,10 +259,10 @@ body.portal-dark .banner-brand-mark {
 
 .legacy-banner-heading {
   color: var(--ink);
-  font-family: var(--font-display, serif);
-  font-size: clamp(1.05rem, 2vw, 1.4rem);
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  font-family: var(--font-display, var(--font-fallback-sans));
+  font-size: clamp(1.1rem, 2.2vw, 1.45rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
   line-height: 1.2;
 }
 
@@ -2423,9 +2422,10 @@ body.portal-dark .banner-brand-mark {
 }
 
 .modal-title {
-  font-family: var(--font-display, serif);
+  font-family: var(--font-display, var(--font-fallback-sans));
   font-size: var(--text-md);
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   margin: 0;
   color: inherit;
 }
