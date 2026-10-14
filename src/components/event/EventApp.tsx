@@ -333,9 +333,11 @@ export function EventApp({
 
   useEffect(() => {
     const saved = window.localStorage.getItem("portal-theme");
-    if (saved === "letterpress" || saved === "dusk") {
+    if (saved === "letterpress" || saved === "dusk" || saved === "noir") {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time post-hydration sync from localStorage; SSR must render the default
       setTheme(saved);
+    } else {
+      setTheme("noir");
     }
   }, []);
 
@@ -478,8 +480,9 @@ export function EventApp({
     if (typeof document === "undefined") return;
     document.body.classList.toggle("portal-dark", theme === "noir");
     document.body.classList.toggle("portal-dusk", theme === "dusk");
+    document.body.classList.toggle("portal-light", theme === "letterpress");
     return () => {
-      document.body.classList.remove("portal-dark", "portal-dusk");
+      document.body.classList.remove("portal-dark", "portal-dusk", "portal-light");
     };
   }, [theme]);
 

@@ -1,22 +1,22 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
-const fontDisplay = Space_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-display",
-  display: "swap",
-  weight: ["500", "600", "700"],
-});
-
-const fontSans = Plus_Jakarta_Sans({
+const fontSans = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
   weight: ["400", "500", "600", "700"],
 });
 
-const fontMono = JetBrains_Mono({
+const fontDisplay = Inter({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+  weight: ["600", "700"],
+});
+
+const fontMono = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-mono",
@@ -68,7 +68,7 @@ export default function RootLayout({
       <body className="portal-dark" suppressHydrationWarning>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("portal-theme");if(t==="letterpress"){document.body.classList.remove("portal-dark","portal-dusk");}else if(t==="dusk"){document.body.classList.remove("portal-dark");document.body.classList.add("portal-dusk");}}catch(e){}})();`,
+            __html: `(function(){try{var t=localStorage.getItem("portal-theme");if(t==="letterpress"||t==="light"){document.body.classList.remove("portal-dark","portal-dusk");document.body.classList.add("portal-light");}else if(t==="dusk"){document.body.classList.remove("portal-dark","portal-light");document.body.classList.add("portal-dusk");}else{document.body.classList.add("portal-dark");document.body.classList.remove("portal-light","portal-dusk");}}catch(e){}})();`,
           }}
         />
         {children}

@@ -1,40 +1,42 @@
 /* ============================================================
-   DESIGN TOKENS — VVEX ATLAS / VVEXPLORE
-   Light: "Titanium Studio" — clean slate, crisp white, electric cobalt.
-   Dark:  "Obsidian Void" — deep space navy, neo-cyan, ultra-crisp ice.
-   Dusk:  "Cyber Iris" — midnight violet, neon purple, synth glow.
+   DESIGN TOKENS — VVEX STUDIO SPECIFICATION (https://vvex.studio/)
+   Typography: Inter (sans) & IBM Plex Mono (mono).
+   Palette: True Black (#000000) default, card surface (#0c0c0e),
+   elevated surface (#141416), line (#222226), bone ink (#eceae6),
+   dim muted text (#8b8b92), and signature VVEX tangerine flame (#ff5c1a).
    ============================================================ */
 
 :root {
-  --bg: #f8fafc;
-  --surface: #ffffff;
-  --surface-raised: #f1f5f9;
-  --ink: #0f172a;
-  --muted: #64748b;
-  --line: rgba(15, 23, 42, 0.08);
+  /* True Pure Black (#000000) Default Mode */
+  --bg: #000000;
+  --surface: #0c0c0e;
+  --surface-raised: #141416;
+  --ink: #eceae6;
+  --muted: #8b8b92;
+  --line: #222226;
 
-  --accent: #0284c7;
-  --accent-strong: #0369a1;
-  --accent-ink: #ffffff;
-  --accent-soft: rgba(2, 132, 199, 0.1);
+  --accent: #ff5c1a;
+  --accent-strong: #ff7538;
+  --accent-ink: #000000;
+  --accent-soft: rgba(255, 92, 26, 0.15);
 
-  --success: #059669;
-  --success-soft: #d1fae5;
-  --warn: #d97706;
-  --warn-soft: #fef3c7;
-  --danger: #e11d48;
-  --danger-soft: #ffe4e6;
-  --info: #0284c7;
-  --info-soft: #e0f2fe;
+  --success: #34d399;
+  --success-soft: rgba(52, 211, 153, 0.16);
+  --warn: #fbbf24;
+  --warn-soft: rgba(251, 191, 36, 0.16);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.16);
+  --info: #38bdf8;
+  --info-soft: rgba(56, 189, 248, 0.16);
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
   --radius-full: 999px;
 
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
-  --shadow-md: 0 4px 16px rgba(15, 23, 42, 0.08);
-  --shadow-lg: 0 20px 48px rgba(15, 23, 42, 0.12);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.8);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.85);
 
   --space-xs: 4px;
   --space-sm: 8px;
@@ -52,64 +54,82 @@
   --text-xl: 1.625rem;
   --text-2xl: 2.125rem;
 
-  /* --font-display / --font-sans / --font-mono are set by next/font
-     in src/app/layout.tsx; these are build-time-injected fallbacks. */
-  --font-fallback-sans: system-ui, -apple-system, sans-serif;
-  --font-fallback-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-fallback-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-fallback-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
-  --gradient-color-1: rgba(2, 132, 199, 0.06);
-  --gradient-color-2: rgba(99, 102, 241, 0.04);
-  --gradient-start: #f8fafc;
-  --gradient-end: #f1f5f9;
-  color-scheme: light;
-}
-
-body.portal-dark {
-  --bg: #090d16;
-  --surface: #0f172a;
-  --surface-raised: #1e293b;
-  --ink: #f8fafc;
-  --muted: #94a3b8;
-  --line: rgba(148, 163, 184, 0.14);
-
-  --accent: #00d2ff;
-  --accent-strong: #38bdf8;
-  --accent-ink: #04121d;
-  --accent-soft: rgba(0, 210, 255, 0.14);
-
-  --success: #10b981;
-  --success-soft: rgba(16, 185, 129, 0.16);
-  --warn: #f59e0b;
-  --warn-soft: rgba(245, 158, 11, 0.16);
-  --danger: #f43f5e;
-  --danger-soft: rgba(244, 63, 94, 0.16);
-  --info: #38bdf8;
-  --info-soft: rgba(56, 189, 248, 0.16);
-
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.6);
-  --shadow-md: 0 8px 28px rgba(0, 0, 0, 0.55);
-  --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.7);
-
-  --gradient-color-1: rgba(0, 210, 255, 0.08);
-  --gradient-color-2: rgba(99, 102, 241, 0.06);
-  --gradient-start: #0a0f1d;
-  --gradient-end: #060911;
+  --gradient-color-1: rgba(255, 92, 26, 0.05);
+  --gradient-color-2: rgba(0, 0, 0, 0);
+  --gradient-start: #000000;
+  --gradient-end: #000000;
   color-scheme: dark;
 }
 
-body.portal-dusk {
-  /* Cyber Iris — deep midnight violet, pure lavender-ice, neon violet accent */
-  --bg: #0c0a1d;
-  --surface: #14122d;
-  --surface-raised: #1e1b40;
-  --ink: #f5f3ff;
-  --muted: #9d94c9;
-  --line: rgba(167, 139, 250, 0.16);
+body.portal-dark {
+  /* Enforce True Pure Black */
+  --bg: #000000;
+  --surface: #0c0c0e;
+  --surface-raised: #141416;
+  --ink: #eceae6;
+  --muted: #8b8b92;
+  --line: #222226;
 
-  --accent: #a855f7;
-  --accent-strong: #c084fc;
-  --accent-ink: #1a082e;
-  --accent-soft: rgba(168, 85, 247, 0.16);
+  --accent: #ff5c1a;
+  --accent-strong: #ff7538;
+  --accent-ink: #000000;
+  --accent-soft: rgba(255, 92, 26, 0.15);
+
+  --gradient-start: #000000;
+  --gradient-end: #000000;
+  color-scheme: dark;
+}
+
+body.portal-light {
+  /* Light mode option */
+  --bg: #f5f4f0;
+  --surface: #ffffff;
+  --surface-raised: #eae9e4;
+  --ink: #09090b;
+  --muted: #6b6b73;
+  --line: #dedcd7;
+
+  --accent: #ff5c1a;
+  --accent-strong: #e04b0d;
+  --accent-ink: #ffffff;
+  --accent-soft: rgba(255, 92, 26, 0.12);
+
+  --success: #16a34a;
+  --success-soft: #dcfce7;
+  --warn: #d97706;
+  --warn-soft: #fef3c7;
+  --danger: #dc2626;
+  --danger-soft: #fee2e2;
+  --info: #0284c7;
+  --info-soft: #e0f2fe;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 18px 40px rgba(0, 0, 0, 0.12);
+
+  --gradient-color-1: rgba(255, 92, 26, 0.04);
+  --gradient-color-2: rgba(0, 0, 0, 0.02);
+  --gradient-start: #f5f4f0;
+  --gradient-end: #eae9e4;
+  color-scheme: light;
+}
+
+body.portal-dusk {
+  /* VVEX Figlet Neon — Midnight Violet with Neon Orange Accent */
+  --bg: #07050a;
+  --surface: #100d16;
+  --surface-raised: #181420;
+  --ink: #f1edfa;
+  --muted: #958ba3;
+  --line: #272030;
+
+  --accent: #ff5c1a;
+  --accent-strong: #ff7942;
+  --accent-ink: #07050a;
+  --accent-soft: rgba(255, 92, 26, 0.16);
 
   --success: #34d399;
   --success-soft: rgba(52, 211, 153, 0.16);
@@ -117,17 +137,17 @@ body.portal-dusk {
   --warn-soft: rgba(251, 191, 36, 0.16);
   --danger: #fb7185;
   --danger-soft: rgba(251, 113, 133, 0.16);
-  --info: #818cf8;
-  --info-soft: rgba(129, 140, 248, 0.16);
+  --info: #a78bfa;
+  --info-soft: rgba(167, 139, 250, 0.16);
 
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.6);
-  --shadow-md: 0 8px 28px rgba(0, 0, 0, 0.55);
-  --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.7);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.7);
 
-  --gradient-color-1: rgba(168, 85, 247, 0.12);
-  --gradient-color-2: rgba(236, 72, 153, 0.08);
-  --gradient-start: #100d24;
-  --gradient-end: #090815;
+  --gradient-color-1: rgba(255, 92, 26, 0.09);
+  --gradient-color-2: rgba(168, 85, 247, 0.06);
+  --gradient-start: #07050a;
+  --gradient-end: #07050a;
   color-scheme: dark;
 }
 
@@ -140,13 +160,15 @@ body {
 
 body {
   color: var(--ink);
-  background:
-    radial-gradient(circle at top left, var(--gradient-color-1), transparent 28%),
-    radial-gradient(circle at bottom right, var(--gradient-color-2), transparent 24%),
-    linear-gradient(180deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+  background: var(--bg);
   font-family: var(--font-sans, var(--font-fallback-sans));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: var(--accent);
+  color: #000000;
 }
 
 * {
@@ -200,7 +222,7 @@ a {
   height: 100vh;
   min-height: 100vh;
   padding: 0;
-  background: var(--surface-raised);
+  background: var(--bg);
   color: var(--ink);
   font-size: var(--text-base);
   letter-spacing: 0.015em;
@@ -216,7 +238,7 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--surface-raised);
+  background: var(--bg);
 }
 
 .legacy-banner-title {
@@ -259,10 +281,11 @@ body.portal-dark .banner-brand-mark {
 
 .legacy-banner-heading {
   color: var(--ink);
-  font-family: var(--font-display, var(--font-fallback-sans));
-  font-size: clamp(1.1rem, 2.2vw, 1.45rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-family: var(--font-mono, var(--font-fallback-mono));
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   line-height: 1.2;
 }
 
@@ -430,7 +453,7 @@ body.portal-dark .banner-brand-mark {
   width: min(var(--sidebar-width, 460px), 45vw);
   flex: 0 0 auto;
   border-left: 1px solid var(--line);
-  background: var(--surface-raised);
+  background: var(--bg);
   overflow-y: auto;
   padding: 10px;
   display: grid;
@@ -913,8 +936,8 @@ body.portal-dark .banner-brand-mark {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  background: var(--surface);
-  border-bottom: 2px solid var(--line);
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
   padding: 8px 16px 0;
   gap: 8px;
 }
@@ -963,20 +986,22 @@ body.portal-dark .banner-brand-mark {
   border-bottom: none;
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   padding: 8px 16px;
-  font-family: inherit;
-  font-weight: 600;
-  font-size: var(--text-sm);
+  font-family: var(--font-mono, var(--font-fallback-mono));
+  font-weight: 500;
+  font-size: var(--text-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--muted);
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
 }
 .main-tab-btn:hover {
-  background: rgba(255, 255, 255, 0.4);
-  color: var(--ink);
+  color: var(--accent);
 }
 .main-tab-btn.active {
   background: var(--surface-raised);
   border-color: var(--line);
+  border-top: 2px solid var(--accent);
   color: var(--ink);
   box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.03);
 }
@@ -990,7 +1015,7 @@ body.portal-dark .banner-brand-mark {
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  background: var(--surface-raised);
+  background: var(--bg);
   position: relative;
 }
 
@@ -1009,22 +1034,22 @@ body.portal-dark .banner-brand-mark {
 .main-schedule-day-group {
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  background: var(--surface-raised);
-  box-shadow: 0 4px 12px rgba(56, 38, 17, 0.05);
+  background: var(--surface);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 .main-schedule-day-header {
   position: sticky;
   top: 0;
   z-index: 25; /* Higher than sticky table cells (z-index 11) to prevent overlap */
-  background: var(--bg);
+  background: var(--surface);
   padding: 12px 16px;
   font-weight: 700;
   font-size: var(--text-base);
   letter-spacing: 0.02em;
   color: var(--ink);
   border-bottom: 1px solid var(--line);
-  border-top-left-radius: 7px;
-  border-top-right-radius: 7px;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1090,7 +1115,7 @@ body.portal-dark .banner-brand-mark {
   position: sticky;
   left: 0;
   z-index: 10;
-  background: var(--surface-raised);
+  background: var(--surface);
   white-space: nowrap;
   font-family: var(--font-mono, var(--font-fallback-mono));
   font-variant-numeric: tabular-nums;
@@ -1557,7 +1582,7 @@ body.portal-dark .banner-brand-mark {
   width: 100%;
   gap: 16px;
   padding: 16px;
-  background: var(--surface-raised);
+  background: var(--bg);
 }
 
 /* Calendar Controls / Sliders */
@@ -1663,7 +1688,7 @@ body.portal-dark .banner-brand-mark {
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  background: var(--surface-raised);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   overflow: auto;
